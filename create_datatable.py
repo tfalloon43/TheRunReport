@@ -247,6 +247,7 @@ def standalone_W(text: str) -> bool:
     return bool(re.search(r'\bW\b', text, re.IGNORECASE))
 
 def stock_from_text(text: str):
+    """Return 'H', 'W', or 'U' if clearly present in text (Stock- H/W/U or standalone H/W/U), else None."""
     if text is None:
         return None
     t = text.strip()
@@ -254,10 +255,14 @@ def stock_from_text(text: str):
         return 'H'
     if re.search(r'\bStock-?\s*W\b', t, re.IGNORECASE):
         return 'W'
-    if standalone_H(t):
+    if re.search(r'\bStock-?\s*U\b', t, re.IGNORECASE):
+        return 'U'
+    if re.search(r'\bH\b', t):
         return 'H'
-    if standalone_W(t):
+    if re.search(r'\bW\b', t):
         return 'W'
+    if re.search(r'\bU\b', t):
+        return 'U'
     return None
 
 def strip_trailing_stock_token(hatch_text: str) -> str:
@@ -324,7 +329,8 @@ while i < len(lines):
     m_tail = re.search(r'(?:^|[\s\-\(])([HWU])\s*$', hatchery_text, re.IGNORECASE)
     if m_tail:
         tail_tok = m_tail.group(1).upper()
-        stock_val = 'H' if tail_tok in ('H', 'U') else 'W'
+        if tail_tok in ('H', 'W', 'U'):
+            stock_val = tail_tok
         hatchery_text = strip_trailing_stock_token(hatchery_text)
 
     if stock_val is None and numbers:
@@ -336,7 +342,7 @@ while i < len(lines):
     if stock_val is None:
         next_text = lines[i + 1][2].strip() if (i + 1) < len(lines) else ''
         if next_text.strip().lower() == "river- u":
-            stock_val = "H"
+            stock_val = "U"
         else:
             stock_val = stock_from_text(next_text)
 

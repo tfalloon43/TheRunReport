@@ -56,7 +56,7 @@ family_map = {
     "summer steelhead": "steelhead", "winter steelhead": "steelhead", "winter-late steelhead": "steelhead",
     "steelhead": "steelhead",
     "sockeye": "sockeye", "chum": "chum", "summer chum": "chum",
-    "pink": "pink", "summer pink": "pink",
+    "pink": "pink", "summer pink": "pink", "odd year pink": "pink",
     "dolly/bull trout": "bull trout", "whitefish": "whitefish",
     "sucker: general": "sucker", "kokanee": "kokanee", "late kokanee": "kokanee",
     "northern pikeminnow": "pikeminnow",
@@ -236,6 +236,8 @@ basin_map = {
     "LK WHATCOM HATCHERY": "Whatcom Lake",
     "OMAK HATCHERY": "Okanogan River",
     "TWISP ACCLIMATION PD": "Twisp River",
+    "COTTONWOOD CR POND":"Cottonwood Creek Pond",
+    "GRAYS RIVER WEIR":"Grays River Weir",
 }
 
 species_set_lc = {s.lower() for s in species_headers}

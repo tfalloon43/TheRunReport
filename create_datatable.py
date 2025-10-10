@@ -1,60 +1,55 @@
-# create_datatable.py — v7
+# create_datatable_v9.py
 # ------------------------------------------------------------
 # Cleans and merges raw pdf_lines data into structured format
-# Adds: species + family + hatchery + hatch_name + basin + stock_BO + stock + date
+# Adds: species + family + hatchery + hatch_name + basin + stock_BO + stock + date + date_iso + count_data
 # Reference data (species_headers, family_map, hatch_name_map, basin_map, stock_corrections)
-# is imported from lookup_maps.py
+# imported from lookup_maps.py
 # ------------------------------------------------------------
 
 import sqlite3
 import pandas as pd
 import re
+from datetime import datetime
 from lookup_maps import species_headers, family_map, hatch_name_map, basin_map, stock_corrections
 
 # ------------------------------------------------------------
-# 1) Connect and load pdf_lines
+# 1) Load data
 # ------------------------------------------------------------
 db_path = "pdf_data.sqlite"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 cursor.execute("SELECT pdf_name, page_num, text_line FROM pdf_lines ORDER BY id")
 rows = cursor.fetchall()
+conn.close()
 
-# ------------------------------------------------------------
-# 2) Setup
-# ------------------------------------------------------------
 species_set_lc = {s.lower() for s in species_headers}
 
 # ------------------------------------------------------------
-# 3) Helper functions
+# 2) Helper functions
 # ------------------------------------------------------------
-def is_species_header(text: str) -> bool:
-    """Check if a line exactly matches a species header."""
+def is_species_header(text):
     return text.strip().lower() in species_set_lc
 
-def contains_stock_tag(text: str) -> bool:
-    """Check if a short line contains - W, - H, - U, or - M"""
+def contains_stock_tag(text):
     return bool(re.search(r"-\s*[WHUMwhum]\b", text))
 
-def find_insert_pos(upper_text: str) -> int:
-    """Find where to insert continuation lines before first number or dash."""
-    match = re.search(r"(\d| -)", upper_text)
-    return match.start() if match else len(upper_text)
+def find_insert_pos(upper_text):
+    m = re.search(r"(\d| -)", upper_text)
+    return m.start() if m else len(upper_text)
 
 def extract_hatchery(text):
-    """Extract the all-uppercase hatchery name prefix."""
     if not text:
         return None
     text = text.strip()
-    match = re.match(r"^([A-Z0-9 ./-]+)(?=\s[A-Z][a-z])", text)
-    if match:
-        return match.group(1).strip()
+    m = re.match(r"^([A-Z0-9 ./-]+)(?=\s[A-Z][a-z])", text)
+    if m:
+        return m.group(1).strip()
     parts = text.split()
-    upper_parts = [w for w in parts if w.isupper()]
-    if len(upper_parts) >= 2:
-        return " ".join(upper_parts[:2])
-    elif upper_parts:
-        return upper_parts[0]
+    uppers = [p for p in parts if p.isupper()]
+    if len(uppers) >= 2:
+        return " ".join(uppers[:2])
+    elif uppers:
+        return uppers[0]
     return None
 
 def lookup_hatch_name(hatch):
@@ -68,113 +63,112 @@ def lookup_basin(hatch):
     return basin_map.get(hatch.upper())
 
 # ------------------------------------------------------------
-# 4) Merge continuation lines + repair inline Stock- tags
+# 3) Text repair helpers
 # ------------------------------------------------------------
-fixed = [list(r) for r in rows]
-
-def move_trailing_stock_letter(s: str) -> str:
+def move_trailing_stock_letter(s):
     """
-    If a line contains 'Stock-' followed by a number/dash but no letter after it,
-    and there is a standalone H/W/U/M token (often at the end), move that letter
-    right after 'Stock- '. Also tidy ' H Hatchery' residue, and tolerate
-    trailing whitespace/punctuation.
+    Moves a stray H/W/U/M to immediately after 'Stock- ' if:
+    - 'Stock-' or 'River-' is followed by numbers/dashes
+    - the line later has ' H Hatchery' or ends with standalone H/W/U/M
     """
-    if "Stock-" not in s:
+    if not any(tag in s for tag in ("Stock-", "River-")):
         return s
 
-    # Only act if 'Stock-' is followed somewhere by a number/dash (the counts section)
-    if not re.search(r"Stock-\s*[\d-]", s):
+    # Identify which tag applies
+    tag = "Stock-" if "Stock-" in s else "River-"
+    if not re.search(fr"{tag}\s*[\d-]", s):
+        return s
+    if re.search(fr"{tag}\s*[HWUM]\b", s):
         return s
 
-    # If there's already a letter after Stock-, nothing to do
-    if re.search(r"Stock-\s*[HWUM]\b", s):
-        return s
+    # Case A: "H Hatchery" or "H. Hatchery"
+    m_hatch = re.search(r'\b([HWUM])\s+\.?[Hh]atchery', s)
+    if m_hatch:
+        letter = m_hatch.group(1)
+        s = s[:m_hatch.start(1)] + s[m_hatch.end(1):]
+        s = re.sub(fr'({tag}\s*)', rf'\1{letter} ', s, count=1)
+        return re.sub(r'\s{2,}', ' ', s).strip()
 
-    # Prefer a trailing standalone token first (e.g., "... estimate. H")
+    # Case B: trailing standalone H/W/U/M
     tail = re.search(r'\s([HWUM])\s*\.?\s*$', s)
     if tail:
         letter = tail.group(1)
-        # Remove that trailing letter chunk
         s = s[:tail.start(1)].rstrip()
-    else:
-        # Otherwise, take the last standalone letter anywhere in the line
-        last = None
-        for m in re.finditer(r'(?<![A-Za-z0-9])([HWUM])(?![A-Za-z0-9])', s):
-            last = m
-        if not last:
-            return s
-        letter = last.group(1)
-        s = (s[:last.start()] + s[last.end():]).strip()
+        s = re.sub(fr'({tag}\s*)', rf'\1{letter} ', s, count=1)
+        return re.sub(r'\s{2,}', ' ', s).strip()
 
-    # Tidy cases like " H Hatchery" / " H. Hatchery"
-    s = re.sub(r'\s+[HWUM]\s+(Hatchery\.?|HATCHERY\.?)', r' \1', s)
-
-    # Inject the letter after 'Stock- '
-    s = re.sub(r'(Stock-\s*)', rf'\1{letter} ', s, count=1)
-
-    # Collapse spaces
-    s = re.sub(r'\s{2,}', ' ', s).strip()
     return s
 
+def has_double_record(line):
+    """Detect two hatchery records on one line (by repeated 'HATCHERY' or multiple dates)."""
+    return line.upper().count("HATCHERY") > 1 or len(re.findall(r"\d{1,2}/\d{1,2}/\d{2,4}", line)) > 1
+
+def split_double_record(line):
+    """Split a line into multiple records if two hatcheries are found."""
+    parts = re.split(r'(?=\b[A-Z]{2,}\s+HATCHERY\b)', line)
+    return [p.strip() for p in parts if p.strip()]
+
+# ------------------------------------------------------------
+# 4) Merge continuation lines
+# ------------------------------------------------------------
+fixed = [list(r) for r in rows]
+
 for i in range(1, len(fixed)):
-    prev_txt = (fixed[i-1][2] or "").strip()
-    cur_txt  = (fixed[i][2]  or "").strip()
-
-    if not cur_txt:
-        continue
-    if is_species_header(cur_txt):
+    prev = (fixed[i-1][2] or "").strip()
+    cur = (fixed[i][2] or "").strip()
+    if not cur or is_species_header(cur):
         continue
 
-    # === Case 1 & 2: short-line continuations (<= 30 chars) ===
-    if len(cur_txt) <= 30:
-        if contains_stock_tag(cur_txt):  # Case 1: insert before first number/dash
-            insert_at = find_insert_pos(prev_txt)
+    # Case 1–2: short continuation lines (<=30 chars)
+    if len(cur) <= 30:
+        if contains_stock_tag(cur):
+            insert_at = find_insert_pos(prev)
             if insert_at > 0:
                 fixed[i-1][2] = (
-                    prev_txt[:insert_at].rstrip() + " " + cur_txt + " " + prev_txt[insert_at:]
+                    prev[:insert_at].rstrip() + " " + cur + " " + prev[insert_at:]
                 ).strip()
                 fixed[i][2] = ""
             continue
-        else:  # Case 2: append to the end
-            fixed[i-1][2] = (prev_txt + " " + cur_txt).strip()
+        else:
+            fixed[i-1][2] = (prev + " " + cur).strip()
             fixed[i][2] = ""
             continue
 
-    # === Case 3: Stock- has numbers/dashes after it, but letter appears elsewhere ===
-    if "Stock-" in cur_txt and re.search(r"Stock-\s*[\d-]", cur_txt):
-        if not re.search(r"Stock-\s*[HWUM]\b", cur_txt):
-            new_txt = move_trailing_stock_letter(cur_txt)
-            fixed[i][2] = new_txt
+    # Case 3: fix Stock- or River- tags missing letter
+    if ("Stock-" in cur or "River-" in cur) and re.search(r"(Stock-|River-)\s*[\d-]", cur):
+        if not re.search(r"(Stock-|River-)\s*[HWUM]\b", cur):
+            fixed[i][2] = move_trailing_stock_letter(cur)
         continue
 
-    # === Case 4: This line is a long 'Stock- H/W/U/M ...' continuation
-    if re.match(r'^\s*Stock-\s*[HWUM]\b', cur_txt):
-        combined = (prev_txt + " " + cur_txt).strip()
+    # Case 4: Next line begins with 'Stock- H...' or 'River- H...'
+    if re.match(r'^\s*(Stock-|River-)\s*[HWUM]\b', cur):
+        combined = (prev + " " + cur).strip()
         combined = move_trailing_stock_letter(combined)
         fixed[i-1][2] = combined
         fixed[i][2] = ""
         continue
 
-    # === Case 5: Ends with standalone H/W/U/M (possibly with a dot) ===
-    if "Stock-" in cur_txt and re.search(r"Stock-\s*[\d-]", cur_txt) and re.search(r'\s([HWUM])\s*\.?\s*$', cur_txt):
-        fixed[i][2] = move_trailing_stock_letter(cur_txt)
-        continue
-
-# --- Final normalization pass: repair any missed lines globally ---
+# Global fix + standalone letter check
 for j in range(len(fixed)):
     txt = (fixed[j][2] or "").strip()
-    if txt:
-        fixed[j][2] = move_trailing_stock_letter(txt)
-        
-# ------------------------------------------------------------
-# 5) Save merged lines
-# ------------------------------------------------------------
+    if not txt:
+        continue
+    # Standalone letter at end, e.g. “... 11/19/19 M”
+    if re.search(r'\s([HWUM])\s*\.?\s*$', txt):
+        txt = move_trailing_stock_letter(txt)
+    if has_double_record(txt):
+        parts = split_double_record(txt)
+        fixed[j][2] = parts[0]
+        for extra in parts[1:]:
+            fixed.insert(j + 1, [fixed[j][0], fixed[j][1], extra])
+    fixed[j][2] = txt
+
 merged_df = pd.DataFrame(fixed, columns=["pdf_name", "page_num", "text_line"])
 merged_df.to_csv("pdf_lines_fixed.csv", index=False)
 print("✅ Saved merged lines → pdf_lines_fixed.csv")
 
 # ------------------------------------------------------------
-# 6) Add species + family tagging
+# 5) Add metadata columns
 # ------------------------------------------------------------
 labeled_rows = []
 current_species = None
@@ -185,11 +179,8 @@ for pdf_name, page_num, text_line in merged_df.itertuples(index=False):
         labeled_rows.append([pdf_name, page_num, text_line, None, None])
         continue
     if is_species_header(line):
-        current_species = line.strip()
-        labeled_rows.append([
-            pdf_name, page_num, line, current_species,
-            family_map.get(current_species.lower())
-        ])
+        current_species = line
+        labeled_rows.append([pdf_name, page_num, line, current_species, family_map.get(line.lower())])
         continue
     species_val = current_species
     family_val = family_map.get(species_val.lower()) if species_val else None
@@ -200,39 +191,26 @@ labeled_df = pd.DataFrame(
 )
 
 # ------------------------------------------------------------
-# 7) Add hatchery + hatch_name + basin
+# 6) Hatchery + basin + stock info
 # ------------------------------------------------------------
 labeled_df["Hatchery"] = labeled_df["text_line"].apply(extract_hatchery)
 labeled_df["hatch_name"] = labeled_df["Hatchery"].apply(lookup_hatch_name)
 labeled_df["basin"] = labeled_df["Hatchery"].apply(lookup_basin)
 
-# ------------------------------------------------------------
-# 8) Extract stock_BO (between hatchery and stock tag)
-# ------------------------------------------------------------
 def extract_stock_bo(text, hatchery):
     if not text or not hatchery:
         return None
     remainder = text[len(hatchery):].strip()
-    match = re.search(r"([A-Za-z0-9().\s]+?-\s*[HWMU])\b", remainder)
-    return match.group(1).strip() if match else None
+    m = re.search(r"([A-Za-z0-9().\s]+?-\s*[HWMU])\b", remainder)
+    return m.group(1).strip() if m else None
 
 labeled_df["stock_BO"] = labeled_df.apply(
-    lambda row: extract_stock_bo(row["text_line"], row["Hatchery"]), axis=1
+    lambda r: extract_stock_bo(r["text_line"], r["Hatchery"]), axis=1
+)
+labeled_df["stock_BO"] = labeled_df["stock_BO"].apply(
+    lambda v: stock_corrections.get(v.strip(), v.strip()) if v else v
 )
 
-# ------------------------------------------------------------
-# 9) Apply manual stock corrections
-# ------------------------------------------------------------
-def apply_stock_corrections(stock_value):
-    if not stock_value:
-        return stock_value
-    return stock_corrections.get(stock_value.strip(), stock_value.strip())
-
-labeled_df["stock_BO"] = labeled_df["stock_BO"].apply(apply_stock_corrections)
-
-# ------------------------------------------------------------
-# 10) Extract stock (final capital letter)
-# ------------------------------------------------------------
 def extract_stock(stock_bo):
     if not stock_bo:
         return None
@@ -242,20 +220,41 @@ def extract_stock(stock_bo):
 labeled_df["stock"] = labeled_df["stock_BO"].apply(extract_stock)
 
 # ------------------------------------------------------------
-# 11) Extract date
+# 7) Date + date_iso + count_data
 # ------------------------------------------------------------
 def extract_date(text):
-    if not text or not isinstance(text, str):
+    if not text:
         return None
     m = re.search(r"(\d{1,2}/\d{1,2}/\d{2,4})", text)
     return m.group(1) if m else None
 
 labeled_df["date"] = labeled_df["text_line"].apply(extract_date)
 
-# ------------------------------------------------------------
-# 12) Save output
-# ------------------------------------------------------------
-labeled_df.to_csv("pdf_lines_labeled_full_with_stock.csv", index=False)
-print("✅ Finished create_datatable v7 → pdf_lines_labeled_full_with_stock.csv")
+def convert_to_iso(date_str):
+    if not date_str:
+        return None
+    try:
+        dt = datetime.strptime(date_str, "%m/%d/%y")
+    except ValueError:
+        try:
+            dt = datetime.strptime(date_str, "%m/%d/%Y")
+        except ValueError:
+            return None
+    return dt.strftime("%Y-%m-%d")
 
-conn.close()
+labeled_df["date_iso"] = labeled_df["date"].apply(convert_to_iso)
+
+def extract_count_data(text):
+    if not text:
+        return None
+    # Between "- H/W/U/M" and date
+    m = re.search(r"-\s*[HWUM]\s+(.*?)\s+\d{1,2}/\d{1,2}/\d{2,4}", text)
+    return m.group(1).strip() if m else None
+
+labeled_df["count_data"] = labeled_df["text_line"].apply(extract_count_data)
+
+# ------------------------------------------------------------
+# 8) Save output
+# ------------------------------------------------------------
+labeled_df.to_csv("pdf_lines_labeled_full_v9.csv", index=False)
+print("✅ Finished create_datatable_v9 → pdf_lines_labeled_full_v9.csv")

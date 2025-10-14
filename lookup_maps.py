@@ -240,3 +240,32 @@ stock_corrections = {
     "":"",
     "":"",
 }
+
+count_data_ignorepatterns = [
+    r"(?i)Hatchery\. Final in-\s*",
+    r"(?i)Hatchery\. Brood Year\s*",
+    r"(?i)Aberdeen Hatchery\.\s*",
+    r"(?i)Ponds\.Final in-season\s*",
+    r"Salmon Hatchery\.\s*",
+    r"Shipped to Speelyai\s*",
+    r"for BY 2022\s*",
+    r"Released into land-\s*",
+    r"Shipped to Reiter\s*",
+    r"Shipped to Palmer\s*",
+    r"season estimate\.\s*",
+    r"locked lake\.\s*",
+    r"lakes\.\s*",
+    r"lakes\s*",
+    r"lake\.\s*",
+    r"Hatchery\.\s*",
+    r"Hatchery\s*",
+    "",
+    "",
+]
+
+# lookup_maps.py — near the bottom or wherever you keep correction maps
+
+hatchery_name_corrections = {
+    "RINGOLD SPRINGS HATCHERYP": "RINGOLD SPRINGS HATCHERY",
+    # Add more as needed...
+}

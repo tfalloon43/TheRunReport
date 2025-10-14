@@ -30,12 +30,12 @@ pipeline_steps = [
     # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets
     # =====================================================
     "create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
-    "clean_tables.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
+    #"clean_tables.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
 
     # =====================================================
     # 4️⃣  DATA PREPARATION — ready for analysis / plotting
     # =====================================================
-    "prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
+    #"prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
 
     # =====================================================
     # 5️⃣  QUALITY CHECKS (optional manual inspection)

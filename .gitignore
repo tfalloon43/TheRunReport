@@ -4,3 +4,4 @@ pdf_data.sqlite
 pdf_reports/
 *.db
 *.sqlite3
+*.csv

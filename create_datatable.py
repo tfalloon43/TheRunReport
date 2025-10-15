@@ -19,9 +19,16 @@ steps = [
     "1_date_extract.py",
     "2_stock_presence.py",
     "3_stock_presence_lower.py",
-    # "4_hatchery_name.py",
-    # "5_tl2_build.py",
+    "4_hatchery_name.py",
+    "5_TL2.py",
+    "6_TL3.py",
+    "7_count_data.py",
+    "8_TL4.py",
+    "9_TL5.py",
+    "10_TL6.py",
+    "11_Stock_BO",
     "100_view_data.py",
+    
 ]
 
 print("🚀 Starting create_datatable pipeline...\n")

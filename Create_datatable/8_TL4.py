@@ -2,14 +2,8 @@
 # ------------------------------------------------------------
 # Build TL4 column from TL2 and TL3
 # TL4 = TL2 with TL3 (numeric tail) removed
-# Example:
-#   TL2 = "Big Soos Creek- H 8,796 207 - - - 2,431 - 279 3,413 29 2,851"
-#   TL3 = "8,796 207 - - - 2,431 - 279 3,413 29 2,851"
-#   TL4 = "Big Soos Creek- H"
-# Conditions:
-#   • Only active if TL2 and TL3 both exist and are non-empty
-# Input  : csv_recent.csv
-# Output : 8_TL4_output.csv + csv_recent.csv (updated snapshot)
+# Removes exactly the final 11 numeric/dash tokens from TL2.
+# Keeps prefix text intact (e.g., 'Stock-').
 # ------------------------------------------------------------
 
 import os
@@ -38,36 +32,37 @@ df = pd.read_csv(input_path)
 # ------------------------------------------------------------
 def make_TL4(tl2, tl3):
     """
-    Remove the numeric tail (tl3) from tl2.
-    - Must have both TL2 and TL3 values.
-    - Result trimmed of trailing punctuation/spaces.
+    Remove only the last 11 numeric/dash tokens from TL2.
+    Keeps everything else (e.g., 'Stock-') intact.
     """
     if not isinstance(tl2, str) or not tl2.strip():
         return ""
     if not isinstance(tl3, str) or not tl3.strip():
         return ""
 
-    # Remove commas for consistency before comparison
+    # Standardize for token counting
     t2 = tl2.strip().replace(",", "")
-    t3 = tl3.strip().replace(",", "")
+    tokens = t2.split()
 
-    # TL3 might appear at the end; remove that segment
-    if t2.endswith(t3):
-        result = t2[: -len(t3)].strip()
-    else:
-        # fallback: try regex to remove numeric tail from end
-        result = re.sub(r"(\s*\d[\d,\s-]*$)", "", t2).strip()
+    # Defensive: if fewer than 11 tokens, don't modify
+    if len(tokens) <= 11:
+        return tl2.strip()
 
-    # Clean any trailing hyphens or stray characters
-    result = re.sub(r"[\s,-]+$", "", result)
+    # Remove the last 11 tokens (numeric/dash block)
+    tl4_tokens = tokens[:-11]
+
+    # Rebuild, preserving punctuation such as trailing hyphen
+    result = " ".join(tl4_tokens)
+
+    # Only trim trailing whitespace (DO NOT strip hyphens/commas)
+    result = re.sub(r"\s+$", "", result)
+
     return result
 
 # ------------------------------------------------------------
 # Apply logic
 # ------------------------------------------------------------
-df["TL4"] = df.apply(
-    lambda r: make_TL4(r.get("TL2", ""), r.get("TL3", "")), axis=1
-)
+df["TL4"] = df.apply(lambda r: make_TL4(r.get("TL2", ""), r.get("TL3", "")), axis=1)
 
 # ------------------------------------------------------------
 # Save outputs

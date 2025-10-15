@@ -16,15 +16,15 @@ species_headers = [
 
 # --- Family Map ---
 family_map = {
-    "fall chinook": "chinook", "spring chinook": "chinook", "summer chinook": "chinook",
-    "late coho": "coho", "summer coho": "coho", "type n coho": "coho", "type s coho": "coho", "coho": "coho",
-    "summer steelhead": "steelhead", "winter steelhead": "steelhead", "winter-late steelhead": "steelhead", "steelhead": "steelhead",
-    "sockeye": "sockeye", "chum": "chum", "summer chum": "chum", "fall chum": "chum",
-    "pink": "pink", "summer pink": "pink", "odd year pink": "pink",
-    "dolly/bull trout": "bull trout", "whitefish": "whitefish",
-    "sucker: general": "sucker", "kokanee": "kokanee", "late kokanee": "kokanee",
-    "northern pikeminnow": "pikeminnow",
-    "anadromous coastal cutthroat": "cutthroat", "lahontan cutthroat": "cutthroat", "westslope cutthroat": "cutthroat"
+    "fall chinook": "Chinook", "spring chinook": "Chinook", "summer chinook": "Chinook",
+    "late coho": "Coho", "summer coho": "Coho", "type n coho": "Coho", "type s coho": "Coho", "coho": "coho",
+    "summer steelhead": "Steelhead", "winter steelhead": "Steelhead", "winter-late steelhead": "Steelhead", "steelhead": "Steelhead",
+    "sockeye": "Sockeye", "chum": "Chum", "summer chum": "Chum", "fall chum": "Chum",
+    "pink": "Pink", "summer pink": "Pink", "Odd Year Pink": "Pink",
+    "dolly/bull trout": "Bull Trout", "whitefish": "Whitefish",
+    "sucker: general": "Sucker", "kokanee": "Kokanee", "late kokanee": "Kokanee",
+    "northern pikeminnow": "Pikeminnow",
+    "anadromous coastal cutthroat": "Cutthroat", "lahontan cutthroat": "Cutthroat", "westslope cutthroat": "Cutthroat"
 }
 
 # --- Hatchery Name Normalization Map ---

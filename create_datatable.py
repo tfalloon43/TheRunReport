@@ -26,7 +26,13 @@ steps = [
     "8_TL4.py",
     "9_TL5.py",
     "10_TL6.py",
-    "11_Stock_BO",
+    "11_Stock_BO.py",
+    "12_Facility.py",
+    "13_species.py",
+    "14_Family.py",
+    "15_date_iso.py",
+    "16_stock.py",
+    "17_counts.py",
     "100_view_data.py",
     
 ]

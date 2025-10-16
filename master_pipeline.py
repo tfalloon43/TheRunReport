@@ -18,8 +18,8 @@ pipeline_steps = [
     # =====================================================
     # 1️⃣  RAW DATA COLLECTION — from WDFW website
     # =====================================================
-    "download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
-    "rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+   #"download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
+    #"rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
     # 2️⃣  DATABASE CREATION — populate pdf_data.sqlite

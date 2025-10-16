@@ -3,31 +3,38 @@
 # Normalize the "date" column (MM/DD/YY or MM/DD/YYYY)
 # into ISO format (YYYY-MM-DD).
 # Only modifies rows with valid date strings.
-# Input  : csv_recent.csv
-# Output : 15_date_iso_output.csv + updated csv_recent.csv
+# Input  : 100_Data/csv_recent.csv
+# Output : 100_Data/15_date_iso_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
-import os
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
+import os
 
 # ------------------------------------------------------------
-# Paths
+# Setup paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "15_date_iso_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_Data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "15_date_iso_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 15: Converting date → date_iso...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 14 first.")
 
 df = pd.read_csv(input_path)
+
+if "date" not in df.columns:
+    raise ValueError("❌ 'date' column not found in input file.")
 
 # ------------------------------------------------------------
 # Helper function
@@ -56,7 +63,7 @@ def convert_to_iso(date_str):
 df["date_iso"] = df["date"].apply(convert_to_iso)
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_Data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)
@@ -65,6 +72,8 @@ df.to_csv(recent_path, index=False)
 # Report
 # ------------------------------------------------------------
 filled = df["date_iso"].astype(str).str.strip().ne("").sum()
+total = len(df)
+
 print(f"✅ date_iso conversion complete → {output_path}")
 print(f"🔄 csv_recent.csv updated with date_iso column")
-print(f"📊 {filled} rows successfully converted.")
+print(f"📊 {filled} of {total} rows successfully converted to ISO format.")

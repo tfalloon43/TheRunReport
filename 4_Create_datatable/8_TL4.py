@@ -4,27 +4,32 @@
 # TL4 = TL2 with TL3 (numeric tail) removed
 # Removes exactly the final 11 numeric/dash tokens from TL2.
 # Keeps prefix text intact (e.g., 'Stock-').
+# Input  : 100_data/csv_recent.csv
+# Output : 100_data/8_TL4_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
-import os
-import pandas as pd
 import re
+import pandas as pd
+from pathlib import Path
 
 # ------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "8_TL4_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "8_TL4_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 8: Creating TL4...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing {input_path} — run previous step first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------
@@ -62,10 +67,13 @@ def make_TL4(tl2, tl3):
 # ------------------------------------------------------------
 # Apply logic
 # ------------------------------------------------------------
-df["TL4"] = df.apply(lambda r: make_TL4(r.get("TL2", ""), r.get("TL3", "")), axis=1)
+df["TL4"] = df.apply(
+    lambda r: make_TL4(r.get("TL2", ""), r.get("TL3", "")),
+    axis=1,
+)
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)

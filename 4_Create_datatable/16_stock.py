@@ -3,31 +3,38 @@
 # Extract standalone stock indicator (H/W/U/M/C)
 # from the end of the Stock_BO column.
 # Only active if Stock_BO has content.
-# Input  : csv_recent.csv
-# Output : 16_stock_output.csv + updated csv_recent.csv
+# Input  : 100_Data/csv_recent.csv
+# Output : 100_Data/16_stock_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
-import os
 import pandas as pd
 import re
+from pathlib import Path
+import os
 
 # ------------------------------------------------------------
-# Paths
+# Setup paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "16_stock_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_Data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "16_stock_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 16: Extracting Stock indicator...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 15 first.")
 
 df = pd.read_csv(input_path)
+
+if "Stock_BO" not in df.columns:
+    raise ValueError("❌ 'Stock_BO' column not found in input file.")
 
 # ------------------------------------------------------------
 # Helper function
@@ -45,7 +52,7 @@ def extract_stock(value):
 df["Stock"] = df["Stock_BO"].apply(extract_stock)
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_Data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)
@@ -53,7 +60,8 @@ df.to_csv(recent_path, index=False)
 # ------------------------------------------------------------
 # Report
 # ------------------------------------------------------------
+total = len(df)
 filled = df["Stock"].astype(str).str.strip().ne("").sum()
 print(f"✅ Stock extraction complete → {output_path}")
 print(f"🔄 csv_recent.csv updated with Stock column")
-print(f"📊 {filled} rows successfully populated with stock indicators.")
+print(f"📊 {filled} of {total} rows successfully populated with stock indicators.")

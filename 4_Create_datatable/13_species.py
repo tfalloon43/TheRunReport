@@ -2,40 +2,52 @@
 # ------------------------------------------------------------
 # Build 'species' column using species_headers from lookup_maps
 # Logic:
-#   • Iterate through csv_recent.csv in order.
+#   • Iterate through 100_Data/csv_recent.csv in order.
 #   • When a text_line matches (case-insensitive) one of the species_headers,
 #       set that as the current species.
 #   • All subsequent rows inherit that species until a new match appears.
 #   • The species column gets the exact string from species_headers (case preserved).
 #   • Rows before the first header remain blank.
-# Input  : csv_recent.csv
-# Output : 13_species_output.csv + updated csv_recent.csv
+# Input  : 100_Data/csv_recent.csv
+# Output : 100_Data/13_species_output.csv + csv_recent.csv
 # ------------------------------------------------------------
 
-import os
-import sys
 import pandas as pd
-
-# --- Fix import path so we can access lookup_maps.py ---
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from lookup_maps import species_headers  # ✅ list of species header strings
+import sys
+from pathlib import Path
+import os
 
 # ------------------------------------------------------------
-# Paths
+# Setup imports and paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "13_species_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+# Project structure:
+# TheRunReport/
+# ├── 4_Create_datatable/
+# └── 100_Data/lookup_maps.py
+# ------------------------------------------------------------
+
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_Data"
+data_dir.mkdir(exist_ok=True)
+
+# 👇 Add 100_Data folder to Python path so lookup_maps can be found
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+data_path = os.path.join(project_root, "100_Data")
+sys.path.append(data_path)
+
+from lookup_maps import species_headers  # ✅ correct import
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "13_species_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 13: Assigning species from species_headers...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
-
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 12 first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------
@@ -50,19 +62,19 @@ species_list = []
 for _, row in df.iterrows():
     text_val = str(row.get("text_line", "")).strip()
 
-    # check if this line is a species header (case-insensitive)
+    # Check if this line is a species header (case-insensitive)
     key = text_val.lower()
     if key in species_lookup:
         current_species = species_lookup[key]  # exact-cased version
         species_list.append(current_species)
     else:
-        # carry forward the last seen species (if any)
+        # Carry forward the last seen species (if any)
         species_list.append(current_species if current_species else "")
 
 df["species"] = species_list
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_Data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)

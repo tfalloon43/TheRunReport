@@ -5,34 +5,46 @@
 #   • For each row, look up its species (case-insensitive) in family_map.
 #   • Write the corresponding family value.
 #   • If species is blank or not found in the map, leave blank.
-# Input  : csv_recent.csv
-# Output : 14_Family_output.csv + updated csv_recent.csv
+# Input  : 100_Data/csv_recent.csv
+# Output : 100_Data/14_Family_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
-import os
-import sys
 import pandas as pd
-
-# --- Fix import path so we can access lookup_maps.py ---
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from lookup_maps import family_map  # ✅ dictionary of species → family
+import sys
+from pathlib import Path
+import os
 
 # ------------------------------------------------------------
-# Paths
+# Setup imports and paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "14_Family_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+# Project structure:
+# TheRunReport/
+# ├── 4_Create_datatable/
+# └── 100_Data/lookup_maps.py
+# ------------------------------------------------------------
+
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_Data"
+data_dir.mkdir(exist_ok=True)
+
+# 👇 Add 100_Data folder to Python path so lookup_maps can be found
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+data_path = os.path.join(project_root, "100_Data")
+sys.path.append(data_path)
+
+from lookup_maps import family_map  # ✅ correct import
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "14_Family_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 14: Assigning Family from species...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
-
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 13 first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------
@@ -47,7 +59,7 @@ def map_family(species):
 df["Family"] = df["species"].apply(map_family)
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_Data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)

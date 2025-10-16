@@ -5,26 +5,32 @@
 #   Phase 2 → if a row has stock_presence_lower, append that row's TL6
 #              to the *previous row's* Stock_BO (always append)
 # After both phases → clean out any 'nan', 'None', or 'NaN' text artifacts
+#
+# Input  : 100_data/csv_recent.csv
+# Output : 100_data/11_Stock_BO_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
-import os
 import pandas as pd
+from pathlib import Path
 
 # ------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "11_Stock_BO_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "11_Stock_BO_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 11: Building Stock_BO...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun previous step first.")
 df = pd.read_csv(input_path)
 
 # Ensure columns exist
@@ -37,7 +43,7 @@ for col in ["date", "TL4", "TL6", "stock_presence_lower"]:
 # ------------------------------------------------------------
 df["Stock_BO"] = df.apply(
     lambda r: str(r["TL4"]).strip()
-    if isinstance(r["date"], str) and r["date"].strip() and r["date"].lower() != "nan"
+    if isinstance(r.get("date"), str) and r["date"].strip() and r["date"].lower() != "nan"
     else "",
     axis=1,
 )
@@ -51,14 +57,13 @@ for i in range(1, len(df)):
     lower_val = str(row.get("stock_presence_lower", "")).strip()
     tl6_val = str(row.get("TL6", "")).strip()
 
-    # Clean out invalid TL6 values before appending
+    # Append TL6 from lower rows where stock_presence_lower exists
     if lower_val and tl6_val.lower() not in ("", "nan", "none"):
         prev_idx = i - 1
         if prev_idx >= 0:
             current_val = str(df.at[prev_idx, "Stock_BO"]).strip()
             new_val = f"{current_val} {tl6_val}".strip()
             new_val = " ".join(new_val.split())  # normalize spacing
-            # Remove any literal 'nan' tokens in middle of string
             new_val = new_val.replace(" nan", "").replace("nan", "").strip()
             df.at[prev_idx, "Stock_BO"] = new_val
 
@@ -74,10 +79,10 @@ df["Stock_BO"] = (
     .str.replace(r"\bnan\b", "", regex=True)
     .str.strip()
 )
-df.loc[df["Stock_BO"].eq(""), "Stock_BO"] = ""  # true blanks only
+df.loc[df["Stock_BO"].eq(""), "Stock_BO"] = ""
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)

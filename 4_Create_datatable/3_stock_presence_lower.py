@@ -4,20 +4,27 @@
 # If a row has a date but NO stock_presence,
 # look at the *next* row's text_line for standalone stock indicators (H/W/M/U/C).
 # Copies that indicator into the *lower* row (the one containing it).
-# Saves both step output and csv_recent snapshot.
+# Saves both step output and csv_recent snapshot (in 100_data/).
 # ------------------------------------------------------------
 
 import pandas as pd
 import re
-import os
+from pathlib import Path
 
 print("▶ Running Step 3: stock_presence_lower")
 
+# --- Paths ---
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+step_output = data_dir / "3_stock_presence_lower_output.csv"
+recent_output = data_dir / "csv_recent.csv"
+
 # --- Load previous output ---
-base_dir = os.path.dirname(__file__)
-input_path = os.path.join(base_dir, "csv_recent.csv")
-if not os.path.exists(input_path):
-    raise FileNotFoundError("csv_recent.csv not found. Run Step 2 first.")
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 2 first.")
 
 df = pd.read_csv(input_path)
 
@@ -38,18 +45,14 @@ for i in range(len(df) - 1):
 
     # Rule: current row has a date but no stock_presence
     if pd.notna(current_row.get("date")) and (not pd.notna(current_row.get("stock_presence"))):
-        # Look for stock indicator in the NEXT row's text_line
         stock_val = find_stock_indicator(str(next_row.get("text_line", "")))
         if stock_val:
             df.at[i + 1, "stock_presence_lower"] = stock_val
 
-# --- Save outputs ---
-step_output = os.path.join(base_dir, "3_stock_presence_lower_output.csv")
-recent_output = os.path.join(base_dir, "csv_recent.csv")
-
+# --- Save outputs (in 100_data) ---
 df.to_csv(step_output, index=False)
 df.to_csv(recent_output, index=False)
 
 print("✅ Step 3 complete → Saved:")
-print(f"   {step_output}")
-print(f"   {recent_output} (latest snapshot)")
+print(f"   📄 {step_output}")
+print(f"   🔄 {recent_output} (latest snapshot)")

@@ -8,23 +8,39 @@
 # If no date → facility = ""
 # ------------------------------------------------------------
 
-import os
-import sys
 import pandas as pd
+import re
+import sys
+from pathlib import Path
+import os
 
-# --- Fix for import path ---
-# Add parent directory (TheRunReport) to sys.path so we can import lookup_maps
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lookup_maps import hatch_name_map  # ✅ import standardized hatchery name map
-
+############
 # ------------------------------------------------------------
-# Paths
+# Setup imports and paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "12_facility_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+# Project structure:
+# TheRunReport/
+# ├── 4_Create_datatable/
+# └── 100_data/lookup_maps.py
+# ------------------------------------------------------------
+
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)
+
+# 👇 Add 100_data folder to Python path so lookup_maps can be found
+# --- Add TheRunReport/100_data to path dynamically ---
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+data_path = os.path.join(project_root, "100_data")
+sys.path.append(data_path)
+
+from lookup_maps import hatch_name_map # type: ignore
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "12_Facility_output.csv"
+recent_path = data_dir / "csv_recent.csv"
+#########
 
 print("🏗️  Step 12: Building facility column (from Hatchery_Name)...")
 

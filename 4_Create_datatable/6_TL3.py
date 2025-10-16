@@ -9,30 +9,33 @@
 #   TL2 = "Green River- W 41 3 - - - 44 - - - - -" → TL3 = "41 3 - - - 44 - - - - -"
 #   TL2 = "White River 3 - - - - - - 3 - - -"      → TL3 = "3 - - - - - - 3 - - -"
 #   TL2 = "I-205- W 79 - 93,470 - - 79 - - - - -" → TL3 = "79 - 93,470 - - 79 - - - - -"
-# Input  : csv_recent.csv
-# Output : 6_TL3_output.csv + csv_recent.csv (updated snapshot)
+# Input  : 100_data/csv_recent.csv
+# Output : 100_data/6_TL3_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import os
 import re
 import pandas as pd
+from pathlib import Path
 
 # ------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------
-base_dir = os.path.dirname(os.path.abspath(__file__))
-input_path = os.path.join(base_dir, "csv_recent.csv")
-output_path = os.path.join(base_dir, "6_TL3_output.csv")
-recent_path = os.path.join(base_dir, "csv_recent.csv")
+project_root = Path(__file__).resolve().parents[1]
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)
+
+input_path = data_dir / "csv_recent.csv"
+output_path = data_dir / "6_TL3_output.csv"
+recent_path = data_dir / "csv_recent.csv"
 
 print("🏗️  Step 6: Creating TL3...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
-if not os.path.exists(input_path):
-    raise FileNotFoundError(f"Missing {input_path} — run previous step first.")
-
+if not input_path.exists():
+    raise FileNotFoundError(f"❌ Missing {input_path} — run previous step first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------
@@ -55,10 +58,13 @@ def extract_TL3(tl2):
 # ------------------------------------------------------------
 # Apply logic
 # ------------------------------------------------------------
-df["TL3"] = df.apply(lambda r: extract_TL3(r["TL2"]) if isinstance(r.get("TL2"), str) and r["TL2"].strip() else "", axis=1)
+df["TL3"] = df.apply(
+    lambda r: extract_TL3(r["TL2"]) if isinstance(r.get("TL2"), str) and r["TL2"].strip() else "",
+    axis=1
+)
 
 # ------------------------------------------------------------
-# Save outputs
+# Save outputs (in 100_data)
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 df.to_csv(recent_path, index=False)

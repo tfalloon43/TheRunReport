@@ -29,6 +29,7 @@ pipeline_steps = [
     # =====================================================
     # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets
     # =====================================================
+    "lookup_maps.py"         #Step 3.5: Make sure directories are up to date
     "create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
     #"clean_tables.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
 

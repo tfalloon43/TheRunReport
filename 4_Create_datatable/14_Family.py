@@ -32,7 +32,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 data_path = os.path.join(project_root, "100_Data")
 sys.path.append(data_path)
 
-from lookup_maps import family_map  # ✅ correct import
+from lookup_maps import family_map  # type: ignore
 
 input_path = data_dir / "csv_recent.csv"
 output_path = data_dir / "14_Family_output.csv"

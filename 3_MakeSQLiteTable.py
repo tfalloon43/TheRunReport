@@ -26,7 +26,7 @@ cursor = conn.cursor()
 
 # --- Step 1: Create table if it doesn't exist ---
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS pdf_lines (
+CREATE TABLE IF NOT EXISTS z1_pdf_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pdf_name TEXT,
     page_num INTEGER,
@@ -55,7 +55,7 @@ else:
                         continue
                     for line in text.splitlines():
                         cursor.execute(
-                            "INSERT INTO pdf_lines (pdf_name, page_num, text_line) VALUES (?, ?, ?)",
+                            "INSERT INTO z1_pdf_lines (pdf_name, page_num, text_line) VALUES (?, ?, ?)",
                             (pdf_file.name, page_num, line.strip())
                         )
         except Exception as e:

@@ -15,12 +15,13 @@ import subprocess
 # List of program files in the correct execution order
 pipeline_steps = [
 
+
     # =====================================================
     # 1️⃣  RAW DATA COLLECTION — from WDFW website
     # =====================================================
-    #"100_Data/lookup_maps.py"         #Step 0: Make sure directories are up to date
-    #"1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
-    #"2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+    "100_Data/lookup_maps.py", #Step 0: Make sure directories are up to date
+    "1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
+    "2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
     # 2️⃣  DATABASE CREATION — populate pdf_data.sqlite
@@ -30,8 +31,8 @@ pipeline_steps = [
     # =====================================================
     # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets
     # =====================================================
-    #"4_create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
-    #"clean_tables.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
+    "4_create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
+    "5_data_clean.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
 
     # =====================================================
     # 4️⃣  DATA PREPARATION — ready for analysis / plotting

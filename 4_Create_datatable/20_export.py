@@ -48,15 +48,15 @@ print(f"✅ Loaded {len(df):,} rows and {len(df.columns)} columns from {input_pa
 # ------------------------------------------------------------
 # Write to SQLite
 # ------------------------------------------------------------
-print(f"💾 Writing data to SQLite → {db_path.name} (table: create_datatable) ...")
+print(f"💾 Writing data to SQLite → {db_path.name} (table: z2_create_datatable) ...")
 
 conn = sqlite3.connect(db_path)
-df.to_sql("create_datatable", conn, if_exists="replace", index=False)
+df.to_sql("z2_create_datatable", conn, if_exists="replace", index=False)
 conn.close()
 
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
 print(f"✅ Data successfully exported to '{db_path.name}'")
-print(f"📊 Table 'create_datatable' now contains {len(df):,} rows and {len(df.columns)} columns.")
+print(f"📊 Table 'z2_create_datatable' now contains {len(df):,} rows and {len(df.columns)} columns.")
 print("🎯 You can inspect it in VS Code or DB Browser for SQLite.")

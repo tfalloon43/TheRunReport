@@ -35,7 +35,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 data_path = os.path.join(project_root, "100_Data")
 sys.path.append(data_path)
 
-from lookup_maps import species_headers  # ✅ correct import
+from lookup_maps import species_headers  # type: ignore
 
 input_path = data_dir / "csv_recent.csv"
 output_path = data_dir / "13_species_output.csv"

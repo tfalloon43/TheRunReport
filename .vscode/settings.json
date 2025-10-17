@@ -1,7 +1,4 @@
 {
-    "sqliteViewer.maxFileSize": 1000
-}
+    "sqliteViewer.maxFileSize": 1000,
 
-{
-    "python.envFile": "${workspaceFolder}/.env"
 }

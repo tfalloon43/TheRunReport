@@ -26,7 +26,7 @@ if not db_path.exists():
     raise FileNotFoundError(f"❌ Database not found: {db_path}")
 
 conn = sqlite3.connect(db_path)
-df = pd.read_sql_query("SELECT * FROM pdf_lines ORDER BY id", conn)
+df = pd.read_sql_query("SELECT * FROM z1_pdf_lines ORDER BY id", conn)
 conn.close()
 
 # --- Extract date ---

@@ -1,9 +1,10 @@
-# create_datatable.py
+# 5_data_clean.py
 # ------------------------------------------------------------
-# Master controller for modular create_datatable pipeline.
-# Ensures each step runs inside /create_datatable/
+# Master controller for modular data_clean pipeline.
+# Ensures each step runs inside /5_Data_Clean/ and /5_Clean_Tables/
 # and prints full stdout/stderr for visibility.
 # ------------------------------------------------------------
+
 
 import subprocess
 import os
@@ -12,34 +13,20 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Folder containing all modular step scripts
-STEP_DIR = os.path.join(BASE_DIR, "4_create_datatable")
+STEP_DIR = os.path.join(BASE_DIR, "5_data_clean")
 
 # Ordered list of pipeline steps
 steps = [
-    "1_date_extract.py",
-    "2_stock_presence.py",
-    "3_stock_presence_lower.py",
-    "4_hatchery_name.py",
-    "5_TL2.py",
-    "6_TL3.py",
-    "7_count_data.py",
-    "8_TL4.py",
-    "9_TL5.py",
-    "10_TL6.py",
-    "11_Stock_BO.py",
-    "12_Facility.py",
-    "13_species.py",
-    "14_Family.py",
-    "15_date_iso.py",
-    "16_stock.py",
-    "17_counts.py",
-    "18_basin.py",
-    "20_export.py",
+    "1_create_csv.py",
+    "2_date_blank.py",
+    "3_hatchery_blank.py",
+    "4_column_reorg.py",
+    "10_export.py",
     "delete_csv.py",
-    
+
 ]
 
-print("🚀 Starting create_datatable pipeline...\n")
+print("🚀 Starting clean_data pipeline...\n")
 
 # Change current working directory to STEP_DIR so all scripts output files here
 os.chdir(STEP_DIR)

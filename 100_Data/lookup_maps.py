@@ -5,8 +5,14 @@
 
 # --- Species Headers ---
 species_headers = [
-    "Fall Chinook", "Spring Chinook", "Summer Chinook",
-    "Coho", "Summer Steelhead", "Sockeye", "Late Coho", "Summer Coho",
+    "Fall Chinook", 
+    "Spring Chinook", 
+    "Summer Chinook",
+    "Coho", 
+    "Summer Steelhead", 
+    "Sockeye", 
+    "Late Coho", 
+    "Summer Coho",
     "Type N Coho", "Type S Coho", "Chum", "Odd Year Pink", "Summer Chum", "Pink",
     "Summer Pink", "Winter Steelhead", "Winter-Late Steelhead", "Fall Chum",
     "Anadromous Coastal Cutthroat", "Lahontan Cutthroat", "Westslope Cutthroat",
@@ -16,15 +22,34 @@ species_headers = [
 
 # --- Family Map ---
 family_map = {
-    "fall chinook": "Chinook", "spring chinook": "Chinook", "summer chinook": "Chinook",
-    "late coho": "Coho", "summer coho": "Coho", "type n coho": "Coho", "type s coho": "Coho", "coho": "coho",
-    "summer steelhead": "Steelhead", "winter steelhead": "Steelhead", "winter-late steelhead": "Steelhead", "steelhead": "Steelhead",
-    "sockeye": "Sockeye", "chum": "Chum", "summer chum": "Chum", "fall chum": "Chum",
-    "pink": "Pink", "summer pink": "Pink", "Odd Year Pink": "Pink",
-    "dolly/bull trout": "Bull Trout", "whitefish": "Whitefish",
-    "sucker: general": "Sucker", "kokanee": "Kokanee", "late kokanee": "Kokanee",
+    "fall chinook": "Chinook", 
+    "spring chinook": "Chinook", 
+    "summer chinook": "Chinook",
+    "late coho": "Coho", 
+    "summer coho": "Coho", 
+    "type n coho": "Coho", 
+    "type s coho": "Coho", 
+    "coho": "Coho",
+    "summer steelhead": "Steelhead", 
+    "winter steelhead": "Steelhead", 
+    "winter-late steelhead": "Steelhead", 
+    "steelhead": "Steelhead",
+    "sockeye": "Sockeye", 
+    "chum": "Chum", 
+    "summer chum": "Chum", 
+    "fall chum": "Chum",
+    "pink": "Pink", 
+    "summer pink": "Pink", 
+    "odd year pink": "Pink",
+    "dolly/bull trout": "Bull Trout", 
+    "whitefish": "Whitefish",
+    "sucker: general": "Sucker", 
+    "kokanee": "Kokanee", 
+    "late kokanee": "Kokanee",
     "northern pikeminnow": "Pikeminnow",
-    "anadromous coastal cutthroat": "Cutthroat", "lahontan cutthroat": "Cutthroat", "westslope cutthroat": "Cutthroat"
+    "anadromous coastal cutthroat": "Cutthroat", 
+    "lahontan cutthroat": "Cutthroat", 
+    "westslope cutthroat": "Cutthroat"
 }
 
 # --- Hatchery Name Normalization Map ---
@@ -116,6 +141,7 @@ hatch_name_map = {
     "TWISP ACCLIMATION PD": "Twisp Acclimation Pond",
     "COTTONWOOD CR POND":"Cottonwood Creek Pond",
     "GRAYS RIVER WEIR":"Grays River Weir",
+    "Eells Springs":"Eells Springs Hatchery",
 }
 
 # --- Basin Map ---
@@ -209,6 +235,8 @@ basin_map = {
     "TWISP ACCLIMATION PD": "Twisp River",
     "COTTONWOOD CR POND":"Cottonwood Creek Pond",
     "GRAYS RIVER WEIR":"Grays River Weir",
+    "Eells Springs":"Skokomish River",
+    
 }
 
 
@@ -266,6 +294,11 @@ count_data_ignorepatterns = [
 # lookup_maps.py — near the bottom or wherever you keep correction maps
 
 hatchery_name_corrections = {
+    "RINGOLD SPRINGS HATCHERYP": "RINGOLD SPRINGS HATCHERY",
+    # Add more as needed...
+}
+
+Stock_BO_corrections = {
     "RINGOLD SPRINGS HATCHERYP": "RINGOLD SPRINGS HATCHERY",
     # Add more as needed...
 }

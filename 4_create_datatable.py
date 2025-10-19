@@ -34,8 +34,9 @@ steps = [
     "16_stock.py",
     "17_counts.py",
     "18_basin.py",
-    "20_export.py",
-    "delete_csv.py",
+    #"19_stock_corrections.py", #if needed after plot data
+    "25_export.py",
+    #"delete_csv.py",
     
 ]
 

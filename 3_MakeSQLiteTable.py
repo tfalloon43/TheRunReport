@@ -7,11 +7,18 @@ import os
 # Dynamically find the user's Desktop folder
 desktop_path = Path(os.path.expanduser("~")) / "Desktop"
 
-# Folder where PDFs are downloaded
+# Folder where PDFs are downloaded (kept on Desktop for now)
 pdf_folder = desktop_path / "RunReport_PDFs"
 
-# SQLite database stored in the same folder as this script (so it's visible in VS Code)
-db_path = Path(__file__).parent / "pdf_data.sqlite"
+# Project base (assumes this script lives in TheRunReport or a subfolder)
+project_root = Path(__file__).resolve().parent
+
+# Folder for all data files
+data_dir = project_root / "100_data"
+data_dir.mkdir(exist_ok=True)  # ✅ make sure the folder exists
+
+# SQLite database now stored in 100_data
+db_path = data_dir / "pdf_data.sqlite"
 
 # --- Connect to the database ---
 conn = sqlite3.connect(db_path)
@@ -19,7 +26,7 @@ cursor = conn.cursor()
 
 # --- Step 1: Create table if it doesn't exist ---
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS pdf_lines (
+CREATE TABLE IF NOT EXISTS z1_pdf_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pdf_name TEXT,
     page_num INTEGER,
@@ -48,7 +55,7 @@ else:
                         continue
                     for line in text.splitlines():
                         cursor.execute(
-                            "INSERT INTO pdf_lines (pdf_name, page_num, text_line) VALUES (?, ?, ?)",
+                            "INSERT INTO z1_pdf_lines (pdf_name, page_num, text_line) VALUES (?, ?, ?)",
                             (pdf_file.name, page_num, line.strip())
                         )
         except Exception as e:
@@ -56,5 +63,6 @@ else:
 
 conn.commit()
 conn.close()
+
 print(f"✅ All PDF lines inserted into SQLite database: {db_path.name}")
-print(f"📂 You can open it in VS Code: {db_path.resolve()}")
+print(f"📂 Database saved in → {db_path.resolve()}")

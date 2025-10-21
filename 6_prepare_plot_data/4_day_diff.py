@@ -1,6 +1,6 @@
-# 3_day_diff.py
+# 4_day_diff.py
 # ------------------------------------------------------------
-# Step 3: Calculate day_diff — number of days since previous report
+# Step 4: Calculate day_diff — number of days since previous report
 # for the same facility/species/Stock_BO.
 # When a new group starts, day_diff = 7 (default weekly cycle).
 # Input  : 100_Data/csv_plotdata.csv
@@ -10,7 +10,7 @@
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 3: Calculating day_diff between updates...")
+print("🏗️ Step 4: Calculating day_diff between updates...")
 
 # ------------------------------------------------------------
 # Paths
@@ -19,7 +19,7 @@ project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 
 input_path = data_dir / "csv_plotdata.csv"
-output_path = data_dir / "3_day_diff_output.csv"
+output_path = data_dir / "4_day_diff_output.csv"
 recent_path = data_dir / "csv_plotdata.csv"
 
 # ------------------------------------------------------------

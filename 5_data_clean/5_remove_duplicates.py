@@ -1,16 +1,16 @@
 # 5_remove_duplicates.py
 # ------------------------------------------------------------
-# Step 5: Remove duplicate rows (ignoring pdf_name column)
+# Step 5: Remove duplicate rows (ignoring pdf_name and date_iso columns)
 # Keeps the first occurrence of each unique combination
 # across all other columns.
-# Input  : csv_reduced.csv
-# Output : csv_reduced.csv (updated in place)
+# Input  : 100_Data/csv_reduce.csv
+# Output : 100_Data/5_remove_duplicates_output.csv + updated csv_reduce.csv
 # ------------------------------------------------------------
 
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 5: Removing duplicate rows (ignoring pdf_name)...")
+print("🏗️ Step 5: Removing duplicate rows (ignoring pdf_name and date_iso)...")
 
 # ------------------------------------------------------------
 # Paths
@@ -32,15 +32,12 @@ df = pd.read_csv(input_path)
 initial_count = len(df)
 
 # ------------------------------------------------------------
-# Remove duplicates (ignore pdf_name)
+# Remove duplicates (ignore pdf_name and date_iso)
 # ------------------------------------------------------------
-if "pdf_name" in df.columns:
-    cols_to_check = [c for c in df.columns if c != "pdf_name"]
-else:
-    cols_to_check = df.columns.tolist()  # fallback, just in case
+ignore_cols = {"pdf_name", "date_iso"}
+cols_to_check = [c for c in df.columns if c not in ignore_cols]
 
 df_deduped = df.drop_duplicates(subset=cols_to_check, keep="first")
-
 removed = initial_count - len(df_deduped)
 
 # ------------------------------------------------------------
@@ -55,3 +52,4 @@ df_deduped.to_csv(recent_path, index=False)
 print(f"✅ Duplicate removal complete → {output_path}")
 print(f"📊 {removed} duplicate rows removed.")
 print(f"📈 Final row count: {len(df_deduped):,}")
+print(f"🧩 Ignored columns: {', '.join(ignore_cols)}")

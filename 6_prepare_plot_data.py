@@ -20,6 +20,13 @@ steps = [
     "2_pdf_data.py",
     "3_reorder.py",
     "4_day_diff.py",
+    "5_adult_diff.py",
+    "6_bio_year.py",
+    "7_remove_singles.py",
+    "8_bio_length.py",
+    "",
+    "",
+    "",
  
     # Add additional steps here as you build them
 ]

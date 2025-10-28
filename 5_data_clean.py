@@ -21,6 +21,7 @@ steps = [
     "2_date_blank.py",
     "3_hatchery_blank.py",
     "4_column_reorg.py",
+    "5_remove_duplicates.py",
     "10_export.py",
     "delete_csv.py",
 

@@ -1,6 +1,6 @@
-# 9_surplus_diff.py
+# 6_surplus_diff.py
 # ------------------------------------------------------------
-# Step 9: Compute surplus_diff = change in Surplus since
+# Step 6: Compute surplus_diff = change in Surplus since
 # previous report for the same facility/species/stock/Stock_BO.
 #
 # surplus_diff = current Surplus - previous Surplus
@@ -18,7 +18,7 @@
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 9: Calculating surplus_diff with group reset...")
+print("🏗️ Step 6: Calculating surplus_diff with group reset...")
 
 # ------------------------------------------------------------
 # Paths
@@ -27,7 +27,7 @@ project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 
 input_path  = data_dir / "csv_plotdata.csv"
-output_path = data_dir / "9_surplus_diff_output.csv"
+output_path = data_dir / "6_surplus_diff_output.csv"
 recent_path = data_dir / "csv_plotdata.csv"
 
 # ------------------------------------------------------------

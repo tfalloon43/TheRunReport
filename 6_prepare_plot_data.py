@@ -21,14 +21,14 @@ steps = [
     "3_reorder.py",
     "4_day_diff.py",
     "5_adult_diff.py",
-    "6_bio_year.py",
-    "7_remove_singles.py",
-    "8_bio_length.py",
-    "",
-    "",
-    "",
+    "6_surplus_diff.py",
+    "7_by_adult.py",
+    "8_by_adult_length.py",
+    "9_by_short.py",
+    #"10_mortality_diff.py",
+    #"11_twotrack.py",
+    #"12_by2.py"
  
-    # Add additional steps here as you build them
 ]
 
 print("🚀 Starting prepare_plot_data pipeline...\n")

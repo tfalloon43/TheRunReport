@@ -59,7 +59,7 @@ for filename in os.listdir(pdf_dir):
         new_path = os.path.join(pdf_dir, new_filename)
         if not os.path.exists(new_path):  # Avoid overwriting
             os.rename(old_path, new_path)
-            print(f"✅ Renamed: {filename} → {new_filename}")
+            #print(f"✅ Renamed: {filename} → {new_filename}")
         else:
             print(f"⏩ Skipped (already exists): {new_filename}")
     else:

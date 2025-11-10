@@ -44,8 +44,12 @@ steps = [
     "26_iteration7.py",
     "27_cleanup7.py",
     "28_iteration8.py",
-
-
+    "29_cleanup9.py",
+    "30_iteration9.py",
+    "31_iteration10.py",
+    "32_prepare_plot_data_final.py",
+    "50_export.py",
+    "delete_csv.py"
  
 ]
 

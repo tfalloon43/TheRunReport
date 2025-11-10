@@ -46,7 +46,7 @@ if not pdf_files:
     print(f"⚠️ No PDFs found in {pdf_folder}")
 else:
     for pdf_file in pdf_files:
-        print(f"📄 Processing {pdf_file.name}...")
+        #print(f"📄 Processing {pdf_file.name}...")
         try:
             with pdfplumber.open(pdf_file) as pdf:
                 for page_num, page in enumerate(pdf.pages, start=1):

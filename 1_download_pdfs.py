@@ -43,7 +43,7 @@ for pdf_url in pdf_links:
         continue
 
     try:
-        print(f"⬇️  Downloading: {filename}")
+        #print(f"⬇️  Downloading: {filename}")
         pdf_data = requests.get(pdf_url, timeout=15)
         pdf_data.raise_for_status()
         with open(filepath, "wb") as f:

@@ -1,6 +1,6 @@
-# 6_delete.py
+# 4_delete.py
 # ------------------------------------------------------------
-# Step 6: Filter out unwanted rows for testing and clarity
+# Step 4: Filter out unwanted rows for testing and clarity
 #
 # Logic:
 #   - Remove rows where adult_diff_plot == 0
@@ -9,14 +9,14 @@
 #       (e.g. if current year is 2025 → keep 2014–2024)
 #
 # Input  : 100_Data/csv_10av.csv
-# Output : 100_Data/6_delete_output.csv + updates csv_10av.csv
+# Output : 100_Data/4_delete_output.csv + updates csv_10av.csv
 # ------------------------------------------------------------
 
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-print("🧹 Step 6: Filtering rows (adult_diff_plot ≠ 0, Stock = H/W, last 10 years)...")
+print("🧹 Step 4: Filtering rows (adult_diff_plot ≠ 0, Stock = H/W, last 10 years)...")
 
 # ------------------------------------------------------------
 # Paths
@@ -25,7 +25,7 @@ project_root = Path(__file__).resolve().parents[1]
 data_dir     = project_root / "100_Data"
 
 input_path   = data_dir / "csv_10av.csv"
-output_path  = data_dir / "6_delete_output.csv"
+output_path  = data_dir / "4_delete_output.csv"
 recent_path  = data_dir / "csv_10av.csv"
 
 # ------------------------------------------------------------

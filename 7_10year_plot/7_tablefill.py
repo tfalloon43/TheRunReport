@@ -1,6 +1,6 @@
-# 9_tablefill.py
+# 7_tablefill.py
 # ------------------------------------------------------------
-# Step 9: Populate H/W daily tables with fish-per-day values
+# Step 7: Populate H/W daily tables with fish-per-day values
 #
 # Logic:
 #   • Reads each row from csv_10av.csv
@@ -14,14 +14,14 @@
 #
 #   If a cell already has a value, new values are added (summed).
 #
-# Input  : 100_Data/csv_10av.csv + 8 empty tables from 8_tablegen.py
+# Input  : 100_Data/csv_10av.csv + 8 empty tables from 6_tablegen.py
 # Output : Updated 8 tables with filled-in values
 # ------------------------------------------------------------
 
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 9: Populating stock-based tables with daily fishperday values...")
+print("🏗️ Step 7: Populating stock-based tables with daily fishperday values...")
 
 # ------------------------------------------------------------
 # Paths
@@ -69,7 +69,7 @@ for key, stock_map in table_paths.items():
         tables[key][stock] = pd.read_csv(path)
         tables[key][stock]["MM-DD"] = tables[key][stock]["MM-DD"].astype(str)
 
-print("✅ Loaded all 8 base tables from Step 8.")
+print("✅ Loaded all 8 base tables from Step 6.")
 
 # ------------------------------------------------------------
 # Core logic — loop over rows
@@ -119,8 +119,13 @@ for _, row in df.iterrows():
                 continue  # Skip if column missing
 
             # Add fish value
-            table.loc[match, key_value] += fish_value
-            cells_updated += 1
+            try:
+                table.loc[match, key_value] = (
+                    pd.to_numeric(table.loc[match, key_value], errors="coerce").fillna(0) + fish_value
+                )
+                cells_updated += 1
+            except Exception as e:
+                print(f"⚠️ Error updating {table_name} {stock} on {d}: {e}")
 
     rows_processed += 1
 
@@ -135,7 +140,7 @@ for table_name, stock_map in tables.items():
 # ------------------------------------------------------------
 # Summary
 # ------------------------------------------------------------
-print("✅ Step 9 complete — Tables updated successfully.")
+print("✅ Step 7 complete — Tables updated successfully.")
 print(f"📊 Rows processed: {rows_processed:,}")
 print(f"➕ Cells updated: {cells_updated:,}")
 print("💾 Updated files:")

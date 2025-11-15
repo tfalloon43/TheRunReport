@@ -1,6 +1,6 @@
-# 10_weeklydata.py
+# 8_weeklydata.py
 # ------------------------------------------------------------
-# Step 10: Convert daily 10-year tables into weekly averages
+# Step 8: Convert daily 10-year tables into weekly averages
 # (with 12-31 partial-week adjustment ×3.5)
 # ------------------------------------------------------------
 
@@ -8,8 +8,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-print("📆 Step 10: Converting daily tables to weekly 10-year averages (with 12-31 adjustment)...")
+print("📆 Step 8: Converting daily tables to weekly 10-year averages (with 12-31 adjustment)...")
 
+# ------------------------------------------------------------
+# Paths
+# ------------------------------------------------------------
 project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 
@@ -24,18 +27,23 @@ file_pairs = [
     ("basinspecies_w.csv", "basinspecies_w_weekly.csv"),
 ]
 
+# ------------------------------------------------------------
+# Helper function
+# ------------------------------------------------------------
 def make_weekly_average(df: pd.DataFrame) -> pd.DataFrame:
-    # Sort by date; use a fixed non-leap year
+    """Aggregate daily data into 7-day blocks, divide by 10 for 10-year average,
+    and multiply final 12-31 week by 3.5 to correct partial-week artifact."""
+    
+    # Sort by date (fixed non-leap year for alignment)
     df["MM-DD"] = pd.to_datetime("2024-" + df["MM-DD"], errors="coerce")
     df = df.sort_values("MM-DD").reset_index(drop=True)
 
     numeric_cols = [c for c in df.columns if c != "MM-DD"]
-    # Ensure numeric source
     df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
     weekly_rows = []
     for start in range(0, len(df), 7):
-        chunk = df.iloc[start:start+7]
+        chunk = df.iloc[start:start + 7]
         if len(chunk) == 0:
             continue
         summed = (chunk[numeric_cols].sum(numeric_only=True) / 10.0).round(2)
@@ -44,20 +52,22 @@ def make_weekly_average(df: pd.DataFrame) -> pd.DataFrame:
 
     weekly_df = pd.DataFrame(weekly_rows, columns=["MM-DD"] + numeric_cols)
 
-    # ✅ Force numeric after construction (prevents object-dtype surprises)
+    # Ensure numeric after creation
     for c in numeric_cols:
         weekly_df[c] = pd.to_numeric(weekly_df[c], errors="coerce").fillna(0.0)
 
-    # ✅ 12-31 adjustment using a DataFrame slice (not a Series)
+    # Apply 12-31 adjustment ×3.5
     if (weekly_df["MM-DD"] == "12-31").any():
         idx = weekly_df.index[weekly_df["MM-DD"] == "12-31"][0]
-        # operate on a 1-row DataFrame to preserve dtypes, then assign back
         adj = (weekly_df.loc[idx:idx, numeric_cols].astype(float) * 3.5).round(2)
         weekly_df.loc[idx:idx, numeric_cols] = adj.values
         print("🔧 Adjusted final week (12-31) — multiplied values by 3.5")
 
     return weekly_df
 
+# ------------------------------------------------------------
+# Process all files
+# ------------------------------------------------------------
 for infile, outfile in file_pairs:
     input_path = data_dir / infile
     output_path = data_dir / outfile
@@ -67,10 +77,13 @@ for infile, outfile in file_pairs:
         continue
 
     df = pd.read_csv(input_path)
-    print(f"✅ Loaded {len(df):,} rows, {len(df.columns)-1:,} data columns from {infile}")
+    print(f"✅ Loaded {len(df):,} rows, {len(df.columns) - 1:,} data columns from {infile}")
 
     weekly_df = make_weekly_average(df)
     weekly_df.to_csv(output_path, index=False)
     print(f"💾 Saved → {outfile} ({len(weekly_df)} weekly rows)")
 
-print("🎯 Step 10 complete — all 8 weekly tables generated successfully with 12-31 adjustment.")
+# ------------------------------------------------------------
+# Done
+# ------------------------------------------------------------
+print("🎯 Step 8 complete — all 8 weekly tables generated successfully with 12-31 adjustment.")

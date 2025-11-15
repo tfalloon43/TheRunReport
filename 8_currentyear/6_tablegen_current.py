@@ -1,22 +1,23 @@
-# 8_tablegen.py
+# 8_currentyear/6_tablegen_current.py
 # ------------------------------------------------------------
-# Step 8: Generate empty 366-day (includes Dec 31) tables for:
-#   1. hatchspecies_h.csv
-#   2. hatchspecies_w.csv
-#   3. hatchfamily_h.csv
-#   4. hatchfamily_w.csv
-#   5. basinfamily_h.csv
-#   6. basinfamily_w.csv
-#   7. basinspecies_h.csv
-#   8. basinspecies_w.csv
+# Step 6 (Current Year): Generate empty 366-day (includes Dec 31)
+# tables for:
+#   1. hatchspecies_h_current.csv
+#   2. hatchspecies_w_current.csv
+#   3. hatchfamily_h_current.csv
+#   4. hatchfamily_w_current.csv
+#   5. basinfamily_h_current.csv
+#   6. basinfamily_w_current.csv
+#   7. basinspecies_h_current.csv
+#   8. basinspecies_w_current.csv
 #
 # Each table:
 #   - Rows: Every day of the year (MM-DD) including 12-31
 #   - Columns: Unique values from the given category,
 #              filtered by Stock = 'H' or 'W'
 #
-# Input  : 100_Data/csv_10av.csv
-# Output : 8 stock-specific tables in 100_Data/
+# Input  : 100_Data/csv_currentyear.csv
+# Output : 8 stock-specific *_current.csv tables in 100_Data/
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -24,25 +25,25 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
 
-print("🏗️ Step 8: Generating 366-day template tables (H vs W splits, including basinspecies)...")
+print("🏗️ Step 6 (Current Year): Generating 366-day template tables (H vs W splits, including basinspecies)...")
 
 # ------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------
 project_root = Path(__file__).resolve().parents[1]
 data_dir     = project_root / "100_Data"
-input_path   = data_dir / "csv_10av.csv"
+input_path   = data_dir / "csv_currentyear.csv"
 
 # Output paths
 outputs = {
-    "hatchspecies_h": data_dir / "hatchspecies_h.csv",
-    "hatchspecies_w": data_dir / "hatchspecies_w.csv",
-    "hatchfamily_h":  data_dir / "hatchfamily_h.csv",
-    "hatchfamily_w":  data_dir / "hatchfamily_w.csv",
-    "basinfamily_h":  data_dir / "basinfamily_h.csv",
-    "basinfamily_w":  data_dir / "basinfamily_w.csv",
-    "basinspecies_h": data_dir / "basinspecies_h.csv",
-    "basinspecies_w": data_dir / "basinspecies_w.csv",
+    "hatchspecies_h": data_dir / "hatchspecies_h_current.csv",
+    "hatchspecies_w": data_dir / "hatchspecies_w_current.csv",
+    "hatchfamily_h":  data_dir / "hatchfamily_h_current.csv",
+    "hatchfamily_w":  data_dir / "hatchfamily_w_current.csv",
+    "basinfamily_h":  data_dir / "basinfamily_h_current.csv",
+    "basinfamily_w":  data_dir / "basinfamily_w_current.csv",
+    "basinspecies_h": data_dir / "basinspecies_h_current.csv",
+    "basinspecies_w": data_dir / "basinspecies_w_current.csv",
 }
 
 # ------------------------------------------------------------
@@ -62,7 +63,7 @@ df["Stock"] = df["Stock"].astype(str).str.strip().str.upper()
 # ------------------------------------------------------------
 # Generate MM-DD rows for full year (includes Dec 31)
 # ------------------------------------------------------------
-dates = [(datetime(2024, 1, 1) + timedelta(days=i)).strftime("%m-%d") for i in range(366)]
+dates = [(datetime(datetime.now().year, 1, 1) + timedelta(days=i)).strftime("%m-%d") for i in range(366)]
 base_df = pd.DataFrame({"MM-DD": dates})
 print(f"📅 Created base date frame with {len(base_df)} days (MM-DD format, includes 12-31)")
 
@@ -104,4 +105,4 @@ make_table("basinspecies", "W", outputs["basinspecies_w"])
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("🎯 All 8 stock-specific template tables generated successfully in 100_Data/")
+print("🎯 All 8 stock-specific *_current template tables generated successfully in 100_Data/")

@@ -39,6 +39,7 @@ pipeline_steps = [
     # =====================================================
     "6_prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
     "7_10year_plot.py",        # Step 7: compute numbers to plot averages for all basins/species
+    "8_currentyear.py"         # Step 8: compute numbers of current year for all basins/species
 
     # =====================================================
     # 5️⃣  QUALITY CHECKS (optional manual inspection)

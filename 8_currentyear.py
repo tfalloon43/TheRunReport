@@ -1,8 +1,8 @@
-# 7_10year_plot.py
+# 8_currentyear.py
 # ------------------------------------------------------------
-# Master controller for modular 10-year plotting pipeline.
-# Executes all step scripts in /7_10year_plot/ in sequential order.
-# Each sub-script should output results to 100_Data or 7_10year_plot.
+# Master controller for modular Current-Year plotting pipeline.
+# Executes all step scripts in /8_currentyear/ in sequential order.
+# Each sub-script should output results to 100_Data or 8_currentyear/.
 # ------------------------------------------------------------
 
 import subprocess
@@ -12,28 +12,27 @@ import os
 # Base paths
 # ------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STEP_DIR = os.path.join(BASE_DIR, "7_10year_plot")
+STEP_DIR = os.path.join(BASE_DIR, "8_currentyear")
 
 # ------------------------------------------------------------
 # Ordered list of pipeline step scripts
 # ------------------------------------------------------------
 steps = [
-    "1_create_csv.py",
-    "2_fishperday.py",
-    "3_locationmarking.py",
-    "4_delete.py",
-    "5_days.py",
-    "6_tablegen.py",
-    "7_tablefill.py",
-    "8_weeklydata.py",
-    #"",
-    #"50_check.py",
+    "1_create_csv_currentyear.py",          # Export z4_plot_data → csv_currentyear.csv
+    "2_fishperday_current.py",              # Compute fish-per-day for current-year data
+    "3_locationmarking_current.py",         # Add hatch/basin family/species combo columns
+    "4_delete_current.py",                  # Filter out invalid rows (H/W only, etc.)
+    "5_days_current.py",                    # Expand date_iso → Day1–DayN columns
+    "6_tablegen_current.py",                # Generate empty 366-day tables
+    "7_tablefill_current.py",               # Fill tables with current-year data
+    "8_weeklydata_current.py",              # Aggregate daily → weekly totals
+    # "50_check.py",                # Optional visualization/QA step
 ]
 
 # ------------------------------------------------------------
 # Execution
 # ------------------------------------------------------------
-print("🚀 Starting 10-Year Plot pipeline...\n")
+print("🚀 Starting Current-Year Plot pipeline...\n")
 
 # Ensure working directory is the step folder
 os.chdir(STEP_DIR)
@@ -73,4 +72,4 @@ for step in steps:
     else:
         print(f"✅ Completed: {step}\n")
 
-print("\n✅ All 10-Year Plot steps completed (or stopped on error).")
+print("\n✅ All Current-Year Plot steps completed (or stopped on error).")

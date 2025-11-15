@@ -1,6 +1,6 @@
-# 7_days.py
+# 5_days.py
 # ------------------------------------------------------------
-# Step 7: Expand date_iso into Day1 → DayN columns based on day_diff_plot
+# Step 5: Expand date_iso into Day1 → DayN columns based on day_diff_plot
 #
 # Logic:
 #   - For each row, use date_iso as the end date
@@ -8,14 +8,14 @@
 #   - Each day (MM-DD) becomes a new column (Day1, Day2, ...)
 #
 # Input  : 100_Data/csv_10av.csv
-# Output : 100_Data/7_days_output.csv + updated csv_10av.csv
+# Output : 100_Data/5_days_output.csv + updated csv_10av.csv
 # ------------------------------------------------------------
 
 import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 
-print("🏗️ Step 7: Expanding date_iso into Day1 → DayN columns...")
+print("🏗️ Step 5: Expanding date_iso into Day1 → DayN columns...")
 
 # ------------------------------------------------------------
 # Paths
@@ -24,7 +24,7 @@ project_root = Path(__file__).resolve().parents[1]
 data_dir     = project_root / "100_Data"
 
 input_path   = data_dir / "csv_10av.csv"
-output_path  = data_dir / "7_days_output.csv"
+output_path  = data_dir / "5_days_output.csv"
 recent_path  = data_dir / "csv_10av.csv"
 
 # ------------------------------------------------------------
@@ -56,26 +56,26 @@ df["day_diff_plot"] = pd.to_numeric(df["day_diff_plot"], errors="coerce").fillna
 max_days = int(df["day_diff_plot"].max())
 print(f"📅 Maximum day_diff_plot = {max_days} days → Creating up to {max_days} Day columns")
 
-# Ensure each row gets as many Day columns as needed
 day_cols = [f"Day{i+1}" for i in range(max_days)]
-
-# Initialize columns
 for col in day_cols:
     df[col] = ""
 
-# Fill columns
+# ------------------------------------------------------------
+# Fill in the Day columns
+# ------------------------------------------------------------
 for idx, row in df.iterrows():
     end_date = row["date_iso"]
     days_back = row["day_diff_plot"]
-    
-    # Skip invalid rows
+
+    # Skip invalid or incomplete rows
     if pd.isna(end_date) or days_back <= 0:
         continue
-    
+
     for i in range(days_back):
         day_label = f"Day{i+1}"
-        day_val = (end_date - timedelta(days=i)).strftime("%m-%d")
-        df.at[idx, day_label] = day_val
+        if day_label in df.columns:
+            day_val = (end_date - timedelta(days=i)).strftime("%m-%d")
+            df.at[idx, day_label] = day_val
 
 # ------------------------------------------------------------
 # Save outputs

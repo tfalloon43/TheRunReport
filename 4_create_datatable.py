@@ -16,6 +16,8 @@ STEP_DIR = os.path.join(BASE_DIR, "4_create_datatable")
 
 # Ordered list of pipeline steps
 steps = [
+    "0_create_csv.py",
+    "0.1_delete.py",
     "1_date_extract.py",
     "2_stock_presence.py",
     "3_stock_presence_lower.py",

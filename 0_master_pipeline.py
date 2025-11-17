@@ -44,8 +44,7 @@ pipeline_steps = [
     # =====================================================
     # 5️⃣  QUALITY CHECKS (optional manual inspection)
     # =====================================================
-    # "view_data.py",        # Optional: Export SQLite tables to CSV for inspection
-    # "test.py",             # Optional: Developer testing file
+    "9_testapp.py"           # Step 9: Test application for QA checks (manual step)
 
 ]
 

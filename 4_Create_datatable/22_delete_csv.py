@@ -1,6 +1,6 @@
-# delete_csv.py
+# 22_delete_csv.py
 # ------------------------------------------------------------
-# Deletes all CSV files in 100_Data except csv_recent.csv.
+# Step 22: Delete all CSV files in 100_Data except csv_recent.csv.
 # Safe utility for cleaning up intermediate outputs.
 # ------------------------------------------------------------
 

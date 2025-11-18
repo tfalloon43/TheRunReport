@@ -1,4 +1,4 @@
-# 17_counts.py
+# 18_counts.py
 # ------------------------------------------------------------
 # Expand "count_data" into 11 numeric columns (whole numbers, no decimals).
 # Only active for rows with a date value.
@@ -8,7 +8,7 @@
 #   - Dash/missing/invalid → NaN.
 #   - Rows with no date → all blank.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/17_counts_output.csv + updated csv_recent.csv
+# Output : 100_Data/18_counts_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -24,16 +24,16 @@ data_dir = project_root / "100_Data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "17_counts_output.csv"
+output_path = data_dir / "18_counts_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 17: Expanding count_data into detailed whole-number columns...")
+print("🏗️  Step 18: Expanding count_data into detailed whole-number columns...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 16 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 17 first.")
 
 df = pd.read_csv(input_path)
 

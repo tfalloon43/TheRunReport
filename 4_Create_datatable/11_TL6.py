@@ -1,4 +1,4 @@
-# 10_TL6.py
+# 11_TL6.py
 # ------------------------------------------------------------
 # Build TL6 column
 # Conditions:
@@ -9,7 +9,7 @@
 #     so that the text begins directly with 'Stock-' or 'River-'.
 #   • Case sensitive — 'HATCHERY' ≠ 'Hatchery'.
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/10_TL6_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/11_TL6_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -24,10 +24,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "10_TL6_output.csv"
+output_path = data_dir / "11_TL6_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 10: Creating TL6 (case-sensitive cleanup)...")
+print("🏗️  Step 11: Creating TL6 (case-sensitive cleanup)...")
 
 # ------------------------------------------------------------
 # Load data

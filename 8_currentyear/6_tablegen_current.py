@@ -2,22 +2,18 @@
 # ------------------------------------------------------------
 # Step 6 (Current Year): Generate empty 366-day (includes Dec 31)
 # tables for:
-#   1. hatchspecies_h_current.csv
-#   2. hatchspecies_w_current.csv
-#   3. hatchfamily_h_current.csv
-#   4. hatchfamily_w_current.csv
-#   5. basinfamily_h_current.csv
-#   6. basinfamily_w_current.csv
-#   7. basinspecies_h_current.csv
-#   8. basinspecies_w_current.csv
+#   • hatchspecies_[h/w/u]_current.csv
+#   • hatchfamily_[h/w/u]_current.csv
+#   • basinfamily_[h/w/u]_current.csv
+#   • basinspecies_[h/w/u]_current.csv
 #
 # Each table:
 #   - Rows: Every day of the year (MM-DD) including 12-31
 #   - Columns: Unique values from the given category,
-#              filtered by Stock = 'H' or 'W'
+#              filtered by Stock = 'H', 'W', or 'U'
 #
 # Input  : 100_Data/csv_currentyear.csv
-# Output : 8 stock-specific *_current.csv tables in 100_Data/
+# Output : 12 stock-specific *_current.csv tables in 100_Data/
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -25,7 +21,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
 
-print("🏗️ Step 6 (Current Year): Generating 366-day template tables (H vs W splits, including basinspecies)...")
+print("🏗️ Step 6 (Current Year): Generating 366-day template tables (Stock = H/W/U)...")
 
 # ------------------------------------------------------------
 # Paths
@@ -35,15 +31,12 @@ data_dir     = project_root / "100_Data"
 input_path   = data_dir / "csv_currentyear.csv"
 
 # Output paths
+table_categories = ["hatchspecies", "hatchfamily", "basinfamily", "basinspecies"]
+stocks = ["H", "W", "U"]
 outputs = {
-    "hatchspecies_h": data_dir / "hatchspecies_h_current.csv",
-    "hatchspecies_w": data_dir / "hatchspecies_w_current.csv",
-    "hatchfamily_h":  data_dir / "hatchfamily_h_current.csv",
-    "hatchfamily_w":  data_dir / "hatchfamily_w_current.csv",
-    "basinfamily_h":  data_dir / "basinfamily_h_current.csv",
-    "basinfamily_w":  data_dir / "basinfamily_w_current.csv",
-    "basinspecies_h": data_dir / "basinspecies_h_current.csv",
-    "basinspecies_w": data_dir / "basinspecies_w_current.csv",
+    f"{category}_{stock.lower()}": data_dir / f"{category}_{stock.lower()}_current.csv"
+    for category in table_categories
+    for stock in stocks
 }
 
 # ------------------------------------------------------------
@@ -91,18 +84,13 @@ def make_table(column_name, stock_value, output_path):
     print(f"✅ Saved table → {output_path.name} ({len(table)} rows, {len(table.columns)} columns)")
 
 # ------------------------------------------------------------
-# Create all eight tables
+# Create all stock-specific tables
 # ------------------------------------------------------------
-make_table("hatchspecies", "H", outputs["hatchspecies_h"])
-make_table("hatchspecies", "W", outputs["hatchspecies_w"])
-make_table("hatchfamily",  "H", outputs["hatchfamily_h"])
-make_table("hatchfamily",  "W", outputs["hatchfamily_w"])
-make_table("basinfamily",  "H", outputs["basinfamily_h"])
-make_table("basinfamily",  "W", outputs["basinfamily_w"])
-make_table("basinspecies", "H", outputs["basinspecies_h"])
-make_table("basinspecies", "W", outputs["basinspecies_w"])
+for category in table_categories:
+    for stock in stocks:
+        make_table(category, stock, outputs[f"{category}_{stock.lower()}"])
 
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("🎯 All 8 stock-specific *_current template tables generated successfully in 100_Data/")
+print(f"🎯 All {len(outputs)} stock-specific *_current template tables generated successfully in 100_Data/")

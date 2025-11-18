@@ -1,21 +1,21 @@
 # 7_tablefill.py
 # ------------------------------------------------------------
-# Step 7: Populate H/W daily tables with fish-per-day values
+# Step 7: Populate H/W/U daily tables with fish-per-day values
 #
 # Logic:
 #   • Reads each row from csv_10av.csv
-#   • Determines Stock (H or W)
+#   • Determines Stock (H, W, or U)
 #   • Gets fishperday value and day columns (Day1–DayN)
 #   • Adds fishperday to the corresponding date cells in:
-#         - hatchspecies_[H/W].csv
-#         - hatchfamily_[H/W].csv
-#         - basinfamily_[H/W].csv
-#         - basinspecies_[H/W].csv
+#         - hatchspecies_[H/W/U].csv
+#         - hatchfamily_[H/W/U].csv
+#         - basinfamily_[H/W/U].csv
+#         - basinspecies_[H/W/U].csv
 #
 #   If a cell already has a value, new values are added (summed).
 #
-# Input  : 100_Data/csv_10av.csv + 8 empty tables from 6_tablegen.py
-# Output : Updated 8 tables with filled-in values
+# Input  : 100_Data/csv_10av.csv + 12 empty tables from 6_tablegen.py
+# Output : Updated 12 tables with filled-in values
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -31,11 +31,10 @@ data_dir = project_root / "100_Data"
 
 input_path = data_dir / "csv_10av.csv"
 
+stocks = ["H", "W", "U"]
 table_paths = {
-    "hatchspecies": {"H": data_dir / "hatchspecies_h.csv", "W": data_dir / "hatchspecies_w.csv"},
-    "hatchfamily":  {"H": data_dir / "hatchfamily_h.csv",  "W": data_dir / "hatchfamily_w.csv"},
-    "basinfamily":  {"H": data_dir / "basinfamily_h.csv",  "W": data_dir / "basinfamily_w.csv"},
-    "basinspecies": {"H": data_dir / "basinspecies_h.csv", "W": data_dir / "basinspecies_w.csv"},
+    category: {stock: data_dir / f"{category}_{stock.lower()}.csv" for stock in stocks}
+    for category in ["hatchspecies", "hatchfamily", "basinfamily", "basinspecies"]
 }
 
 # ------------------------------------------------------------
@@ -58,7 +57,7 @@ day_cols = [c for c in df.columns if c.lower().startswith("day")]
 print(f"📅 Found {len(day_cols)} Day columns (e.g., {day_cols[:5]}...)")
 
 # ------------------------------------------------------------
-# Load all 8 output tables
+# Load all stock-specific output tables
 # ------------------------------------------------------------
 tables = {}
 for key, stock_map in table_paths.items():
@@ -69,7 +68,8 @@ for key, stock_map in table_paths.items():
         tables[key][stock] = pd.read_csv(path)
         tables[key][stock]["MM-DD"] = tables[key][stock]["MM-DD"].astype(str)
 
-print("✅ Loaded all 8 base tables from Step 6.")
+total_tables = len(table_paths) * len(stocks)
+print(f"✅ Loaded all {total_tables} base tables from Step 6.")
 
 # ------------------------------------------------------------
 # Core logic — loop over rows
@@ -79,7 +79,7 @@ cells_updated = 0
 
 for _, row in df.iterrows():
     stock = str(row["Stock"]).upper().strip()
-    if stock not in ["H", "W"]:
+    if stock not in stocks:
         continue
 
     fish_value = row["fishperday"]

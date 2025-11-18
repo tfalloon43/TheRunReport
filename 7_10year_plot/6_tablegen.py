@@ -1,22 +1,18 @@
 # 6_tablegen.py
 # ------------------------------------------------------------
 # Step 6: Generate empty 366-day (includes Dec 31) tables for:
-#   1. hatchspecies_h.csv
-#   2. hatchspecies_w.csv
-#   3. hatchfamily_h.csv
-#   4. hatchfamily_w.csv
-#   5. basinfamily_h.csv
-#   6. basinfamily_w.csv
-#   7. basinspecies_h.csv
-#   8. basinspecies_w.csv
+#   • hatchspecies_[h/w/u].csv
+#   • hatchfamily_[h/w/u].csv
+#   • basinfamily_[h/w/u].csv
+#   • basinspecies_[h/w/u].csv
 #
 # Each table:
 #   - Rows: Every day of the year (MM-DD) including 12-31
 #   - Columns: Unique values from the given category,
-#              filtered by Stock = 'H' or 'W'
+#              filtered by Stock = 'H', 'W', or 'U'
 #
 # Input  : 100_Data/csv_10av.csv
-# Output : 8 stock-specific tables in 100_Data/
+# Output : 12 stock-specific tables in 100_Data/
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -24,7 +20,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
 
-print("🏗️ Step 6: Generating 366-day template tables (H vs W splits, including basinspecies)...")
+print("🏗️ Step 6: Generating 366-day template tables (Stock = H/W/U)...")
 
 # ------------------------------------------------------------
 # Paths
@@ -34,15 +30,12 @@ data_dir     = project_root / "100_Data"
 input_path   = data_dir / "csv_10av.csv"
 
 # Output paths
+table_categories = ["hatchspecies", "hatchfamily", "basinfamily", "basinspecies"]
+stocks = ["H", "W", "U"]
 outputs = {
-    "hatchspecies_h": data_dir / "hatchspecies_h.csv",
-    "hatchspecies_w": data_dir / "hatchspecies_w.csv",
-    "hatchfamily_h":  data_dir / "hatchfamily_h.csv",
-    "hatchfamily_w":  data_dir / "hatchfamily_w.csv",
-    "basinfamily_h":  data_dir / "basinfamily_h.csv",
-    "basinfamily_w":  data_dir / "basinfamily_w.csv",
-    "basinspecies_h": data_dir / "basinspecies_h.csv",
-    "basinspecies_w": data_dir / "basinspecies_w.csv",
+    f"{category}_{stock.lower()}": data_dir / f"{category}_{stock.lower()}.csv"
+    for category in table_categories
+    for stock in stocks
 }
 
 # ------------------------------------------------------------
@@ -90,18 +83,13 @@ def make_table(column_name, stock_value, output_path):
     print(f"✅ Saved table → {output_path.name} ({len(table)} rows, {len(table.columns)} columns)")
 
 # ------------------------------------------------------------
-# Create all eight tables
+# Create all stock-specific tables
 # ------------------------------------------------------------
-make_table("hatchspecies", "H", outputs["hatchspecies_h"])
-make_table("hatchspecies", "W", outputs["hatchspecies_w"])
-make_table("hatchfamily",  "H", outputs["hatchfamily_h"])
-make_table("hatchfamily",  "W", outputs["hatchfamily_w"])
-make_table("basinfamily",  "H", outputs["basinfamily_h"])
-make_table("basinfamily",  "W", outputs["basinfamily_w"])
-make_table("basinspecies", "H", outputs["basinspecies_h"])
-make_table("basinspecies", "W", outputs["basinspecies_w"])
+for category in table_categories:
+    for stock in stocks:
+        make_table(category, stock, outputs[f"{category}_{stock.lower()}"])
 
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("🎯 All 8 stock-specific template tables generated successfully in 100_Data/")
+print(f"🎯 All {len(outputs)} stock-specific template tables generated successfully in 100_Data/")

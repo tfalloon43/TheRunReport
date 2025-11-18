@@ -1,8 +1,17 @@
 # 7_10year_plot.py
 # ------------------------------------------------------------
 # Master controller for modular 10-year plotting pipeline.
-# Executes all step scripts in /7_10year_plot/ in sequential order.
-# Each sub-script should output results to 100_Data or 7_10year_plot.
+# Executes all scripts in /7_10year_plot/ sequentially:
+#   1_create_csv.py          → build csv_10av.csv from z3_data_clean
+#   2_fishperday.py          → calculate fishperday metric
+#   3_locationmarking.py     → append hatch/basin category columns
+#   4_delete.py              → trim to last 10 yrs & allowed stocks
+#   5_days.py                → explode date_iso into Day1–DayN columns
+#   6_tablegen.py            → create empty H/W/U tables
+#   7_tablefill.py           → populate tables with fishperday values
+#   8_weeklydata.py          → aggregate to weekly 10-yr averages
+#   50_check.py (optional)   → quick QC/visual checks
+# Each sub-script outputs to 100_Data or 7_10year_plot as appropriate.
 # ------------------------------------------------------------
 
 import subprocess
@@ -18,16 +27,15 @@ STEP_DIR = os.path.join(BASE_DIR, "7_10year_plot")
 # Ordered list of pipeline step scripts
 # ------------------------------------------------------------
 steps = [
-    "1_create_csv.py",
-    "2_fishperday.py",
-    "3_locationmarking.py",
-    "4_delete.py",
-    "5_days.py",
-    "6_tablegen.py",
-    "7_tablefill.py",
-    "8_weeklydata.py",
-    #"",
-    #"50_check.py",
+    "1_create_csv.py",      # export z3_data_clean → csv_10av.csv
+    "2_fishperday.py",      # compute fishperday metric
+    "3_locationmarking.py", # add hatch/basin category columns
+    "4_delete.py",          # filter rows (adult_diff_plot, stock, date range)
+    "5_days.py",            # expand dates into Day1–DayN columns
+    "6_tablegen.py",        # build empty stock tables for H/W/U
+    "7_tablefill.py",       # fill tables with fishperday values
+    "8_weeklydata.py",      # convert daily tables → weekly averages
+    "50_check.py",          # optional QA/visualization step
 ]
 
 # ------------------------------------------------------------

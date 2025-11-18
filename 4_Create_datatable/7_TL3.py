@@ -1,4 +1,4 @@
-# 6_TL3.py
+# 7_TL3.py
 # ------------------------------------------------------------
 # Build TL3 column from TL2
 # TL3 = final 11 numeric/dash tokens at the end of TL2
@@ -10,7 +10,7 @@
 #   TL2 = "White River 3 - - - - - - 3 - - -"      → TL3 = "3 - - - - - - 3 - - -"
 #   TL2 = "I-205- W 79 - 93,470 - - 79 - - - - -" → TL3 = "79 - 93,470 - - 79 - - - - -"
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/6_TL3_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/7_TL3_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import os
@@ -26,10 +26,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "6_TL3_output.csv"
+output_path = data_dir / "7_TL3_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 6: Creating TL3...")
+print("🏗️  Step 7: Creating TL3...")
 
 # ------------------------------------------------------------
 # Load data

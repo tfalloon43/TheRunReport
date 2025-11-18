@@ -1,4 +1,4 @@
-# 13_species.py
+# 14_species.py
 # ------------------------------------------------------------
 # Build 'species' column using species_headers from lookup_maps
 # Logic:
@@ -9,7 +9,7 @@
 #   • The species column gets the exact string from species_headers (case preserved).
 #   • Rows before the first header remain blank.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/13_species_output.csv + csv_recent.csv
+# Output : 100_Data/14_species_output.csv + csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -38,16 +38,16 @@ sys.path.append(data_path)
 from lookup_maps import species_headers  # type: ignore
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "13_species_output.csv"
+output_path = data_dir / "14_species_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 13: Assigning species from species_headers...")
+print("🏗️  Step 14: Assigning species from species_headers...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 12 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 13 first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------

@@ -1,6 +1,6 @@
-# 19_stock_correction.py
+# 20_stock_corrections.py
 # ------------------------------------------------------------
-# Step 19 of Create Datatable Pipeline
+# Step 20 of Create Datatable Pipeline
 # Builds the 'stock_correction' column using Stock_BO_corrections
 # from lookup_maps.py.
 # Logic:
@@ -8,7 +8,7 @@
 #   • If found → assign corrected Stock_BO value.
 #   • If not found or Stock_BO is blank → leave blank.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/19_stock_correction_output.csv + updated csv_recent.csv
+# Output : 100_Data/20_stock_corrections_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -16,7 +16,7 @@ from pathlib import Path
 import sys
 import os
 
-print("🏗️ Step 19: Correcting Stock_BO entries using lookup_maps...")
+print("🏗️ Step 20: Correcting Stock_BO entries using lookup_maps...")
 
 # ------------------------------------------------------------
 # Setup paths
@@ -42,7 +42,7 @@ except ModuleNotFoundError as e:
 # File paths
 # ------------------------------------------------------------
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "19_stock_correction_output.csv"
+output_path = data_dir / "20_stock_corrections_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
 # ------------------------------------------------------------

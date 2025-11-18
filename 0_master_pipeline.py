@@ -20,13 +20,13 @@ pipeline_steps = [
     # 1️⃣  RAW DATA COLLECTION — from WDFW website
     # =====================================================
     "100_Data/lookup_maps.py", #Step 0: Make sure directories are up to date
-    "1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
-    "2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+    #"1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
+    #"2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
     # 2️⃣  DATABASE CREATION — populate pdf_data.sqlite
     # =====================================================
-    "3_MakeSQLiteTable.py",    # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
+    #"3_MakeSQLiteTable.py",    # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
 
     # =====================================================
     # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets

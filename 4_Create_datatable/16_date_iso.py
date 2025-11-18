@@ -1,10 +1,10 @@
-# 15_date_iso.py
+# 16_date_iso.py
 # ------------------------------------------------------------
 # Normalize the "date" column (MM/DD/YY or MM/DD/YYYY)
 # into ISO format (YYYY-MM-DD).
 # Only modifies rows with valid date strings.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/15_date_iso_output.csv + updated csv_recent.csv
+# Output : 100_Data/16_date_iso_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -20,16 +20,16 @@ data_dir = project_root / "100_Data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "15_date_iso_output.csv"
+output_path = data_dir / "16_date_iso_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 15: Converting date → date_iso...")
+print("🏗️  Step 16: Converting date → date_iso...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 14 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 15 first.")
 
 df = pd.read_csv(input_path)
 

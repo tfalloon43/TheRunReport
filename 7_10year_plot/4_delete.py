@@ -4,7 +4,7 @@
 #
 # Logic:
 #   - Remove rows where adult_diff_plot == 0
-#   - Keep only rows where Stock is 'H' or 'W'
+#   - Keep only rows where Stock is 'H', 'W', or 'U'
 #   - Keep only data from the last 10 complete years
 #       (e.g. if current year is 2025 → keep 2014–2024)
 #
@@ -16,7 +16,7 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-print("🧹 Step 4: Filtering rows (adult_diff_plot ≠ 0, Stock = H/W, last 10 years)...")
+print("🧹 Step 4: Filtering rows (adult_diff_plot ≠ 0, Stock = H/W/U, last 10 years)...")
 
 # ------------------------------------------------------------
 # Paths
@@ -63,7 +63,7 @@ print(f"📅 Keeping rows between {start_date.date()} and {end_date.date()}")
 before_rows = len(df)
 df = df[
     (df["adult_diff_plot"] != 0)
-    & (df["Stock"].isin(["H", "W"]))
+    & (df["Stock"].isin(["H", "W", "U"]))
     & (df["date_iso"].between(start_date, end_date))
 ]
 after_rows = len(df)

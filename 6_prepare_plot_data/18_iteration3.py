@@ -118,7 +118,7 @@ df["by_short3"] = ""
 def flag_spillover_short_runs(g):
     g = g.sort_values("date_iso").reset_index(drop=True)
     stock_type = str(g.loc[0, "Stock"]).strip().upper()
-    if stock_type not in ["H", "W"]:
+    if stock_type not in ["H", "W", "U"]:
         return g
 
     short_idx = set()

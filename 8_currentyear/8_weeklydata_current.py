@@ -16,15 +16,15 @@ print("📆 Step 8 (Current Year): Converting daily *_current tables to weekly t
 project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 
+stocks = ["h", "w", "u"]
 file_pairs = [
-    ("hatchspecies_h_current.csv", "hatchspecies_h_current_weekly.csv"),
-    ("hatchspecies_w_current.csv", "hatchspecies_w_current_weekly.csv"),
-    ("hatchfamily_h_current.csv",  "hatchfamily_h_current_weekly.csv"),
-    ("hatchfamily_w_current.csv",  "hatchfamily_w_current_weekly.csv"),
-    ("basinfamily_h_current.csv",  "basinfamily_h_current_weekly.csv"),
-    ("basinfamily_w_current.csv",  "basinfamily_w_current_weekly.csv"),
-    ("basinspecies_h_current.csv", "basinspecies_h_current_weekly.csv"),
-    ("basinspecies_w_current.csv", "basinspecies_w_current_weekly.csv"),
+    (f"hatchspecies_{s}_current.csv", f"hatchspecies_{s}_current_weekly.csv") for s in stocks
+] + [
+    (f"hatchfamily_{s}_current.csv", f"hatchfamily_{s}_current_weekly.csv") for s in stocks
+] + [
+    (f"basinfamily_{s}_current.csv", f"basinfamily_{s}_current_weekly.csv") for s in stocks
+] + [
+    (f"basinspecies_{s}_current.csv", f"basinspecies_{s}_current_weekly.csv") for s in stocks
 ]
 
 # ------------------------------------------------------------
@@ -85,4 +85,4 @@ for infile, outfile in file_pairs:
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("🎯 Step 8 (Current Year) complete — all 8 *_current_weekly tables generated successfully with 12-31 adjustment.")
+print("🎯 Step 8 (Current Year) complete — all *_current_weekly tables generated successfully with 12-31 adjustment.")

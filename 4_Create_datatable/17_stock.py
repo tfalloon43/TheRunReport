@@ -1,10 +1,10 @@
-# 16_stock.py
+# 17_stock.py
 # ------------------------------------------------------------
 # Extract standalone stock indicator (H/W/U/M/C)
 # from the end of the Stock_BO column.
 # Only active if Stock_BO has content.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/16_stock_output.csv + updated csv_recent.csv
+# Output : 100_Data/17_stock_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -20,16 +20,16 @@ data_dir = project_root / "100_Data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "16_stock_output.csv"
+output_path = data_dir / "17_stock_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 16: Extracting Stock indicator...")
+print("🏗️  Step 17: Extracting Stock indicator...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 15 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 16 first.")
 
 df = pd.read_csv(input_path)
 

@@ -1,4 +1,4 @@
-# 11_Stock_BO.py
+# 12_Stock_BO.py
 # ------------------------------------------------------------
 # Build Stock_BO in two phases:
 #   Phase 1 → copy TL4 for all rows with a date
@@ -7,7 +7,7 @@
 # After both phases → clean out any 'nan', 'None', or 'NaN' text artifacts
 #
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/11_Stock_BO_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/12_Stock_BO_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -21,10 +21,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "11_Stock_BO_output.csv"
+output_path = data_dir / "12_Stock_BO_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 11: Building Stock_BO...")
+print("🏗️  Step 12: Building Stock_BO...")
 
 # ------------------------------------------------------------
 # Load data

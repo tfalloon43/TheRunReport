@@ -16,15 +16,15 @@ print("📆 Step 8: Converting daily tables to weekly 10-year averages (with 12-
 project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 
+stocks = ["h", "w", "u"]
 file_pairs = [
-    ("hatchspecies_h.csv", "hatchspecies_h_weekly.csv"),
-    ("hatchspecies_w.csv", "hatchspecies_w_weekly.csv"),
-    ("hatchfamily_h.csv",  "hatchfamily_h_weekly.csv"),
-    ("hatchfamily_w.csv",  "hatchfamily_w_weekly.csv"),
-    ("basinfamily_h.csv",  "basinfamily_h_weekly.csv"),
-    ("basinfamily_w.csv",  "basinfamily_w_weekly.csv"),
-    ("basinspecies_h.csv", "basinspecies_h_weekly.csv"),
-    ("basinspecies_w.csv", "basinspecies_w_weekly.csv"),
+    (f"hatchspecies_{s}.csv", f"hatchspecies_{s}_weekly.csv") for s in stocks
+] + [
+    (f"hatchfamily_{s}.csv", f"hatchfamily_{s}_weekly.csv") for s in stocks
+] + [
+    (f"basinfamily_{s}.csv", f"basinfamily_{s}_weekly.csv") for s in stocks
+] + [
+    (f"basinspecies_{s}.csv", f"basinspecies_{s}_weekly.csv") for s in stocks
 ]
 
 # ------------------------------------------------------------
@@ -86,4 +86,4 @@ for infile, outfile in file_pairs:
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("🎯 Step 8 complete — all 8 weekly tables generated successfully with 12-31 adjustment.")
+print("🎯 Step 8 complete — all weekly tables generated successfully with 12-31 adjustment.")

@@ -1,4 +1,4 @@
-# 7_count_data.py
+# 8_count_data.py
 # ------------------------------------------------------------
 # Convert TL3 into normalized numeric format
 # • Replace dashes ("-") with 0
@@ -9,7 +9,7 @@
 #   TL3 = "108 4 - - - - - 104 - 8 -"        → count_data = "108 4 0 0 0 0 0 104 0 8 0"
 #   TL3 = "- - 1,740,000 - - - - - - - -"    → count_data = "0 0 1740000 0 0 0 0 0 0 0 0"
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/7_count_data_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/8_count_data_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import re
@@ -24,10 +24,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "7_count_data_output.csv"
+output_path = data_dir / "8_count_data_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 7: Creating count_data...")
+print("🏗️  Step 8: Creating count_data...")
 
 # ------------------------------------------------------------
 # Load data

@@ -9,7 +9,7 @@
 #     in the same report stream.
 #
 # Logic:
-#   - Only applies when Stock ∈ ["H", "W"]
+#   - Applies when Stock ∈ ["H", "W", "U"]
 #   - Group by facility/species/Stock/Stock_BO
 #   - For each long run (by_adult_length > 15):
 #       → Look ahead through the next 4 by_adult transitions
@@ -67,9 +67,9 @@ group_cols = ["facility", "species", "Stock", "Stock_BO"]
 def flag_spillover_short_runs(g):
     g = g.sort_values("date_iso").reset_index(drop=True)
 
-    # Skip if stock type not H or W
+    # Skip if stock type not H, W, or U
     stock_type = str(g.loc[0, "Stock"]).strip().upper()
-    if stock_type not in ["H", "W"]:
+    if stock_type not in ["H", "W", "U"]:
         return g
 
     short_idx = set()

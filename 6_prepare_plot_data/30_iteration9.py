@@ -141,7 +141,7 @@ def flag_spillover_short_runs(g):
     if family not in valid_families:
         return g
     stock_type = str(g.loc[0, "Stock"]).strip().upper()
-    if stock_type not in ["H", "W"]:
+    if stock_type not in ["H", "W", "U"]:
         return g
 
     short_idx = set()

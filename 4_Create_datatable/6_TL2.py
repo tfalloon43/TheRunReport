@@ -1,4 +1,4 @@
-# 5_TL2.py
+# 6_TL2.py
 # ------------------------------------------------------------
 # Create a new column TL2:
 #   • Only active (non-blank) if a date value exists.
@@ -25,7 +25,7 @@ input_path = data_dir / "csv_recent.csv"
 output_path = data_dir / "5_tl2_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 5: Building TL2 column...")
+print("🏗️  Step 6: Building TL2 column...")
 
 # ------------------------------------------------------------
 # Load data

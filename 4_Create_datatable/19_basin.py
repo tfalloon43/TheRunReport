@@ -1,13 +1,13 @@
-# 18_basin.py
+# 19_basin.py
 # ------------------------------------------------------------
-# Step 18 of Create Datatable Pipeline
+# Step 19 of Create Datatable Pipeline
 # Builds the 'basin' column using basin_map from lookup_maps.py.
 # Logic:
 #   • Looks up each Hatchery_Name (case-insensitive) in basin_map.
 #   • If found → assign corresponding basin name.
 #   • If not found or Hatchery_Name is blank → leave basin blank.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/18_basin_output.csv + updated csv_recent.csv
+# Output : 100_Data/19_basin_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -15,7 +15,7 @@ from pathlib import Path
 import sys
 import os
 
-print("🏗️ Step 18: Assigning basin from Hatchery_Name...")
+print("🏗️ Step 19: Assigning basin from Hatchery_Name...")
 
 # ------------------------------------------------------------
 # Setup paths
@@ -39,7 +39,7 @@ except ModuleNotFoundError as e:
 
 # File paths
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "18_basin_output.csv"
+output_path = data_dir / "19_basin_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
 # ------------------------------------------------------------

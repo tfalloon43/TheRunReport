@@ -1,4 +1,4 @@
-# 4_hatchery_name.py
+# 5_hatchery_name.py
 # ------------------------------------------------------------
 # Extract Hatchery_Name values from text_line
 # Conditions:
@@ -8,7 +8,7 @@
 #   • Ignore WDFW, CAUTION, or species headers (e.g., Fall Chinook).
 #   • Apply manual corrections from lookup_maps.hatchery_name_corrections.
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/4_hatchery_name_output.csv + csv_recent.csv
+# Output : 100_data/5_hatchery_name_output.csv + csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -39,16 +39,16 @@ sys.path.append(data_path)
 from lookup_maps import hatchery_name_corrections # type: ignore
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "4_hatchery_name_output.csv"
+output_path = data_dir / "5_hatchery_name_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 4: Extracting Hatchery_Name...")
+print("🏗️  Step 5: Extracting Hatchery_Name...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 3 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 4 first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------

@@ -1,11 +1,11 @@
-# 8_TL4.py
+# 9_TL4.py
 # ------------------------------------------------------------
 # Build TL4 column from TL2 and TL3
 # TL4 = TL2 with TL3 (numeric tail) removed
 # Removes exactly the final 11 numeric/dash tokens from TL2.
 # Keeps prefix text intact (e.g., 'Stock-').
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/8_TL4_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/9_TL4_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import re
@@ -20,10 +20,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "8_TL4_output.csv"
+output_path = data_dir / "9_TL4_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 8: Creating TL4...")
+print("🏗️  Step 9: Creating TL4...")
 
 # ------------------------------------------------------------
 # Load data

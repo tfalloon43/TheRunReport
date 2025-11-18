@@ -1,4 +1,4 @@
-# 14_Family.py
+# 15_Family.py
 # ------------------------------------------------------------
 # Build 'Family' column from 'species' using family_map in lookup_maps
 # Logic:
@@ -6,7 +6,7 @@
 #   • Write the corresponding family value.
 #   • If species is blank or not found in the map, leave blank.
 # Input  : 100_Data/csv_recent.csv
-# Output : 100_Data/14_Family_output.csv + updated csv_recent.csv
+# Output : 100_Data/15_Family_output.csv + updated csv_recent.csv
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -35,16 +35,16 @@ sys.path.append(data_path)
 from lookup_maps import family_map  # type: ignore
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "14_Family_output.csv"
+output_path = data_dir / "15_Family_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 14: Assigning Family from species...")
+print("🏗️  Step 15: Assigning Family from species...")
 
 # ------------------------------------------------------------
 # Load data
 # ------------------------------------------------------------
 if not input_path.exists():
-    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 13 first.")
+    raise FileNotFoundError(f"❌ Missing input file: {input_path}\nRun Step 14 first.")
 df = pd.read_csv(input_path)
 
 # ------------------------------------------------------------

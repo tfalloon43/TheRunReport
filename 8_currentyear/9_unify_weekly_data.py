@@ -4,23 +4,15 @@
 #         tables into a single unified long-format CSV.
 #
 # Input files:
-#   hatchspecies_h_weekly.csv
-#   hatchspecies_w_weekly.csv
-#   hatchfamily_h_weekly.csv
-#   hatchfamily_w_weekly.csv
-#   basinfamily_h_weekly.csv
-#   basinfamily_w_weekly.csv
-#   basinspecies_h_weekly.csv
-#   basinspecies_w_weekly.csv
+#   hatchspecies_[h/w/u]_weekly.csv
+#   hatchfamily_[h/w/u]_weekly.csv
+#   basinfamily_[h/w/u]_weekly.csv
+#   basinspecies_[h/w/u]_weekly.csv
 #
-#   hatchspecies_h_current_weekly.csv
-#   hatchspecies_w_current_weekly.csv
-#   hatchfamily_h_current_weekly.csv
-#   hatchfamily_w_current_weekly.csv
-#   basinfamily_h_current_weekly.csv
-#   basinfamily_w_current_weekly.csv
-#   basinspecies_h_current_weekly.csv
-#   basinspecies_w_current_weekly.csv
+#   hatchspecies_[h/w/u]_current_weekly.csv
+#   hatchfamily_[h/w/u]_current_weekly.csv
+#   basinfamily_[h/w/u]_current_weekly.csv
+#   basinspecies_[h/w/u]_current_weekly.csv
 #
 # Output:
 #   weekly_unified_long.csv
@@ -44,26 +36,26 @@ data_dir = project_root / "100_Data"
 # 🧩 File lists (aligned with your REAL filenames)
 # ------------------------------------------------------------
 
+stocks = ["h", "w", "u"]
+
 ten_year_files = [
-    "hatchspecies_h_weekly.csv",
-    "hatchspecies_w_weekly.csv",
-    "hatchfamily_h_weekly.csv",
-    "hatchfamily_w_weekly.csv",
-    "basinfamily_h_weekly.csv",
-    "basinfamily_w_weekly.csv",
-    "basinspecies_h_weekly.csv",
-    "basinspecies_w_weekly.csv",
+    f"hatchspecies_{s}_weekly.csv" for s in stocks
+] + [
+    f"hatchfamily_{s}_weekly.csv" for s in stocks
+] + [
+    f"basinfamily_{s}_weekly.csv" for s in stocks
+] + [
+    f"basinspecies_{s}_weekly.csv" for s in stocks
 ]
 
 current_year_files = [
-    "hatchspecies_h_current_weekly.csv",
-    "hatchspecies_w_current_weekly.csv",
-    "hatchfamily_h_current_weekly.csv",
-    "hatchfamily_w_current_weekly.csv",
-    "basinfamily_h_current_weekly.csv",
-    "basinfamily_w_current_weekly.csv",
-    "basinspecies_h_current_weekly.csv",
-    "basinspecies_w_current_weekly.csv",
+    f"hatchspecies_{s}_current_weekly.csv" for s in stocks
+] + [
+    f"hatchfamily_{s}_current_weekly.csv" for s in stocks
+] + [
+    f"basinfamily_{s}_current_weekly.csv" for s in stocks
+] + [
+    f"basinspecies_{s}_current_weekly.csv" for s in stocks
 ]
 
 all_files = ten_year_files + current_year_files
@@ -89,8 +81,14 @@ def parse_filename(name: str):
     else:
         category = "unknown"
 
-    # Stock (H/W)
-    stock = "H" if "_h" in base else "W"
+    # Stock (H/W/U)
+    parts = base.split("_")
+    stock_token = next((p for p in parts if p in {"h", "w", "u"}), None)
+    if stock_token is None:
+        print(f"⚠️ Unable to determine stock from filename '{name}' — defaulting to '?'")
+        stock = "?"
+    else:
+        stock = stock_token.upper()
 
     return category, stock, metric_type
 

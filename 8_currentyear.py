@@ -26,6 +26,9 @@ steps = [
     "6_tablegen_current.py",                # Generate empty 366-day tables
     "7_tablefill_current.py",               # Fill tables with current-year data
     "8_weeklydata_current.py",              # Aggregate daily → weekly totals
+    "9_unify_weekly_long.py",
+    "51_export.py",
+    "52_delete.py",
     # "50_check.py",                # Optional visualization/QA step
 ]
 

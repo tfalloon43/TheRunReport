@@ -72,10 +72,17 @@ for idx, row in df.iterrows():
     if pd.isna(end_date) or days_back <= 0:
         continue
 
+    year_start = pd.Timestamp(year=end_date.year, month=1, day=1)
+
     for i in range(days_back):
         day_label = f"Day{i+1}"
         if day_label in df.columns:
-            day_val = (end_date - timedelta(days=i)).strftime("%m-%d")
+            day_candidate = end_date - timedelta(days=i)
+            if day_candidate < year_start:
+                day_val = year_start.strftime("%m-%d")
+                df.at[idx, day_label] = day_val
+                break
+            day_val = day_candidate.strftime("%m-%d")
             df.at[idx, day_label] = day_val
 
 # ------------------------------------------------------------

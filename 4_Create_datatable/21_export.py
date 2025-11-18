@@ -1,6 +1,6 @@
-# 25_export.py
+# 21_export.py
 # ------------------------------------------------------------
-# Exports the final csv_recent.csv into the SQLite database.
+# Step 21: Export the final csv_recent.csv into the SQLite database.
 # Table name: create_datatable
 # Behavior:
 #   • Replaces the existing table if it already exists.
@@ -23,7 +23,7 @@ data_dir.mkdir(exist_ok=True)
 input_path = data_dir / "csv_recent.csv"
 db_path = data_dir / "pdf_data.sqlite"
 
-print("📤 Step 20: Exporting csv_recent.csv to SQLite database...")
+print("📤 Step 21: Exporting csv_recent.csv to SQLite database...")
 
 # ------------------------------------------------------------
 # Validate inputs

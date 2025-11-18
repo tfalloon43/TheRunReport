@@ -1,11 +1,11 @@
-# 9_TL5.py
+# 10_TL5.py
 # ------------------------------------------------------------
 # Build TL5 column:
 #   • If stock_presence_lower has a value → TL5 = text_line
 #   • Otherwise → TL5 = ""
 #
 # Input  : 100_data/csv_recent.csv
-# Output : 100_data/9_TL5_output.csv + csv_recent.csv (updated snapshot)
+# Output : 100_data/10_TL5_output.csv + csv_recent.csv (updated snapshot)
 # ------------------------------------------------------------
 
 import pandas as pd
@@ -19,10 +19,10 @@ data_dir = project_root / "100_data"
 data_dir.mkdir(exist_ok=True)
 
 input_path = data_dir / "csv_recent.csv"
-output_path = data_dir / "9_TL5_output.csv"
+output_path = data_dir / "10_TL5_output.csv"
 recent_path = data_dir / "csv_recent.csv"
 
-print("🏗️  Step 9: Creating TL5 (copy text_line if stock_presence_lower exists)...")
+print("🏗️  Step 10: Creating TL5 (copy text_line if stock_presence_lower exists)...")
 
 # ------------------------------------------------------------
 # Load data

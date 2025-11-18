@@ -5,6 +5,8 @@
 #   H current-year    → solid blue
 #   W 10-year avg     → faint red
 #   W current-year    → solid red
+#   U 10-year avg     → faint green
+#   U current-year    → solid green
 #
 # You select only:
 #   • category_type
@@ -23,6 +25,13 @@ from tkinter import ttk, messagebox
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+CURRENT_YEAR = datetime.now().year
+STOCK_CONFIGS = {
+    "H": {"color": "blue", "name": "Hatchery"},
+    "W": {"color": "red", "name": "Wild"},
+    "U": {"color": "green", "name": "U Fish"},
+}
 
 
 # ------------------------------------------------------------
@@ -157,29 +166,49 @@ class RunReportApp:
             )
             return df_local.sort_values("date_obj")
 
-        # Subsets
-        H_10 = prep(subset[(subset["stock"] == "H") & (subset["metric_type"] == "ten_year_avg")])
-        H_cur = prep(subset[(subset["stock"] == "H") & (subset["metric_type"] == "current_year")])
-        W_10 = prep(subset[(subset["stock"] == "W") & (subset["metric_type"] == "ten_year_avg")])
-        W_cur = prep(subset[(subset["stock"] == "W") & (subset["metric_type"] == "current_year")])
+        # Subsets grouped by stock/metric
+        stock_series = {}
+        for code in STOCK_CONFIGS.keys():
+            stock_series[code] = {
+                "ten_year": prep(subset[(subset["stock"] == code) & (subset["metric_type"] == "ten_year_avg")]),
+                "current": prep(subset[(subset["stock"] == code) & (subset["metric_type"] == "current_year")]),
+            }
 
         # Clear plot
         self.ax.clear()
 
-        # Plot H (blue)
-        if not H_10.empty:
-            self.ax.plot(H_10["date_obj"], H_10["value"], color="blue", alpha=0.35, linewidth=2, label="Hatchery — 10yr")
-        if not H_cur.empty:
-            self.ax.plot(H_cur["date_obj"], H_cur["value"], color="blue", linewidth=2.5, label="Hatchery — 2025")
+        # Plot each stock with consistent styling
+        active_names = []
+        for code, cfg in STOCK_CONFIGS.items():
+            series = stock_series.get(code, {})
+            ten_year = series.get("ten_year")
+            current = series.get("current")
 
-        # Plot W (red)
-        if not W_10.empty:
-            self.ax.plot(W_10["date_obj"], W_10["value"], color="red", alpha=0.35, linewidth=2, label="Wild — 10yr")
-        if not W_cur.empty:
-            self.ax.plot(W_cur["date_obj"], W_cur["value"], color="red", linewidth=2.5, label="Wild — 2025")
+            if ten_year is not None and not ten_year.empty:
+                self.ax.plot(
+                    ten_year["date_obj"],
+                    ten_year["value"],
+                    color=cfg["color"],
+                    alpha=0.35,
+                    linewidth=2,
+                    label=f"{cfg['name']} — 10yr",
+                )
+                active_names.append(cfg["name"])
+
+            if current is not None and not current.empty:
+                self.ax.plot(
+                    current["date_obj"],
+                    current["value"],
+                    color=cfg["color"],
+                    linewidth=2.5,
+                    label=f"{cfg['name']} — {CURRENT_YEAR}",
+                )
+                if cfg["name"] not in active_names:
+                    active_names.append(cfg["name"])
 
         # Labels / formatting
-        self.ax.set_title(f"{ident} ({cat}) — Hatchery & Wild", fontsize=14, pad=12)
+        title_suffix = ", ".join(active_names) if active_names else ", ".join(cfg["name"] for cfg in STOCK_CONFIGS.values())
+        self.ax.set_title(f"{ident} ({cat}) — {title_suffix}", fontsize=14, pad=12)
         self.ax.set_xlabel("Date (MM-DD)")
         self.ax.set_ylabel("Fish per Week")
         self.ax.grid(alpha=0.3)

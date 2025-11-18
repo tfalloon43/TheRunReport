@@ -43,15 +43,41 @@ if "date_iso" in df.columns:
 # ------------------------------------------------------------
 # Add as many dictionary blocks as needed
 manual_deletions = [
-    # Example:
      {
          "pdf_name": "WA_EscapementReport_04-15-2021.pdf",
          "facility": "Kalama Falls Hatchery",
          "species": "Summer Steelhead",
          "Stock": "H",
          "date_iso": "2021-03-19",
-         "Adult_Total": 1.0
+         "Adult_Total": 1.0,
          #ROW 16417
+     },
+     {
+         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "H",
+         "date_iso": "2025-01-21",
+         "Adult_Total": 20005,
+         #ROW 5587
+     },
+     {
+         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "W",
+         "date_iso": "2025-01-21",
+         "Adult_Total": 13204,
+         #ROW 6182
+     },
+     {
+         "pdf_name": "WA_EscapementReport_03-06-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "W",
+         "date_iso": "2025-02-27",
+         "Adult_Total": 13206,
+         #ROW 6182
      },
 ]
 

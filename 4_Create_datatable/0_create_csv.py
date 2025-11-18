@@ -22,6 +22,7 @@ data_dir.mkdir(exist_ok=True)
 
 db_path = data_dir / "pdf_data.sqlite"
 output_path = data_dir / "csv_recent.csv"
+compare_path = data_dir / "0_create_csv.csv"
 
 # ------------------------------------------------------------
 # Validate database path
@@ -43,12 +44,15 @@ except Exception as e:
 print(f"✅ Loaded {len(df):,} rows and {len(df.columns)} columns from z1_pdf_lines")
 
 # ------------------------------------------------------------
-# Save CSV
+# Save CSVs
 # ------------------------------------------------------------
 df.to_csv(output_path, index=False)
 print(f"💾 Exported → {output_path}")
 
+df.to_csv(compare_path, index=False)
+print(f"💾 Exported comparison snapshot → {compare_path}")
+
 # ------------------------------------------------------------
 # Done
 # ------------------------------------------------------------
-print("✅ Step 0 complete — csv_recent.csv created successfully in 100_Data.")
+print("✅ Step 0 complete — csv_recent.csv and 0_create_csv.csv created successfully in 100_Data.")

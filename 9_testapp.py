@@ -27,7 +27,7 @@ STEP_DIR = os.path.join(BASE_DIR, "9_testapp")
 # (You will define what each step does next.)
 # ------------------------------------------------------------
 steps = [
-    "1_starter.py",      # (placeholder)
+    #"1_starter.py",      # (placeholder)
     "2_testapp.py",        # (placeholder)
     #"3_generate_app_tables.py",       # (placeholder)
     #"4_export_app_ready_data.py",     # (placeholder)

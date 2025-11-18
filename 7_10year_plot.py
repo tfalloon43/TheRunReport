@@ -35,7 +35,7 @@ steps = [
     "6_tablegen.py",        # build empty stock tables for H/W/U
     "7_tablefill.py",       # fill tables with fishperday values
     "8_weeklydata.py",      # convert daily tables → weekly averages
-    "50_check.py",          # optional QA/visualization step
+    #"50_check.py",          # optional QA/visualization step
 ]
 
 # ------------------------------------------------------------

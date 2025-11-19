@@ -21,6 +21,7 @@
 #   MM-DD | identifier | category_type | stock | metric_type | value
 # ------------------------------------------------------------
 
+import numpy as np
 import pandas as pd
 from pathlib import Path
 
@@ -130,8 +131,80 @@ if len(records) == 0:
 
 unified = pd.concat(records, ignore_index=True)
 
-# Cleanup
-unified["value"] = pd.to_numeric(unified["value"], errors="coerce").fillna(0)
+# Cleanup & baseline handling
+unified["value"] = pd.to_numeric(unified["value"], errors="coerce")
+unified["date_obj"] = pd.to_datetime(
+    "2024-" + unified["MM-DD"], format="%Y-%m-%d", errors="coerce"
+)
+
+group_cols = ["category_type", "identifier", "stock", "metric_type"]
+
+
+def backfill_pre_counts(group: pd.DataFrame) -> pd.DataFrame:
+    """Set leading blanks to zero for current-year lines only."""
+    if group.name[3] != "current_year":
+        return group
+
+    group = group.copy().sort_values("date_obj")
+    valid_mask = group["value"].notna()
+    if not valid_mask.any():
+        return group
+
+    first_date = group.loc[valid_mask, "date_obj"].iloc[0]
+    leading_mask = group["date_obj"] < first_date
+    group.loc[leading_mask, "value"] = 0.0
+    return group
+
+
+def trim_trailing_placeholders(group: pd.DataFrame) -> pd.DataFrame:
+    """Drop placeholder zeros after the last real data point."""
+    if group.name[3] != "current_year":
+        return group
+
+    group = group.copy().sort_values("date_obj")
+    positive_mask = group["value"] > 0
+    if not positive_mask.any():
+        return group
+
+    last_date = group.loc[positive_mask, "date_obj"].iloc[-1]
+    trailing_mask = group["date_obj"] > last_date
+    group.loc[trailing_mask, "value"] = np.nan
+    return group
+
+
+def align_hw_end_dates(group: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ensure Hatchery & Wild current-year lines end together.
+
+    If one stock continues reporting later than the other, assume the missing
+    stock truly has zero fish (since hatcheries would still report wild fish).
+    """
+
+    if group.name[2] != "current_year":
+        return group
+
+    group = group.copy()
+    hw_mask = group["stock"].isin({"H", "W"})
+    valid_hw = group[hw_mask & group["value"].notna()]
+    if valid_hw.empty:
+        return group
+
+    max_hw_date = valid_hw["date_obj"].max()
+    fill_mask = hw_mask & group["date_obj"].le(max_hw_date) & group["value"].isna()
+    group.loc[fill_mask, "value"] = 0.0
+    return group
+
+
+unified = (
+    unified.groupby(group_cols, group_keys=False)
+    .apply(backfill_pre_counts)
+    .groupby(group_cols, group_keys=False)
+    .apply(trim_trailing_placeholders)
+    .groupby(["category_type", "identifier", "metric_type"], group_keys=False)
+    .apply(align_hw_end_dates)
+    .sort_values(group_cols + ["date_obj"])
+)
+unified = unified.drop(columns="date_obj")
 
 # ------------------------------------------------------------
 # Save Output

@@ -28,7 +28,7 @@ steps = [
     "8_weeklydata_current.py",              # Aggregate daily → weekly totals
     "9_unify_weekly_data.py",
     "51_export.py",
-    "52_delete.py",
+    #"52_delete.py",
     # "50_check.py",                # Optional visualization/QA step
 ]
 

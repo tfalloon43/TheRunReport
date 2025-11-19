@@ -5,7 +5,6 @@
 # ------------------------------------------------------------
 
 import pandas as pd
-import numpy as np
 from pathlib import Path
 
 print("📆 Step 8 (Current Year): Converting daily *_current tables to weekly totals (with 12-31 adjustment)...")
@@ -38,14 +37,14 @@ def make_weekly_sum(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values("MM-DD").reset_index(drop=True)
 
     numeric_cols = [c for c in df.columns if c != "MM-DD"]
-    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
 
     weekly_rows = []
     for start in range(0, len(df), 7):
         chunk = df.iloc[start:start + 7]
         if len(chunk) == 0:
             continue
-        summed = chunk[numeric_cols].sum(numeric_only=True).round(2)
+        summed = chunk[numeric_cols].sum(numeric_only=True, min_count=1).round(2)
         last_day = chunk["MM-DD"].iloc[-1].strftime("%m-%d")
         weekly_rows.append([last_day] + summed.tolist())
 
@@ -53,7 +52,7 @@ def make_weekly_sum(df: pd.DataFrame) -> pd.DataFrame:
 
     # Ensure numeric after creation
     for c in numeric_cols:
-        weekly_df[c] = pd.to_numeric(weekly_df[c], errors="coerce").fillna(0.0)
+        weekly_df[c] = pd.to_numeric(weekly_df[c], errors="coerce")
 
     # Apply 12-31 adjustment ×3.5
     if (weekly_df["MM-DD"] == "12-31").any():

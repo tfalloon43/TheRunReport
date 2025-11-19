@@ -25,6 +25,7 @@ from tkinter import ttk, messagebox
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.dates as mdates
 
 CURRENT_YEAR = datetime.now().year
 STOCK_CONFIGS = {
@@ -58,7 +59,7 @@ def load_data():
     df["category_type"] = df["category_type"].astype(str).str.strip()
     df["stock"] = df["stock"].astype(str).str.strip().str.upper()
     df["metric_type"] = df["metric_type"].astype(str).str.strip()
-    df["value"] = pd.to_numeric(df["value"], errors="coerce").fillna(0.0)
+    df["value"] = pd.to_numeric(df["value"], errors="coerce")
 
     return df
 
@@ -123,6 +124,12 @@ class RunReportApp:
         self.ax = self.fig.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.canvas.mpl_connect("motion_notify_event", self.on_hover)
+
+        status_frame = ttk.Frame(self.root, padding=(10, 5))
+        status_frame.pack(side=tk.TOP, fill=tk.X)
+        self.status_var = tk.StringVar(value="Hover over chart to see the date under your cursor.")
+        ttk.Label(status_frame, textvariable=self.status_var, anchor="w").pack(fill=tk.X)
 
     # --------------------------------------------------------
     # Event Handlers
@@ -216,6 +223,22 @@ class RunReportApp:
 
         self.fig.autofmt_xdate(rotation=45)
         self.canvas.draw()
+
+    def on_hover(self, event):
+        if not hasattr(self, "status_var"):
+            return
+
+        if event.inaxes != self.ax or event.xdata is None:
+            self.status_var.set("Date: —")
+            return
+
+        try:
+            dt = mdates.num2date(event.xdata)
+        except Exception:
+            self.status_var.set("Date: —")
+            return
+
+        self.status_var.set(f"Date: {dt.strftime('%b %d')}")
 
 
 # ------------------------------------------------------------

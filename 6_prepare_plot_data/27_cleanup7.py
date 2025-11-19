@@ -145,6 +145,22 @@ manual_deletions = [
          "date_iso": "2014-10-01",
          "Adult_Total": 7058,
      },
+     {
+         "pdf_name": "WA_EscapementReport_03-19-2020.pdf",
+         "facility": "Wynoochee River Dam Trap",
+         "species": "Winter-Late Steelhead",
+         "Stock": "H",
+         "date_iso": "2014-10-01",
+         "Adult_Total": 660,
+     },
+          {
+         "pdf_name": "WA_EscapementReport_05-11-2023.pdf",
+         "facility": "Tacoma Power – Wynoochee River",
+         "species": "Winter-Late Steelhead",
+         "Stock": "H",
+         "date_iso": "2023-04-27",
+         "Adult_Total": 1028,
+     },
 ]
 
 

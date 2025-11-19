@@ -234,7 +234,7 @@ basin_map = {
     "OMAK HATCHERY": "Okanogan River",
     "TWISP ACCLIMATION PD": "Twisp River",
     "COTTONWOOD CR POND":"Cottonwood Creek Pond",
-    "GRAYS RIVER WEIR":"Grays River Weir",
+    "GRAYS RIVER WEIR":"Grays River",
     "Eells Springs":"Skokomish River",
     
 }

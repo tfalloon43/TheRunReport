@@ -43,17 +43,110 @@ if "date_iso" in df.columns:
 # ------------------------------------------------------------
 # Add as many dictionary blocks as needed
 manual_deletions = [
-    # Example:
      {
          "pdf_name": "WA_EscapementReport_04-15-2021.pdf",
          "facility": "Kalama Falls Hatchery",
          "species": "Summer Steelhead",
          "Stock": "H",
          "date_iso": "2021-03-19",
-         "Adult_Total": 1.0
+         "Adult_Total": 1.0,
          #ROW 16417
      },
+     {
+         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "H",
+         "date_iso": "2025-01-21",
+         "Adult_Total": 20005,
+         #ROW 5587
+     },
+     {
+         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "W",
+         "date_iso": "2025-01-21",
+         "Adult_Total": 13204,
+         #ROW 6182
+     },
+     {
+         "pdf_name": "WA_EscapementReport_03-06-2025.pdf",
+         "facility": "Cowlitz Salmon Hatchery",
+         "species": "Type N Coho",
+         "Stock": "W",
+         "date_iso": "2025-02-27",
+         "Adult_Total": 13206,
+         #ROW 6182
+     },
+     {
+         "pdf_name": "WA_EscapementReport_11-06-2025.pdf",
+         "facility": "Soos Creek Hatchery",
+         "species": "Fall Chinook",
+         "Stock": "H",
+         "date_iso": "2025-10-20",
+         "Adult_Total": 11820,
+         #ROW 6182
+     },
+     {
+         "pdf_name": "WA_EscapementReport_03-20-2025.pdf",
+         "facility": "Eastbank Hatchery",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-03-10",
+         "Adult_Total": 161,
+         #ROW 6182
+     },
+     {
+         "pdf_name": "WA_EscapementReport_10-02-2025.pdf",
+         "facility": "Lewis River Hatchery",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-09-30",
+         "Adult_Total": 392,
+     },
+     {
+         "pdf_name": "WA_EscapementReport_10-09-2025.pdf",
+         "facility": "Lewis River Hatchery",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-10-07",
+         "Adult_Total": 394,
+     },
+     {
+         "pdf_name": "WA_EscapementReport_10-16-2025.pdf",
+         "facility": "Lewis River Hatchery",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-10-14",
+         "Adult_Total": 395,
+     },
+     {
+         "pdf_name": "WA_EscapementReport_09-18-2025.pdf",
+         "facility": "Merwin Dam FCF",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-09-17",
+         "Adult_Total": 3226,
+     },
+     {
+         "pdf_name": "WA_EscapementReport_09-25-2025.pdf",
+         "facility": "Merwin Dam FCF",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2025-09-23",
+         "Adult_Total": 3349,
+     },
+     {
+         "pdf_name": "WA_EscapementReport_10-02-2014.pdf",
+         "facility": "Merwin Dam FCF",
+         "species": "Summer Steelhead",
+         "Stock": "H",
+         "date_iso": "2014-10-01",
+         "Adult_Total": 7058,
+     },
 ]
+
 
 # ------------------------------------------------------------
 # Build deletion mask

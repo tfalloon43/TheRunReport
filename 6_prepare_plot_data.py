@@ -49,7 +49,7 @@ steps = [
     "31_iteration10.py",
     "32_prepare_plot_data_final.py",
     "50_export.py",
-    #"delete_csv.py"
+    "delete_csv.py"
  
 ]
 

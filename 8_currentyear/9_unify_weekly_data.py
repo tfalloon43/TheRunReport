@@ -23,6 +23,7 @@
 
 import numpy as np
 import pandas as pd
+from datetime import timedelta
 from pathlib import Path
 
 print("🔗 Step 9: Unifying weekly 10-year + current-year CSVs into long format...")
@@ -176,8 +177,9 @@ def align_hw_end_dates(group: pd.DataFrame) -> pd.DataFrame:
     """
     Ensure Hatchery & Wild current-year lines end together.
 
-    If one stock continues reporting later than the other, assume the missing
-    stock truly has zero fish (since hatcheries would still report wild fish).
+    If one stock continues reporting later than the other, allow a 15-day lag
+    before filling missing values with zero. This keeps the two lines within
+    15 days of each other without forcing an immediate zero drop.
     """
 
     if group.name[2] != "current_year":
@@ -189,9 +191,24 @@ def align_hw_end_dates(group: pd.DataFrame) -> pd.DataFrame:
     if valid_hw.empty:
         return group
 
-    max_hw_date = valid_hw["date_obj"].max()
-    fill_mask = hw_mask & group["date_obj"].le(max_hw_date) & group["value"].isna()
-    group.loc[fill_mask, "value"] = 0.0
+    last_by_stock = valid_hw.groupby("stock")["date_obj"].max()
+    latest_hw_date = last_by_stock.max()
+    lag_allowance = timedelta(days=15)
+    latest_allowed_gap_date = latest_hw_date - lag_allowance
+
+    for stock, last_date in last_by_stock.items():
+        # If this stock already reports within the allowed 15-day window, skip.
+        if last_date >= latest_allowed_gap_date:
+            continue
+
+        # Fill only up to the allowed gap date to avoid overshooting by more than 15 days.
+        fill_mask = (
+            (group["stock"] == stock)
+            & group["date_obj"].gt(last_date)
+            & group["date_obj"].le(latest_allowed_gap_date)
+            & group["value"].isna()
+        )
+        group.loc[fill_mask, "value"] = 0.0
     return group
 
 

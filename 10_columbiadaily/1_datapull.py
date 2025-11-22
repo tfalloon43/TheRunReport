@@ -1,236 +1,233 @@
-# 1_datapull.py
-# ------------------------------------------------------------
-# Step 1: Pull Columbia & Snake River daily counts (all dams/species)
-# and build one unified long-format CSV.
-#
-# Output → 100_Data/columbiadaily_long.csv
-# ------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+1_datapull.py
 
-import requests
-import pandas as pd
-from io import StringIO
+Pull Columbia/Snake River daily adult counts from FPC by:
+  - POSTing directly to the results endpoint with dam/species codes
+  - Extracting the CSV URL from the HTML
+  - Downloading the CSV
+  - Concatenating everything into one big CSV
+
+Output: 100_Data/columbiadaily_raw.csv
+"""
+
+import re
+import sys
 from pathlib import Path
 
-print("🐟 Step 1: Pulling Columbia/Snake daily counts into unified long-format table...")
+import pandas as pd
+import requests
 
-# ------------------------------------------------------------
-# 65 FLAT CONFIG ENTRIES (you fill in urls)
-# ------------------------------------------------------------
-SOURCES = [
+# ---------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------
 
-    # ============================
-    # Columbia River – Bonneville Dam (5)
-    # ============================
-    { "dam": "Bonneville Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Bonneville Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Bonneville Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Bonneville Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Bonneville Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
+BASE_URL = "https://www.fpc.org"
+RESULT_URL = f"{BASE_URL}/adults/R_dailyadultcountsgraph_resultsV6.php"
 
-    # ============================
-    # The Dalles Dam (5)
-    # ============================
-    { "dam": "The Dalles Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "The Dalles Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "The Dalles Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "The Dalles Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "The Dalles Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
+# Headers modeled off your real browser + HAR capture
+COMMON_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+        "Version/18.1.1 Safari/605.1.15"
+    ),
+    "Referer": f"{BASE_URL}/adults/Q_dailyadultcountsgraph2.php",
+    "Origin": BASE_URL,
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
-    # ============================
-    # John Day Dam (5)
-    # ============================
-    { "dam": "John Day Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "John Day Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "John Day Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "John Day Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "John Day Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
+# Dam codes -> nice names (your list)
+DAM_CODES = {
+    "BON": "Bonneville Dam",
+    "TDA": "The Dalles Dam",
+    "JDA": "John Day Dam",
+    "MCN": "McNary Dam",
+    "IHR": "Ice Harbor Dam",
+    "LMN": "Lower Monumental Dam",
+    "LGS": "Little Goose Dam",
+    "LGR": "Lower Granite Dam",
+    "PRD": "Priest Rapids Dam",
+    "WAN": "Wanapum Dam",
+    "RIS": "Rock Island Dam",
+    "RRH": "Rocky Reach Dam",
+    "WEL": "Wells Dam",
+    "WFA": "Willamette Falls Dam",
+}
 
-    # ============================
-    # McNary Dam (5)
-    # ============================
-    { "dam": "McNary Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "McNary Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "McNary Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "McNary Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "McNary Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
+# Species codes -> nice names (your list)
+SPECIES_CODES = {
+    "CHAD": "Chinook Adult",
+    "COAD": "Coho Adult",
+    "ST": "Steelhead",
+    "WST": "Unclipped Steelhead",
+    "SO": "Sockeye",
+}
 
-    # ============================
-    # Priest Rapids Dam (5)
-    # ============================
-    { "dam": "Priest Rapids Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Priest Rapids Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Priest Rapids Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Priest Rapids Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Priest Rapids Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # ============================
-    # Wanapum Dam (5)
-    # ============================
-    { "dam": "Wanapum Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wanapum Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wanapum Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wanapum Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wanapum Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # ============================
-    # Rock Island Dam (5)
-    # ============================
-    { "dam": "Rock Island Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rock Island Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rock Island Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rock Island Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rock Island Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # ============================
-    # Rocky Reach Dam (5)
-    # ============================
-    { "dam": "Rocky Reach Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rocky Reach Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rocky Reach Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rocky Reach Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Rocky Reach Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # ============================
-    # Wells Dam (5)
-    # ============================
-    { "dam": "Wells Dam", "river": "Columbia", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wells Dam", "river": "Columbia", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wells Dam", "river": "Columbia", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wells Dam", "river": "Columbia", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Wells Dam", "river": "Columbia", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # ============================
-    # Snake River – 4 dams × 5 species
-    # ============================
-
-    # Ice Harbor Dam
-    { "dam": "Ice Harbor Dam", "river": "Snake", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Ice Harbor Dam", "river": "Snake", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Ice Harbor Dam", "river": "Snake", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Ice Harbor Dam", "river": "Snake", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Ice Harbor Dam", "river": "Snake", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # Lower Monumental Dam
-    { "dam": "Lower Monumental Dam", "river": "Snake", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Monumental Dam", "river": "Snake", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Monumental Dam", "river": "Snake", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Monumental Dam", "river": "Snake", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Monumental Dam", "river": "Snake", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # Little Goose Dam
-    { "dam": "Little Goose Dam", "river": "Snake", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Little Goose Dam", "river": "Snake", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Little Goose Dam", "river": "Snake", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Little Goose Dam", "river": "Snake", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Little Goose Dam", "river": "Snake", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
-
-    # Lower Granite Dam
-    { "dam": "Lower Granite Dam", "river": "Snake", "species": "Chinook",             "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Granite Dam", "river": "Snake", "species": "Coho",                "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Granite Dam", "river": "Snake", "species": "Steelhead",           "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Granite Dam", "river": "Snake", "species": "Unclipped Steelhead", "run": "All", "stock": "Adult", "url": "" },
-    { "dam": "Lower Granite Dam", "river": "Snake", "species": "Sockeye",             "run": "All", "stock": "Adult", "url": "" },
+# 14 dams × 5 species = 70 combos (all cross-product)
+DAM_SPECIES_PAIRS = [
+    (dam_code, species_code)
+    for dam_code in DAM_CODES.keys()
+    for species_code in SPECIES_CODES.keys()
 ]
 
-# ------------------------------------------------------------
-# Paths
-# ------------------------------------------------------------
-project_root = Path(__file__).resolve().parents[1]
-data_dir     = project_root / "100_Data"
-data_dir.mkdir(exist_ok=True)
-output_path  = data_dir / "columbiadaily_long.csv"
+# Regex to find CSV URL inside the HTML
+CSV_REGEX = re.compile(r'/DataReqs/web/apps/adultsalmon/[^"]+\.csv')
 
-# ------------------------------------------------------------
-# Detect date column
-# ------------------------------------------------------------
-def detect_date_column(df):
-    for col in df.columns:
-        if str(col).strip().lower() == "date":
-            return col
-    return df.columns[0]
 
-# ------------------------------------------------------------
-# Main fetch loop
-# ------------------------------------------------------------
-frames = []
+# ---------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------
 
-for src in SOURCES:
-    dam     = src["dam"]
-    river   = src["river"]
-    species = src["species"]
-    run     = src["run"]
-    stock   = src["stock"]
-    url     = src["url"]
-
-    print(f"\n🌐 Fetching {dam} — {species} — URL: {url}")
-    if not url:
-        print("   ⚠️ No URL provided — skipping.")
-        continue
+def fetch_results_html(session: requests.Session, dam_code: str, species_code: str) -> str | None:
+    """
+    POST to the results page with dam/species and return HTML text.
+    Returns None on failure.
+    """
+    data = {"dam": dam_code, "species": species_code}
 
     try:
-        resp = requests.get(url, timeout=20)
-        resp.raise_for_status()
+        resp = session.post(RESULT_URL, headers=COMMON_HEADERS, data=data, timeout=30)
     except Exception as e:
-        print(f"   ❌ DOWNLOAD FAILED: {e}")
-        continue
+        print(f"      ❌ POST error: {e}")
+        return None
 
+    if resp.status_code != 200:
+        print(f"      ❌ POST status {resp.status_code}")
+        return None
+
+    return resp.text
+
+
+def extract_csv_url(html: str) -> str | None:
+    """
+    From the HTML of the results page, extract the CSV path using regex,
+    and return the full URL.
+    """
+    m = CSV_REGEX.search(html)
+    if not m:
+        return None
+
+    path = m.group(0)
+    # Ensure we have a leading slash
+    if not path.startswith("/"):
+        path = "/" + path
+
+    return BASE_URL + path
+
+
+def download_csv(session: requests.Session, csv_url: str) -> str | None:
+    """
+    Download CSV text from the given URL.
+    Returns CSV string or None on failure.
+    """
     try:
-        df = pd.read_csv(StringIO(resp.text))
+        resp = session.get(csv_url, headers={"User-Agent": COMMON_HEADERS["User-Agent"]}, timeout=30)
     except Exception as e:
-        print(f"   ❌ PARSE FAILED: {e}")
-        continue
+        print(f"      ❌ CSV GET error: {e}")
+        return None
 
-    if df.empty:
-        print("   ⚠️ EMPTY CSV — skipped.")
-        continue
+    if resp.status_code != 200:
+        print(f"      ❌ CSV GET status {resp.status_code}")
+        return None
 
-    date_col = detect_date_column(df)
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.dropna(subset=[date_col])
+    return resp.text
 
-    numeric_cols = df.select_dtypes(include="number").columns.tolist()
-    if not numeric_cols:
-        for c in df.columns:
-            if c != date_col:
-                df[c] = pd.to_numeric(df[c], errors="coerce")
-        numeric_cols = df.select_dtypes(include="number").columns.tolist()
 
-    if not numeric_cols:
-        print("   ⚠️ No numeric data — skipping.")
-        continue
+# ---------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------
 
-    long_df = df.melt(
-        id_vars=[date_col],
-        value_vars=numeric_cols,
-        var_name="metric_type",
-        value_name="value",
-    )
+def main() -> int:
+    print("🐟 Step 1: Pulling Columbia/Snake River daily counts via pure HTTP...\n")
 
-    long_df.rename(columns={date_col: "date"}, inplace=True)
+    # Project layout: this file is /10_columbiadaily/1_datapull.py
+    # Data folder is sibling: /100_Data
+    script_path = Path(__file__).resolve()
+    project_root = script_path.parents[1]
+    data_dir = project_root / "100_Data"
+    data_dir.mkdir(parents=True, exist_ok=True)
 
-    long_df["dam"]     = dam
-    long_df["river"]   = river
-    long_df["species"] = species
-    long_df["run"]     = run
-    long_df["stock"]   = stock
+    out_csv_path = data_dir / "columbiadaily_raw.csv"
 
-    long_df = long_df.dropna(subset=["value"])
-    long_df = long_df[["date", "dam", "river", "species", "run", "stock", "metric_type", "value"]]
+    all_frames: list[pd.DataFrame] = []
+    successful_pairs: list[tuple[str, str]] = []
 
-    print(f"   ✅ Added {len(long_df):,} rows")
-    frames.append(long_df)
+    with requests.Session() as session:
+        for dam_code, species_code in DAM_SPECIES_PAIRS:
+            dam_name = DAM_CODES[dam_code]
+            species_name = SPECIES_CODES[species_code]
 
-# ------------------------------------------------------------
-# Save final dataset
-# ------------------------------------------------------------
-if not frames:
-    raise RuntimeError("❌ No data collected from any source.")
+            print(f"🌐 Fetching: {dam_name} — {species_name} ({dam_code}/{species_code})")
 
-final = pd.concat(frames, ignore_index=True)
-final = final.sort_values(["river", "dam", "species", "date"]).reset_index(drop=True)
+            # 1) POST to results page
+            html = fetch_results_html(session, dam_code, species_code)
+            if not html:
+                print("   ⚠️ No HTML returned, skipping.\n")
+                continue
 
-final.to_csv(output_path, index=False)
+            # 2) Extract CSV URL from HTML
+            csv_url = extract_csv_url(html)
+            if not csv_url:
+                print("   ⚠️ No CSV link found in HTML, skipping.\n")
+                continue
 
-print("\n🎉 Unified Columbia/Snake dataset created!")
-print(f"📊 Total rows: {len(final):,}")
-print(f"📁 Saved → {output_path}")
+            print(f"   📎 CSV URL: {csv_url}")
+
+            # 3) Download CSV
+            csv_text = download_csv(session, csv_url)
+            if not csv_text:
+                print("   ⚠️ Could not download CSV, skipping.\n")
+                continue
+
+            # 4) Parse CSV into DataFrame (keep raw structure)
+            try:
+                df = pd.read_csv(pd.compat.StringIO(csv_text))
+            except AttributeError:
+                # pandas >= 2.0 removed compat.StringIO; fall back to io.StringIO
+                import io
+                df = pd.read_csv(io.StringIO(csv_text))
+            except Exception as e:
+                print(f"   ❌ pandas.read_csv error: {e}")
+                # Optionally, dump CSV to file for debugging
+                debug_path = data_dir / f"debug_{dam_code}_{species_code}.csv"
+                try:
+                    debug_path.write_text(csv_text, encoding="utf-8")
+                    print(f"   📝 Wrote raw CSV to {debug_path} for inspection.\n")
+                except Exception:
+                    print("   ⚠️ Also failed to write debug CSV.\n")
+                continue
+
+            # 5) Add metadata columns so you always know which dam/species
+            df["dam_code"] = dam_code
+            df["dam_name"] = dam_name
+            df["species_code"] = species_code
+            df["species_name"] = species_name
+
+            row_count = len(df)
+            print(f"   ✅ Parsed {row_count} rows.\n")
+
+            if row_count > 0:
+                all_frames.append(df)
+                successful_pairs.append((dam_code, species_code))
+
+    if not all_frames:
+        print("❌ No data collected for any dam/species. Nothing to write.")
+        return 1
+
+    # Concatenate everything into one big CSV
+    big_df = pd.concat(all_frames, ignore_index=True)
+
+    big_df.to_csv(out_csv_path, index=False)
+    print("----------------------------------------------------------------")
+    print(f"✅ Wrote {len(big_df)} total rows from {len(successful_pairs)} "
+          f"dam/species combos to:\n   {out_csv_path}")
+    print("----------------------------------------------------------------")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

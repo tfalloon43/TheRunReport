@@ -44,7 +44,7 @@ pipeline_steps = [
     # 4️⃣b  COLUMBIA BASIN ADULT COUNTS (external fetch)
     # =====================================================
     # Note: network required; uncomment to fetch latest FPC daily counts
-    #"10_columbiadata.py",
+    "10_columbiadata.py",
 
     # =====================================================
     # 5️⃣  QUALITY CHECKS (optional manual inspection)

@@ -61,11 +61,10 @@ SPECIES_CODES = {
     "CHAD": "Chinook Adult",
     "COAD": "Coho Adult",
     "ST": "Steelhead",
-    "WST": "Unclipped Steelhead",
     "SO": "Sockeye",
 }
 
-# 14 dams × 5 species = 70 combos (all cross-product)
+# 14 dams × 4 species = 56 combos (all cross-product)
 DAM_SPECIES_PAIRS = [
     (dam_code, species_code)
     for dam_code in DAM_CODES.keys()

@@ -19,37 +19,39 @@ pipeline_steps = [
     # =====================================================
     # 1️⃣  RAW DATA COLLECTION — from WDFW website
     # =====================================================
-    "100_Data/lookup_maps.py", #Step 0: Make sure directories are up to date
-    "1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
-    "2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+    #"100_Data/lookup_maps.py", #Step 0: Make sure directories are up to date
+    #"1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
+    #"2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
     # 2️⃣  DATABASE CREATION — populate pdf_data.sqlite
     # =====================================================
-    "3_MakeSQLiteTable.py",    # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
+    #"3_MakeSQLiteTable.py",    # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
 
     # =====================================================
     # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets
     # =====================================================
-    "4_create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
-    "5_data_clean.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
+    #"4_create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
+    #"5_data_clean.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
 
     # =====================================================
     # 4️⃣  DATA PREPARATION — ready for analysis / plotting
     # =====================================================
-    "6_prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
+    #"6_prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
     "7_10year_plot.py",        # Step 7: compute numbers to plot averages for all basins/species
     "8_currentyear.py",         # Step 8: compute numbers of current year for all basins/species
     # =====================================================
     # 4️⃣b  COLUMBIA BASIN ADULT COUNTS (external fetch)
     # =====================================================
     # Note: network required; uncomment to fetch latest FPC daily counts
+    "9_previousyear.py",
     "10_columbiadata.py",
+    "11_unify_fishcounts.py",
 
     # =====================================================
     # 5️⃣  QUALITY CHECKS (optional manual inspection)
     # =====================================================
-    "15_testapp.py"           # Step 9: Test application for QA checks (manual step)
+    #"15_testapp.py"           # Step 9: Test application for QA checks (manual step)
 
 ]
 

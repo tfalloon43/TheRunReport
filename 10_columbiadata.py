@@ -27,9 +27,9 @@ STEP_DIR = os.path.join(BASE_DIR, "10_columbiadata")   # <-- CORRECT FOLDER NAME
 # ------------------------------------------------------------
 steps = [
     "1_datapull.py",     # Pulls all Columbia/Snake dam daily data into unified CSV
-    # "2_clean.py",      # (future) cleaning script
-    # "3_transform.py",  # (future) transforms + metrics
-    # "4_export.py",     # (future) export to sqlite
+    "2_species_plot.py", # create species_plot column
+    "3_river.py",        # maps dam location to river
+    "4_reorg.py",        # changes order of columns and gets rid of redundant
     # "99_check.py",     # (optional) visual QA
 ]
 

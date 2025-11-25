@@ -1,4 +1,6 @@
 {
     "sqliteViewer.maxFileSize": 1000,
-
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/100_Data"
+    ]
 }

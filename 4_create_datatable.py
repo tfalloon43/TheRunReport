@@ -1,8 +1,22 @@
 # create_datatable.py
 # ------------------------------------------------------------
 # Master controller for modular create_datatable pipeline.
-# Ensures each step runs inside /create_datatable/
-# and prints full stdout/stderr for visibility.
+# Runs sequentially inside /4_create_datatable/ and surfaces stdout/stderr.
+# Flow (after PDF extraction):
+#   0) Initialize CSV scaffold
+#   1) Delete prior outputs
+#   2) Extract dates
+#   3-4) Normalize stock presence (upper/lower)
+#   5) Normalize hatchery names
+#   6-11) Apply TL2–TL6 transformations
+#   12) Stock BO handling
+#   13-15) Facility/species/family tagging
+#   16) ISO dates
+#   17-18) Stock + count calculations
+#   19) Basin tagging
+#   20) (optional) Stock corrections
+#   21) Export table
+#   22) Cleanup
 # ------------------------------------------------------------
 
 import subprocess
@@ -16,30 +30,29 @@ STEP_DIR = os.path.join(BASE_DIR, "4_create_datatable")
 
 # Ordered list of pipeline steps
 steps = [
-    "0_create_csv.py",
-    "1_delete.py",
-    "2_date_extract.py",
-    "3_stock_presence.py",
-    "4_stock_presence_lower.py",
-    "5_hatchery_name.py",
-    "6_TL2.py",
-    "7_TL3.py",
-    "8_count_data.py",
-    "9_TL4.py",
-    "10_TL5.py",
-    "11_TL6.py",
-    "12_Stock_BO.py",
-    "13_facility.py",
-    "14_species.py",
-    "15_Family.py",
-    "16_date_iso.py",
-    "17_stock.py",
-    "18_counts.py",
-    "19_basin.py",
-    #"20_stock_corrections.py", #if needed after plot data
-    "21_export.py",
-    "22_delete_csv.py",
-    
+    "0_create_csv.py",        # Initialize CSV scaffold
+    "1_delete.py",            # Clear prior outputs
+    "2_date_extract.py",      # Extract dates
+    "3_stock_presence.py",    # Stock presence (upper)
+    "4_stock_presence_lower.py",  # Stock presence (lower)
+    "5_hatchery_name.py",     # Normalize hatchery names
+    "6_TL2.py",               # TL2 transform
+    "7_TL3.py",               # TL3 transform
+    "8_count_data.py",        # Count data prep
+    "9_TL4.py",               # TL4 transform
+    "10_TL5.py",              # TL5 transform
+    "11_TL6.py",              # TL6 transform
+    "12_Stock_BO.py",         # Stock BO handling
+    "13_facility.py",         # Facility tagging
+    "14_species.py",          # Species tagging
+    "15_Family.py",           # Family tagging
+    "16_date_iso.py",         # ISO date format
+    "17_stock.py",            # Stock calculations
+    "18_counts.py",           # Count calculations
+    "19_basin.py",            # Basin tagging
+    #"20_stock_corrections.py", # Optional: post-plot corrections
+    "21_export.py",           # Export table
+    "22_delete_csv.py",       # Cleanup
 ]
 
 print("🚀 Starting create_datatable pipeline...\n")

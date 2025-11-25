@@ -25,16 +25,16 @@ data_dir = project_root / "100_Data"
 data_dir.mkdir(exist_ok=True)
 
 # ✅ Ensure lookup_maps.py can be imported
-data_path = str(data_dir.resolve())
-if data_path not in sys.path:
-    sys.path.insert(0, data_path)
+root_path = str(project_root.resolve())
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
 
 # Import basin_map
 try:
     from lookup_maps import basin_map  # type: ignore
     print("✅ Successfully imported basin_map from lookup_maps.py")
 except ModuleNotFoundError as e:
-    print("❌ Could not import lookup_maps.py — ensure it’s inside 100_Data/")
+    print("❌ Could not import lookup_maps.py — ensure it’s at project root")
     raise e
 
 # File paths

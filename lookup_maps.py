@@ -301,3 +301,20 @@ Stock_BO_corrections = {
     "RINGOLD SPRINGS HATCHERYP": "RINGOLD SPRINGS HATCHERY",
     # Add more as needed...
 }
+
+Columbia_or_Snake = {
+    "BON": "Columbia River",
+    "TDA": "Columbia River",
+    "JDA": "Columbia River",
+    "MCN": "Columbia River",
+    "PRD": "Columbia River",
+    "WAN": "Columbia River",
+    "RIS": "Columbia River",
+    "RRH": "Columbia River",
+    "WEL": "Columbia River",
+    "IHR": "Snake River",
+    "LMN": "Snake River",
+    "LGS": "Snake River",
+    "LGR": "Snake River",
+    "WFA": "Willamette River",
+}

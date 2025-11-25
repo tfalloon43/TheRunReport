@@ -26,16 +26,17 @@ STEP_DIR = os.path.join(BASE_DIR, "11_unify_fishcounts")
 # Ordered list of pipeline step scripts
 # ------------------------------------------------------------
 steps = [
-    # These scripts do NOT exist yet — we will build them next:
-    "1_unify_weekly.py",         # loads weekly_unified_long from 7_10year_plot
-    "2_delete_csvs.py",          # cleans out folder
-    "3_keep_basinfamily.py",     # loads weekly_previous_unified_long from 9_previousyear
-    "4_river.py",                # loads columbiadaily_long from 10_columbiadata
-    "5_Species_Plot.py",         # adds Species_Plot column
-    "6_stockmerge.py",
-    "7_deletestock.py",
-    "8_delete_columbia.py",
-    # "50_check_unify.py",       # optional — QA and plotting
+    "1_unify_weekly.py",         # merge weekly inputs (10yr/current/previous)
+    "2_delete_csvs.py",          # clean out old CSVs
+    "3_keep_basinfamily.py",     # keep only basinfamily category
+    "4_river.py",                # extract river from identifier
+    "5_Species_Plot.py",         # extract Species_Plot from identifier
+    "6_stockmerge.py",           # add stock=ONE aggregates
+    "7_deletestock.py",          # keep only stock=ONE
+    "8_delete_columbia.py",      # drop Columbia River rows
+    "9_Snohomish.py",            # add Snohomish aggregated rows
+    "10_reorg.py",               # reorder/trim columns
+    "20_export.py",              # export to sqlite
 ]
 
 # ------------------------------------------------------------

@@ -7,7 +7,13 @@
 #   (3) Extracting text → SQLite database
 #   (4) Creating structured escapement tables
 #   (5) Cleaning / filtering data
-#   (6) Preparing final ordered datasets for plotting
+#   (6) Preparing ordered datasets for plotting
+#   (7) Building 10-year trend tables
+#   (8) Computing current-year stats
+#   (9) Computing previous-year stats
+#   (10) Fetching Columbia Basin adult counts
+#   (11) Unifying hatchery + Columbia outputs
+#   (12) Optional QA app
 # -------------------------------------------------------
 
 import subprocess
@@ -17,41 +23,37 @@ pipeline_steps = [
 
 
     # =====================================================
-    # 1️⃣  RAW DATA COLLECTION — from WDFW website
+    # 1  RAW DATA COLLECTION — from WDFW website
     # =====================================================
-    #"100_Data/lookup_maps.py", #Step 0: Make sure directories are up to date
-    #"1_download_pdfs.py",      # Step 1: Download latest escapement PDFs to user's Desktop folder
-    #"2_rename_pdfs.py",        # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+    "lookup_maps.py",           # Step 0: Ensure lookup data/dirs exist
+    "1_download_pdfs.py",       # Step 1: Download latest escapement PDFs to user's Desktop folder
+    "2_Rename_pdfs.py",         # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
-    # 2️⃣  DATABASE CREATION — populate pdf_data.sqlite
+    # 2  DATABASE CREATION — populate pdf_data.sqlite
     # =====================================================
-    #"3_MakeSQLiteTable.py",    # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
+    "3_MakeSQLiteTable.py",     # Step 3: Extract every line of text from PDFs into pdf_data.sqlite (table: pdf_lines)
 
     # =====================================================
-    # 3️⃣  ESCAPEMENT DATA TABLES — build & clean datasets
+    # 3  ESCAPEMENT DATA TABLES — build & clean datasets
     # =====================================================
-    #"4_create_datatable.py",   # Step 4: Convert raw pdf_lines → structured escapement_data table
-    #"5_data_clean.py",       # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
+    "4_create_datatable.py",    # Step 4: Convert raw pdf_lines → structured escapement_data table
+    "5_data_clean.py",          # Step 5: Remove headers, duplicates, blank rows, invalid dates, etc.
 
     # =====================================================
-    # 4️⃣  DATA PREPARATION — ready for analysis / plotting
+    # 4  FISH COUNT DATA PREPARATION — ready for analysis / plotting
     # =====================================================
-    #"6_prepare_plot_data.py",  # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
-    "7_10year_plot.py",        # Step 7: compute numbers to plot averages for all basins/species
-    "8_currentyear.py",         # Step 8: compute numbers of current year for all basins/species
-    # =====================================================
-    # 4️⃣b  COLUMBIA BASIN ADULT COUNTS (external fetch)
-    # =====================================================
-    # Note: network required; uncomment to fetch latest FPC daily counts
-    "9_previousyear.py",
-    "10_columbiadata.py",
-    "11_unify_fishcounts.py",
+    "6_prepare_plot_data.py",   # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
+    "7_10year_plot.py",         # Step 7: Compute 10-year averages for all basins/species
+    "8_currentyear.py",         # Step 8: Compute current-year metrics for all basins/species
+    "9_previousyear.py",        # Step 9: Extract previous full year metrics
+    "10_columbiadata.py",       # Step 10: Fetch Columbia Basin daily adult counts from FPC
+    "11_unify_fishcounts.py",   # Step 11: Merge hatchery + Columbia datasets
 
     # =====================================================
-    # 5️⃣  QUALITY CHECKS (optional manual inspection)
+    # 5  QUALITY CHECKS (optional manual inspection)
     # =====================================================
-    #"15_testapp.py"           # Step 9: Test application for QA checks (manual step)
+    "15_testapp.py"            # Step 15: Test application for QA checks (manual step; file name kept for legacy)
 
 ]
 

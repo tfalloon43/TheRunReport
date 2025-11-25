@@ -25,7 +25,7 @@ input_path   = data_dir / "columbiadaily_raw.csv"
 output_path  = data_dir / "3_river.csv"
 recent_path  = data_dir / "columbiadaily_raw.csv"
 
-lookup_path  = data_dir / "lookup_maps.py"
+lookup_path  = project_root / "lookup_maps.py"
 
 # ------------------------------------------------------------
 # Load mapping from lookup_maps.py
@@ -34,7 +34,7 @@ if not lookup_path.exists():
     raise FileNotFoundError(f"❌ lookup_maps.py not found at: {lookup_path}")
 
 # Dynamically import lookup_maps.py
-sys.path.append(str(data_dir))
+sys.path.append(str(project_root))
 try:
     import lookup_maps
 except Exception as e:

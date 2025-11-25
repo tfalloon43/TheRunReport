@@ -23,17 +23,17 @@ import os
 # Project structure:
 # TheRunReport/
 # ├── 4_Create_datatable/
-# └── 100_Data/lookup_maps.py
+# └── lookup_maps.py (project root)
 # ------------------------------------------------------------
 
 project_root = Path(__file__).resolve().parents[1]
 data_dir = project_root / "100_Data"
 data_dir.mkdir(exist_ok=True)
 
-# 👇 Add 100_Data folder to Python path so lookup_maps can be found
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-data_path = os.path.join(project_root, "100_Data")
-sys.path.append(data_path)
+# 👇 Add project root to Python path so lookup_maps can be found
+project_root_str = str(project_root.resolve())
+if project_root_str not in sys.path:
+    sys.path.append(project_root_str)
 
 from lookup_maps import species_headers  # type: ignore
 

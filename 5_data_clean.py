@@ -1,8 +1,15 @@
 # 5_data_clean.py
 # ------------------------------------------------------------
 # Master controller for modular data_clean pipeline.
-# Ensures each step runs inside /5_Data_Clean/ and /5_Clean_Tables/
-# and prints full stdout/stderr for visibility.
+# Runs inside /5_data_clean/ to tidy escapement_data:
+#   1) Create initial CSV
+#   2) Drop blank dates
+#   3) Drop blank hatchery rows
+#   4) Reorder/normalize columns
+#   5) Remove duplicates
+#   6) Export cleaned table
+#   7) Cleanup
+# Prints full stdout/stderr for visibility.
 # ------------------------------------------------------------
 
 
@@ -17,14 +24,13 @@ STEP_DIR = os.path.join(BASE_DIR, "5_data_clean")
 
 # Ordered list of pipeline steps
 steps = [
-    "1_create_csv.py",
-    "2_date_blank.py",
-    "3_hatchery_blank.py",
-    "4_column_reorg.py",
-    "5_remove_duplicates.py",
-    "10_export.py",
-    "delete_csv.py",
-
+    "1_create_csv.py",       # Build initial cleaned CSV scaffold
+    "2_date_blank.py",       # Drop rows with blank/invalid dates
+    "3_hatchery_blank.py",   # Drop rows missing hatchery info
+    "4_column_reorg.py",     # Reorder/normalize columns
+    "5_remove_duplicates.py",# Remove duplicate rows
+    "10_export.py",          # Export cleaned table
+    "delete_csv.py",         # Cleanup temp CSVs
 ]
 
 print("🚀 Starting clean_data pipeline...\n")

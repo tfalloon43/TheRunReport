@@ -30,8 +30,6 @@ steps = [
     "6_tablegen_previous.py",           # Generate empty 366-day tables
     "7_tablefill_previous.py",          # Fill tables with previous-year data
     "8_weeklydata_previous.py",         # Aggregate daily → weekly totals
-    #"9_unify_weekly_previous.py",       # (optional) unify previous-year files
-    # "50_check_previous.py",          # optional visualization step
 ]
 
 # ------------------------------------------------------------

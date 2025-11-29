@@ -34,6 +34,7 @@ steps = [
     "6_stockmerge.py",           # add stock=ONE aggregates
     "7_deletestock.py",          # keep only stock=ONE
     "8_delete_columbia.py",      # drop Columbia River rows
+    "8.1_delete_snake.py",       # drop Snake River rows
     "9_Snohomish.py",            # add Snohomish aggregated rows
     "10_reorg.py",               # reorder/trim columns
     "20_export.py",              # export to sqlite

@@ -26,8 +26,8 @@ pipeline_steps = [
     # 1  RAW DATA COLLECTION — from WDFW website
     # =====================================================
     "lookup_maps.py",           # Step 0: Ensure lookup data/dirs exist
-    "1_download_pdfs.py",       # Step 1: Download latest escapement PDFs to user's Desktop folder
-    "2_Rename_pdfs.py",         # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
+    #"1_download_pdfs.py",       # Step 1: Download latest escapement PDFs to user's Desktop folder
+    #"2_Rename_pdfs.py",         # Step 2: Standardize file names (e.g., WA_EscapementReport_09-21-2023.pdf)
 
     # =====================================================
     # 2  DATABASE CREATION — populate pdf_data.sqlite
@@ -51,9 +51,15 @@ pipeline_steps = [
     "11_unify_fishcounts.py",   # Step 11: Merge hatchery + Columbia datasets
 
     # =====================================================
-    # 5  QUALITY CHECKS (optional manual inspection)
+    # 5  RIVER FLOW DATA COLLECTION - build, clean, and prepare to analyze
+    # =====================================================
+    "12_flows.py",              
+
+    # =====================================================
+    # 6  QUALITY CHECKS (optional manual inspection)
     # =====================================================
     "15_testapp.py"            # Step 15: Test application for QA checks (manual step; file name kept for legacy)
+
 
 ]
 

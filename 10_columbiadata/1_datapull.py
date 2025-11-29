@@ -53,7 +53,7 @@ DAM_CODES = {
     "RIS": "Rock Island Dam",
     "RRH": "Rocky Reach Dam",
     "WEL": "Wells Dam",
-    "WFA": "Willamette Falls Dam",
+    #"WFA": "Willamette Falls Dam",
 }
 
 # Species codes -> nice names (your list)

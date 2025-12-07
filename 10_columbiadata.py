@@ -30,7 +30,7 @@ steps = [
     "2_species_plot.py", # create species_plot column
     "3_river.py",        # maps dam location to river
     "4_reorg.py",        # changes order of columns and gets rid of redundant
-    # "99_check.py",     # (optional) visual QA
+    "5_id.py",           # Adds ID column and converts numeric columns
 ]
 
 # ------------------------------------------------------------

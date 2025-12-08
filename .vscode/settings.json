@@ -1,6 +1,7 @@
 {
     "sqliteViewer.maxFileSize": 1000,
     "python.analysis.extraPaths": [
-        "${workspaceFolder}/100_Data"
+        "${workspaceFolder}/100_Data",
+        "./runreport-backend/0_db"
     ]
 }

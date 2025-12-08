@@ -1,38 +1,27 @@
-import { useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [message, setMessage] = useState("Connecting to Supabase...")
+import Navbar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
+import ChartsPage from "./pages/ChartsPage";
+import ContactPage from "./pages/ContactPage";
 
-  useEffect(() => {
-    async function testConnection() {
-      // Try to read 1 row from your table
-      const { data, error } = await supabase
-        .from('columbia_data')   // <-- YOUR TABLE NAME
-        .select('*')
-        .limit(1)
+import "./App.css";
 
-      if (error) {
-        console.error("Supabase error:", error)
-        setMessage(`❌ Supabase connection FAILED: ${error.message}`)
-      } else {
-        console.log("Supabase data:", data)
-        setMessage("✅ Supabase connection SUCCESSFUL")
-      }
-    }
-
-    testConnection()
-  }, [])
-
+export default function App() {
   return (
-    <div style={{ 
-      fontFamily: "Arial", 
-      padding: "40px", 
-      fontSize: "24px" 
-    }}>
-      {message}
-    </div>
-  )
-}
+    <Router>
+      <div className="app-container">
+        <Navbar />
 
-export default App
+        {/* Main Page Content */}
+        <div className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/charts" element={<ChartsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
+  );
+}

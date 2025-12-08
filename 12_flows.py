@@ -43,7 +43,7 @@ steps = [
     "15_USGSflow.py",         # Pull historical flow data from USGS NWIS for all USGS gages in flows.csv
     "16_NOAAflow.py",         # Pull historical flow data from NOAA NWRFC
     "17_NOAAupdate.py",       # Add ID column + remove timestamp_dt from NOAA_flows
-    "50_USGStempupdate.py",   # Update USGS flows with temperature data
+    #"50_USGStempupdate.py",   # Update USGS flows with temperature data
 ]
 
 # ------------------------------------------------------------

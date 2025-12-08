@@ -37,7 +37,9 @@ steps = [
     "8.1_delete_snake.py",       # drop Snake River rows
     "9_Snohomish.py",            # add Snohomish aggregated rows
     "10_reorg.py",               # reorder/trim columns
+    "11_id.py",                  # add unique ID column
     "20_export.py",              # export to sqlite
+    "21_delete.py",              # clean up intermediate files
 ]
 
 # ------------------------------------------------------------

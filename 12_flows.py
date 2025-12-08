@@ -37,6 +37,13 @@ steps = [
     "9_NOAA_SiteID.py",       # Derive NOAA Site ID from the ID column in the catalog
     "10_NOAAmerge.py",        # Merge NOAA station candidates into 6_NOAAsites.csv with Site/Gage columns
     "11_merge2.py",           # Append NOAA Site/Gage pairs into flows.csv without overwriting USGS data
+    "12_flowpresence2.py",    # Update flow_presence flag based on NOAA data
+    "13_manualNOAA.py",       # Manually add any missing NOAA gages to flows.csv
+    "14_delete.py",           # Clean up unneeded CSV files in 100_Data
+    "15_USGSflow.py",         # Pull historical flow data from USGS NWIS for all USGS gages in flows.csv
+    "16_NOAAflow.py",         # Pull historical flow data from NOAA NWRFC
+    "17_NOAAupdate.py",       # Add ID column + remove timestamp_dt from NOAA_flows
+    #"50_USGStempupdate.py",   # Update USGS flows with temperature data
 ]
 
 # ------------------------------------------------------------

@@ -1,21 +1,20 @@
 """
-0_runner.py
+step0_runner.py
+-----------------------------------------
+Runs the Columbia_FishCounts ETL pipeline with a gating check:
 
-Runs the full Columbia_FishCounts ETL pipeline:
+    • Step 1 always runs (downloads raw data).
+    • If downloaded data is unchanged vs the DB, stop.
+    • Otherwise continue:
+        Step 2: add_species_plot()
+        Step 3: add_river_column()
+        Step 4: reorganize_daily_data()
+        Step 5: add_id_and_convert_numeric()
 
-    Step 1: fetch_columbia_daily()
-    Step 2: add_species_plot()
-    Step 3: add_river_column()
-    Step 4: reorganize_daily_data()
-    Step 5: add_id_and_convert_numeric()
-
-Finally writes the cleaned DataFrame to:
-
-    runreport-backend/0_db/local.db
-
-using SQLiteManager.
+Writes the cleaned DataFrame to runreport-backend/0_db/local.db.
 """
 
+import hashlib
 import sys
 from pathlib import Path
 import pandas as pd
@@ -46,6 +45,19 @@ from sqlite_manager import SQLiteManager
 
 
 # ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
+def df_hash(df: pd.DataFrame) -> str:
+    """
+    Produce a stable hash for a DataFrame by sorting columns/rows first.
+    """
+    cols = sorted(df.columns)
+    ordered = df[cols].sort_values(by=cols).reset_index(drop=True)
+    data = ordered.to_csv(index=False).encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+
+# ------------------------------------------------------------
 # MAIN PIPELINE FUNCTION
 # ------------------------------------------------------------
 def run_columbia_pipeline():
@@ -53,12 +65,12 @@ def run_columbia_pipeline():
 
     # Step 1 — download + raw CSVs
     print("👉 Step 1: Fetching raw FPC data...")
-    df = fetch_columbia_daily()
-    print(f"   ✔ Retrieved {len(df):,} raw rows")
+    df_raw = fetch_columbia_daily()
+    print(f"   ✔ Retrieved {len(df_raw):,} raw rows")
 
     # Step 2 — Species_Plot
     print("👉 Step 2: Adding Species_Plot...")
-    df = add_species_plot(df)
+    df = add_species_plot(df_raw)
 
     # Step 3 — river column
     print("👉 Step 3: Mapping dam_code → river...")
@@ -71,6 +83,25 @@ def run_columbia_pipeline():
     # Step 5 — add ID, enforce numeric types
     print("👉 Step 5: Adding ID + converting numeric columns...")
     df = add_id_and_convert_numeric(df)
+
+    # Gating: compare final transformed data to existing table
+    db = SQLiteManager("local.db")
+    try:
+        existing = db.fetch_df("SELECT * FROM Columbia_FishCounts")
+        old_hash = df_hash(existing)
+        print(f"🔑 Existing table hash: {old_hash[:12]}...")
+    except Exception:
+        old_hash = None
+        print("ℹ️ No existing Columbia_FishCounts table found (or unreadable).")
+
+    new_hash = df_hash(df)
+    print(f"🔑 New data hash:      {new_hash[:12]}...")
+
+    if old_hash and new_hash == old_hash:
+        print("✔ No change detected — skipping write.\n")
+        return None
+
+    print("🆕 Change detected — writing updated table.")
 
     print("\n🎉 Pipeline complete!")
     print(f"   Final row count: {len(df):,}")
@@ -97,5 +128,6 @@ def write_to_local_db(df: pd.DataFrame, table_name="Columbia_FishCounts"):
 # ------------------------------------------------------------
 if __name__ == "__main__":
     final_df = run_columbia_pipeline()
-    write_to_local_db(final_df)
-    print("🏁 ETL job finished successfully.")
+    if final_df is not None:
+        write_to_local_db(final_df)
+        print("🏁 ETL job finished successfully.")

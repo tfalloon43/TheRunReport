@@ -1,0 +1,114 @@
+# step48_iteration10.py
+# ------------------------------------------------------------
+# Step 48 (v10): Final plotting prep columns
+#
+# Adds the final derived plotting columns to Escapement_PlotPipeline:
+#   day_diff_plot
+#   adult_diff_plot
+#   Biological_Year
+#   Biological_Year_Length
+#
+# All work is performed directly inside the database.
+# ------------------------------------------------------------
+
+import sqlite3
+import pandas as pd
+from pathlib import Path
+
+print("🏗️ Step 48: Building final plotting columns (day_diff_plot → Biological_Year_Length)...")
+
+# ------------------------------------------------------------
+# DB PATH
+# ------------------------------------------------------------
+project_root = Path(__file__).resolve().parents[1]
+db_path = project_root / "0_db" / "local.db"
+print(f"🗄️ Using DB → {db_path}")
+
+# ------------------------------------------------------------
+# LOAD DATA FROM DB
+# ------------------------------------------------------------
+conn = sqlite3.connect(db_path)
+df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
+
+print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
+
+# ------------------------------------------------------------
+# REQUIRED COLUMNS
+# ------------------------------------------------------------
+required_cols = [
+    "facility", "species", "Stock", "Stock_BO",
+    "date_iso", "Adult Total",
+    "by_adult_f", "by_adult_f_length",
+    "day_diff_f", "adult_diff_f"
+]
+
+missing = [c for c in required_cols if c not in df.columns]
+if missing:
+    raise ValueError(f"❌ Missing columns required for plotting prep: {missing}")
+
+# ------------------------------------------------------------
+# NORMALIZE TYPES
+# ------------------------------------------------------------
+df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+
+group_cols = ["facility", "species", "Stock", "Stock_BO"]
+
+# ------------------------------------------------------------
+# SORT CONSISTENTLY
+# ------------------------------------------------------------
+df = df.sort_values(group_cols + ["date_iso"]).reset_index(drop=True)
+
+# ============================================================
+# STEP 1: day_diff_plot
+# ============================================================
+print("🔹 Creating day_diff_plot...")
+
+df["day_diff_plot"] = df["day_diff_f"]
+
+# Identify biological year transitions
+df["prev_by"] = df.groupby(group_cols)["by_adult_f"].shift(1)
+boundary_mask = df["by_adult_f"] == (df["prev_by"] + 1)
+
+df.loc[boundary_mask, "day_diff_plot"] = 7
+boundary_count = int(boundary_mask.sum())
+
+df = df.drop(columns=["prev_by"])
+
+# ============================================================
+# STEP 2: adult_diff_plot
+# ============================================================
+print("🔹 Creating adult_diff_plot...")
+
+df["adult_diff_plot"] = df["adult_diff_f"]
+df.loc[df["adult_diff_f"] < 0, "adult_diff_plot"] = df["Adult Total"]
+
+# ============================================================
+# STEP 3: Biological_Year
+# ============================================================
+df["Biological_Year"] = df["by_adult_f"]
+
+# ============================================================
+# STEP 4: Biological_Year_Length
+# ============================================================
+df["Biological_Year_Length"] = df["by_adult_f_length"]
+
+# ============================================================
+# SAVE BACK TO DB
+# ============================================================
+print("💾 Writing plotting prep columns back to Escapement_PlotPipeline...")
+
+df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
+conn.close()
+
+# ------------------------------------------------------------
+# SUMMARY
+# ------------------------------------------------------------
+print("✅ Iteration 10 complete!")
+print("📊 Added columns:")
+print("   • day_diff_plot")
+print("   • adult_diff_plot")
+print("   • Biological_Year")
+print("   • Biological_Year_Length")
+print(f"🔢 Total rows: {len(df):,}")
+print(f"🔁 Biological year transitions (day_diff_plot=7): {boundary_count:,}")

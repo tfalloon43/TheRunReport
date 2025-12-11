@@ -41,6 +41,7 @@ def main():
     print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
     ordered_columns = [
+        "index",
         "pdf_name",
         "facility",
         "basin",
@@ -49,31 +50,34 @@ def main():
         "Stock_BO",
         "Stock",
         "date_iso",
-        "Adult Total",
-        "Jack Total",
-        "Total Eggtake",
-        "On Hand Adults",
-        "On Hand Jacks",
-        "Lethal Spawned",
-        "Live Spawned",
+        "Adult_Total",
+        "Jack_Total",
+        "Total_Eggtake",
+        "On_Hand_Adults",
+        "On_Hand_Jacks",
+        "Lethal_Spawned",
+        "Live_Spawned",
         "Released",
-        "Live Shipped",
+        "Live_Shipped",
         "Mortality",
         "Surplus",
+        "pdf_date",
+        "day_diff_plot",
+        "adult_diff_plot",
+        "Biological_Year",
+        "Biological_Year_Length",
     ]
 
+    # Normalize any space-delimited names back to underscore schema
     rename_map = {
-        "Adult_Total": "Adult Total",
-        "Jack_Total": "Jack Total",
-        "Total_Eggtake": "Total Eggtake",
-        "On_Hand_Adults": "On Hand Adults",
-        "On_Hand_Jacks": "On Hand Jacks",
-        "Lethal_Spawned": "Lethal Spawned",
-        "Live_Spawned": "Live Spawned",
-        "Released": "Released",
-        "Live_Shipped": "Live Shipped",
-        "Mortality": "Mortality",
-        "Surplus": "Surplus",
+        "Adult Total": "Adult_Total",
+        "Jack Total": "Jack_Total",
+        "Total Eggtake": "Total_Eggtake",
+        "On Hand Adults": "On_Hand_Adults",
+        "On Hand Jacks": "On_Hand_Jacks",
+        "Lethal Spawned": "Lethal_Spawned",
+        "Live Spawned": "Live_Spawned",
+        "Live Shipped": "Live_Shipped",
     }
 
     df = df.rename(columns=rename_map)

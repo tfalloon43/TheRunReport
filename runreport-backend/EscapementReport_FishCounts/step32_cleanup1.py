@@ -40,12 +40,25 @@ conn = sqlite3.connect(db_path)
 df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # VALIDATE REQUIRED COLUMNS
 # ------------------------------------------------------------
 required_cols = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "x_count", "Adult Total"
+    "date_iso", "x_count", "Adult_Total"
 ]
 
 missing = [c for c in required_cols if c not in df.columns]
@@ -57,7 +70,7 @@ if missing:
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
 df["x_count"] = pd.to_numeric(df["x_count"], errors="coerce").fillna(0).astype(int)
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
 
@@ -86,7 +99,7 @@ def process_group(g):
         cluster = g.loc[i:j]
 
         # Mark duplicates (except earliest)
-        dupes = cluster.duplicated(subset=["Adult Total"], keep="first")
+        dupes = cluster.duplicated(subset=["Adult_Total"], keep="first")
 
         for idx in cluster.index[dupes]:
             keep_mask[idx] = False

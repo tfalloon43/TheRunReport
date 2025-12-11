@@ -128,7 +128,7 @@ def main():
 
             updates += conn.total_changes
 
-            print(f"   ✔ {old_name} → {new_name}")
+            #print(f"   ✔ {old_name} → {new_name}")
 
         conn.commit()
 

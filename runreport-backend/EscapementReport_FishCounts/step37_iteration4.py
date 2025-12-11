@@ -37,13 +37,25 @@ print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 # ------------------------------------------------------------
 # REQUIRED COLUMNS
 # ------------------------------------------------------------
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 required_cols = [
     "facility",
     "species",
     "Stock",
     "Stock_BO",
     "date_iso",
-    "Adult Total"
+    "Adult_Total"
 ]
 
 missing = [c for c in required_cols if c not in df.columns]
@@ -54,7 +66,7 @@ if missing:
 # NORMALIZE TYPES
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
 
@@ -78,7 +90,7 @@ df["day_diff4"] = (
 # ============================================================
 print("🔹 Calculating adult_diff4...")
 
-df["adult_diff4"] = df.groupby(group_cols)["Adult Total"].diff()
+df["adult_diff4"] = df.groupby(group_cols)["Adult_Total"].diff()
 
 # Mark group boundaries
 for col in group_cols:
@@ -86,8 +98,8 @@ for col in group_cols:
 
 df["group_changed"] = df[[f"{col}_changed" for col in group_cols]].any(axis=1)
 
-df.loc[df["group_changed"], "adult_diff4"] = df.loc[df["group_changed"], "Adult Total"]
-df["adult_diff4"] = df["adult_diff4"].fillna(df["Adult Total"])
+df.loc[df["group_changed"], "adult_diff4"] = df.loc[df["group_changed"], "Adult_Total"]
+df["adult_diff4"] = df["adult_diff4"].fillna(df["Adult_Total"])
 
 df = df.drop(columns=[f"{col}_changed" for col in group_cols] + ["group_changed"])
 

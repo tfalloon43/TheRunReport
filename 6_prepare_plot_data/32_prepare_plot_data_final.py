@@ -76,6 +76,31 @@ df_final = df[keep_cols].copy()
 after_cols = len(df_final.columns)
 
 # ------------------------------------------------------------
+# Coerce count columns to integer (nullable)
+# ------------------------------------------------------------
+int_columns = [
+    "Adult_Total",
+    "Jack_Total",
+    "Total_Eggtake",
+    "On_Hand_Adults",
+    "On_Hand_Jacks",
+    "Lethal_Spawned",
+    "Live_Spawned",
+    "Released",
+    "Live_Shipped",
+    "Mortality",
+    "Surplus",
+]
+
+for col in int_columns:
+    if col in df_final.columns:
+        df_final[col] = (
+            pd.to_numeric(df_final[col], errors="coerce")
+            .round(0)
+            .astype("Int64")
+        )
+
+# ------------------------------------------------------------
 # Save final dataset
 # ------------------------------------------------------------
 df_final.to_csv(output_path, index=False)

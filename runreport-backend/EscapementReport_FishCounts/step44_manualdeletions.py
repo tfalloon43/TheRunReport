@@ -27,6 +27,19 @@ conn = sqlite3.connect(db_path)
 df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # Normalize dates
 # ------------------------------------------------------------
@@ -43,7 +56,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2021-03-19",
-        "Adult Total": 1.0,
+        "Adult_Total": 1.0,
     },
     {
         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
@@ -51,7 +64,7 @@ manual_deletions = [
         "species": "Type N Coho",
         "Stock": "H",
         "date_iso": "2025-01-21",
-        "Adult Total": 20005,
+        "Adult_Total": 20005,
     },
     {
         "pdf_name": "WA_EscapementReport_01-30-2025.pdf",
@@ -59,7 +72,7 @@ manual_deletions = [
         "species": "Type N Coho",
         "Stock": "W",
         "date_iso": "2025-01-21",
-        "Adult Total": 13204,
+        "Adult_Total": 13204,
     },
     {
         "pdf_name": "WA_EscapementReport_03-06-2025.pdf",
@@ -67,7 +80,7 @@ manual_deletions = [
         "species": "Type N Coho",
         "Stock": "W",
         "date_iso": "2025-02-27",
-        "Adult Total": 13206,
+        "Adult_Total": 13206,
     },
     {
         "pdf_name": "WA_EscapementReport_11-06-2025.pdf",
@@ -75,7 +88,7 @@ manual_deletions = [
         "species": "Fall Chinook",
         "Stock": "H",
         "date_iso": "2025-10-20",
-        "Adult Total": 11820,
+        "Adult_Total": 11820,
     },
     {
         "pdf_name": "WA_EscapementReport_03-20-2025.pdf",
@@ -83,7 +96,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-03-10",
-        "Adult Total": 161,
+        "Adult_Total": 161,
     },
     {
         "pdf_name": "WA_EscapementReport_10-02-2025.pdf",
@@ -91,7 +104,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-09-30",
-        "Adult Total": 392,
+        "Adult_Total": 392,
     },
     {
         "pdf_name": "WA_EscapementReport_10-09-2025.pdf",
@@ -99,7 +112,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-10-07",
-        "Adult Total": 394,
+        "Adult_Total": 394,
     },
     {
         "pdf_name": "WA_EscapementReport_10-16-2025.pdf",
@@ -107,7 +120,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-10-14",
-        "Adult Total": 395,
+        "Adult_Total": 395,
     },
     {
         "pdf_name": "WA_EscapementReport_09-18-2025.pdf",
@@ -115,7 +128,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-09-17",
-        "Adult Total": 3226,
+        "Adult_Total": 3226,
     },
     {
         "pdf_name": "WA_EscapementReport_09-25-2025.pdf",
@@ -123,7 +136,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2025-09-23",
-        "Adult Total": 3349,
+        "Adult_Total": 3349,
     },
     {
         "pdf_name": "WA_EscapementReport_10-02-2014.pdf",
@@ -131,7 +144,7 @@ manual_deletions = [
         "species": "Summer Steelhead",
         "Stock": "H",
         "date_iso": "2014-10-01",
-        "Adult Total": 7058,
+        "Adult_Total": 7058,
     },
     {
         "pdf_name": "WA_EscapementReport_03-19-2020.pdf",
@@ -139,7 +152,7 @@ manual_deletions = [
         "species": "Winter-Late Steelhead",
         "Stock": "H",
         "date_iso": "2014-10-01",
-        "Adult Total": 660,
+        "Adult_Total": 660,
     },
     {
         "pdf_name": "WA_EscapementReport_05-11-2023.pdf",
@@ -147,7 +160,7 @@ manual_deletions = [
         "species": "Winter-Late Steelhead",
         "Stock": "H",
         "date_iso": "2023-04-27",
-        "Adult Total": 1028,
+        "Adult_Total": 1028,
     },
 ]
 

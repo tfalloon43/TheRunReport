@@ -45,7 +45,7 @@ final_columns = [
     "Stock_BO",
     "Stock",
     "date_iso",
-    "Adult Total",          # DB field equivalent of Adult_Total
+    "Adult_Total",
     "Jack_Total",
     "Total_Eggtake",
     "On_Hand_Adults",
@@ -66,15 +66,39 @@ final_columns = [
 # ------------------------------------------------------------
 # Validate presence
 # ------------------------------------------------------------
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
+if "index" not in df.columns:
+    df.insert(0, "index", range(1, len(df) + 1))
+
 missing_cols = [c for c in final_columns if c not in df.columns]
 if missing_cols:
     print(f"⚠️ Warning: Missing expected final columns: {missing_cols}")
 
-# keep only those that exist
 keep_cols = [c for c in final_columns if c in df.columns]
-
 df_final = df[keep_cols].copy()
 after_cols = len(df_final.columns)
+
+# ------------------------------------------------------------
+# Normalize date columns to YYYY-MM-DD strings (drop time)
+# ------------------------------------------------------------
+for col in ("date_iso", "pdf_date"):
+    if col in df_final.columns:
+        df_final[col] = (
+            pd.to_datetime(df_final[col], errors="coerce")
+            .dt.strftime("%Y-%m-%d")
+            .fillna("")
+        )
 
 # ------------------------------------------------------------
 # WRITE TRIMMED DATA BACK TO DB

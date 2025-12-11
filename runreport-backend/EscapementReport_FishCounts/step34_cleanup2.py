@@ -35,12 +35,25 @@ df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # CHECK REQUIRED COLUMNS
 # ------------------------------------------------------------
 required_cols = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "x_count2", "Adult Total"
+    "date_iso", "x_count2", "Adult_Total"
 ]
 
 missing = [c for c in required_cols if c not in df.columns]
@@ -51,7 +64,7 @@ if missing:
 # TYPE NORMALIZATION
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 df["x_count2"] = pd.to_numeric(df["x_count2"], errors="coerce").fillna(0).astype(int)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
@@ -60,7 +73,7 @@ group_cols = ["facility", "species", "Stock", "Stock_BO"]
 # CORE CLEANUP LOGIC
 # ------------------------------------------------------------
 def condense_x_clusters(g):
-    """Condense clusters with x_count2 ≥ 3 and Adult Total within ±2%."""
+    """Condense clusters with x_count2 ≥ 3 and Adult_Total within ±2%."""
     g = g.sort_values("date_iso").reset_index(drop=True)
     n = len(g)
     drop_idx = set()
@@ -76,8 +89,8 @@ def condense_x_clusters(g):
                 j += 1
 
             cluster = g.iloc[i:j]
-            max_val = cluster["Adult Total"].max()
-            min_val = cluster["Adult Total"].min()
+            max_val = cluster["Adult_Total"].max()
+            min_val = cluster["Adult_Total"].min()
 
             # Check ±2% spread
             if max_val > 0 and ((max_val - min_val) / max_val) <= 0.02:

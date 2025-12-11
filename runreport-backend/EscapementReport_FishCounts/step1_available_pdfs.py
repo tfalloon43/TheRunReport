@@ -111,6 +111,13 @@ def urls_needing_download(db: SQLiteManager) -> list[str]:
 BASE_URL = "https://wdfw.wa.gov/fishing/management/hatcheries/escapement"
 
 def discover_pdf_urls() -> list[str]:
+    """
+    Scrape the page and collect any link that points to a PDF.
+
+    Robustness tweaks:
+        • Strip query/fragment before checking for ".pdf"
+        • Capture any href that CONTAINS ".pdf" (case-insensitive)
+    """
     print(f"🌐 Fetching: {BASE_URL}")
     resp = requests.get(BASE_URL, timeout=20)
     resp.raise_for_status()
@@ -118,13 +125,30 @@ def discover_pdf_urls() -> list[str]:
     soup = BeautifulSoup(resp.text, "html.parser")
 
     pdfs = []
+    skipped = []
+
     for link in soup.find_all("a", href=True):
         href = link["href"]
-        if href.lower().endswith(".pdf"):
+        # Strip query/fragment for extension detection
+        clean_href = href.split("?", 1)[0].split("#", 1)[0]
+        lower_href = clean_href.lower()
+
+        if ".pdf" in lower_href:
             if href.startswith("http"):
                 pdfs.append(href)
             else:
                 pdfs.append(requests.compat.urljoin(BASE_URL, href))
+        else:
+            # Keep a short list of skipped hrefs for debugging
+            if ".pdf" in href.lower():
+                skipped.append(href)
+
+    if skipped:
+        print(f"⚠️  Skipped {len(skipped)} hrefs containing '.pdf' after query/fragment stripping (likely unexpected format):")
+        for h in skipped[:5]:
+            print(f"   • {h}")
+        if len(skipped) > 5:
+            print("   • …")
 
     return pdfs
 

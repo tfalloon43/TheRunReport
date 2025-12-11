@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 # csvcompare.py
 #
-# Compare:
-#   A = csv_plotdata.csv
-#   B = Escapement_PlotPipeline.csv
-#
-# Normalizes:
-#   - column name aliases (Adult Total -> Adult_Total, etc. in B)
-#   - date formats for date_iso + pdf_date
-# Aligns rows by `index` and reports differences.
+# Purpose:
+#   From file A, list rows that do not appear anywhere in file B
+#   (match is on all shared columns, regardless of order).
 #
 # Output:
 #   /Users/thomasfalloon/Desktop/TheRunReport/diff.csv
@@ -58,6 +53,8 @@ if rename_map:
 for df_name, df in (("A", A), ("B", B)):
     for col in ("date_iso", "pdf_date"):
         if col in df.columns:
+            # Strip any time component so dates like 2016-11-30 00:00:00
+            # compare equal to 2016-11-30.
             df[col] = (
                 pd.to_datetime(df[col], errors="coerce")
                 .dt.strftime("%Y-%m-%d")
@@ -65,101 +62,44 @@ for df_name, df in (("A", A), ("B", B)):
             )
 
 # ------------------------------------------------------------
-# Determine shared columns & ensure 'index' exists
+# Shared columns to use for matching
 # ------------------------------------------------------------
 shared_cols = sorted(set(A.columns) & set(B.columns))
-if "index" not in shared_cols:
-    raise SystemExit("❌ 'index' column not found in BOTH CSVs; cannot safely align rows.")
+if not shared_cols:
+    raise SystemExit("❌ No shared columns between A and B; cannot compare.")
 
 print(f"🔗 Shared columns: {len(shared_cols)}")
 
-# Restrict to shared columns, set index
-A_s = A[shared_cols].set_index("index")
-B_s = B[shared_cols].set_index("index")
-
 # ------------------------------------------------------------
-# Outer join on index to see membership
+# Hash rows for membership test (all shared columns)
 # ------------------------------------------------------------
-merged = A_s.merge(
-    B_s,
-    how="outer",
-    left_index=True,
-    right_index=True,
-    suffixes=("_A", "_B"),
-    indicator=True,
-)
+def row_hash(df: pd.DataFrame, cols: list[str]) -> pd.Series:
+    cols_sorted = cols  # already sorted
+    # Normalize cell values so that ints/floats compare the same and stray
+    # whitespace is ignored.
+    def normalize_value(v):
+        if pd.isna(v):
+            return ""
+        if isinstance(v, float):
+            # Remove trailing .0 for whole numbers, keep precision otherwise
+            return str(int(v)) if v.is_integer() else f"{v:.15g}"
+        return str(v).strip()
 
-print("📊 Row membership by index:")
-print(merged["_merge"].value_counts())
+    normalized = df[cols_sorted].map(normalize_value)
 
-both_mask = merged["_merge"] == "both"
-onlyA_mask = merged["_merge"] == "left_only"
-onlyB_mask = merged["_merge"] == "right_only"
+    return pd.util.hash_pandas_object(
+        normalized.agg("¶".join, axis=1),
+        index=False,
+    )
 
-# ------------------------------------------------------------
-# Cell-wise differences for rows present in BOTH
-# ------------------------------------------------------------
-both = merged[both_mask].copy()
-data_cols = [c for c in shared_cols if c != "index"]
+hash_B = set(row_hash(B, shared_cols))
+hash_A = row_hash(A, shared_cols)
 
-diffs_any = pd.Series(False, index=both.index)
-diff_counts = {}
+# Mask rows in A that are missing in B
+missing_mask = ~hash_A.isin(hash_B)
+missing_rows = A.loc[missing_mask].copy()
 
-for c in data_cols:
-    ca = both[f"{c}_A"]
-    cb = both[f"{c}_B"]
-    # equal if same or both NaN
-    same = (ca == cb) | (ca.isna() & cb.isna())
-    diff_mask = ~same
-    if diff_mask.any():
-        diffs_any |= diff_mask
-        diff_counts[c] = int(diff_mask.sum())
-    else:
-        diff_counts[c] = 0
+missing_rows.to_csv(OUT_DIFF, index=False)
 
-print("📊 Column-wise differing row counts (rows where that column differs):")
-for c in data_cols:
-    print(f"  - {c}: {diff_counts[c]:,}")
-
-# Rows present in both files where at least one shared column differs
-diff_rows = both[diffs_any].copy()
-
-# ------------------------------------------------------------
-# For each differing row, list which columns differ
-# ------------------------------------------------------------
-def list_diff_cols(row):
-    cols = []
-    for c in data_cols:
-        va = row[f"{c}_A"]
-        vb = row[f"{c}_B"]
-        if not ((pd.isna(va) and pd.isna(vb)) or (va == vb)):
-            cols.append(c)
-    return ", ".join(cols)
-
-if not diff_rows.empty:
-    diff_rows["diff_cols"] = diff_rows.apply(list_diff_cols, axis=1)
-else:
-    diff_rows["diff_cols"] = ""
-
-diff_rows["_merge"] = "both"
-
-# ------------------------------------------------------------
-# Rows only in A or only in B
-# ------------------------------------------------------------
-onlyA_df = merged[onlyA_mask].copy()
-if not onlyA_df.empty:
-    onlyA_df["diff_cols"] = "ONLY_IN_A"
-
-onlyB_df = merged[onlyB_mask].copy()
-if not onlyB_df.empty:
-    onlyB_df["diff_cols"] = "ONLY_IN_B"
-
-# ------------------------------------------------------------
-# Combine & save
-# ------------------------------------------------------------
-combined = pd.concat([diff_rows, onlyA_df, onlyB_df], axis=0)
-combined = combined.sort_index()
-
-combined.to_csv(OUT_DIFF)
-print(f"✅ Diff CSV written → {OUT_DIFF}")
-print(f"🔢 Total differing / unmatched indices: {combined.shape[0]:,}")
+print(f"✅ Rows in A not found in B: {len(missing_rows):,}")
+print(f"📝 Diff CSV written → {OUT_DIFF}")

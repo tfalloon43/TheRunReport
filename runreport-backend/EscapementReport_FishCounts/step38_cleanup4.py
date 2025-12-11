@@ -41,12 +41,25 @@ conn = sqlite3.connect(db_path)
 df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # REQUIRED COLUMNS
 # ------------------------------------------------------------
 required = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "Adult Total", "x_count4"
+    "date_iso", "Adult_Total", "x_count4"
 ]
 missing = [c for c in required if c not in df.columns]
 if missing:
@@ -56,7 +69,7 @@ if missing:
 # NORMALIZE TYPES
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 df["x_count4"] = pd.to_numeric(df["x_count4"], errors="coerce").fillna(0).astype(int)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
@@ -85,7 +98,7 @@ def condense_x4(g):
             j += 1
 
         cluster = g.iloc[i:j]
-        adult_vals = cluster["Adult Total"].tolist()
+        adult_vals = cluster["Adult_Total"].tolist()
 
         # If strictly ascending, no modification
         if adult_vals == sorted(adult_vals):
@@ -93,12 +106,12 @@ def condense_x4(g):
             continue
 
         # Compute midpoint
-        min_val = cluster["Adult Total"].min()
-        max_val = cluster["Adult Total"].max()
+        min_val = cluster["Adult_Total"].min()
+        max_val = cluster["Adult_Total"].max()
         midpoint = (min_val + max_val) / 2.0
 
         # Identify large and small rows
-        is_large = cluster["Adult Total"] > midpoint
+        is_large = cluster["Adult_Total"] > midpoint
         large_rows = cluster[is_large]
         small_rows = cluster[~is_large]
 
@@ -115,9 +128,9 @@ def condense_x4(g):
 
             if first_idx != keep_large_idx:
                 # assign to first row
-                g.loc[first_idx, "Adult Total"] = earliest_large["Adult Total"]
+                g.loc[first_idx, "Adult_Total"] = earliest_large["Adult_Total"]
                 # zero out original value
-                g.loc[keep_large_idx, "Adult Total"] = 0
+                g.loc[keep_large_idx, "Adult_Total"] = 0
 
         i = j
 

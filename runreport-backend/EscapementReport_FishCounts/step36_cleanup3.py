@@ -34,6 +34,19 @@ df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # REQUIRED COLUMNS CHECK
 # ------------------------------------------------------------
@@ -43,7 +56,7 @@ required_cols = [
     "Stock",
     "Stock_BO",
     "date_iso",
-    "Adult Total",
+    "Adult_Total",
     "x_count3"
 ]
 
@@ -55,7 +68,7 @@ if missing:
 # NORMALIZE TYPES
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 df["x_count3"] = pd.to_numeric(df["x_count3"], errors="coerce").fillna(0).astype(int)
 
 TOLERANCE = 0.10  # ±10%
@@ -67,7 +80,7 @@ group_cols = ["facility", "species", "Stock", "Stock_BO"]
 # ------------------------------------------------------------
 def condense_clusters(g):
     """Condense contiguous x_count3 clusters, keeping only the row with
-    the largest Adult Total if within ±10% tolerance."""
+    the largest Adult_Total if within ±10% tolerance."""
     g = g.sort_values("date_iso").reset_index(drop=True)
     n = len(g)
     drop_idx = set()
@@ -84,12 +97,12 @@ def condense_clusters(g):
 
             cluster = g.iloc[i:j]
 
-            max_val = cluster["Adult Total"].max()
-            min_val = cluster["Adult Total"].min()
+            max_val = cluster["Adult_Total"].max()
+            min_val = cluster["Adult_Total"].min()
 
             # If within ±10%, keep only the largest Adult Total
             if max_val > 0 and ((max_val - min_val) / max_val) <= TOLERANCE:
-                keep_idx = cluster["Adult Total"].idxmax()
+                keep_idx = cluster["Adult_Total"].idxmax()
                 drop_idx.update(cluster.index.difference([keep_idx]))
 
             i = j

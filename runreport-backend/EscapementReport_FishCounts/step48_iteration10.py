@@ -32,12 +32,25 @@ df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
+# Normalize column names to underscore schema if needed
+rename_map = {
+    "Adult Total": "Adult_Total",
+    "Jack Total": "Jack_Total",
+    "Total Eggtake": "Total_Eggtake",
+    "On Hand Adults": "On_Hand_Adults",
+    "On Hand Jacks": "On_Hand_Jacks",
+    "Lethal Spawned": "Lethal_Spawned",
+    "Live Spawned": "Live_Spawned",
+    "Live Shipped": "Live_Shipped",
+}
+df = df.rename(columns=rename_map)
+
 # ------------------------------------------------------------
 # REQUIRED COLUMNS
 # ------------------------------------------------------------
 required_cols = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "Adult Total",
+    "date_iso", "Adult_Total",
     "by_adult_f", "by_adult_f_length",
     "day_diff_f", "adult_diff_f"
 ]
@@ -50,7 +63,7 @@ if missing:
 # NORMALIZE TYPES
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
-df["Adult Total"] = pd.to_numeric(df["Adult Total"], errors="coerce").fillna(0)
+df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
 
@@ -81,7 +94,7 @@ df = df.drop(columns=["prev_by"])
 print("🔹 Creating adult_diff_plot...")
 
 df["adult_diff_plot"] = df["adult_diff_f"]
-df.loc[df["adult_diff_f"] < 0, "adult_diff_plot"] = df["Adult Total"]
+df.loc[df["adult_diff_f"] < 0, "adult_diff_plot"] = df["Adult_Total"]
 
 # ============================================================
 # STEP 3: Biological_Year

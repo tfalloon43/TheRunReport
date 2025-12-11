@@ -15,6 +15,7 @@ Table: Escapement_PlotPipeline
 ------------------------------------------------------------
 """
 
+import re
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -53,11 +54,23 @@ def ensure_date_iso_column():
 # Date conversion helper
 # ------------------------------------------------------------
 def convert_to_iso(date_str):
-    """Convert MM/DD/YY or MM/DD/YYYY → YYYY-MM-DD."""
+    """Convert MM/DD/YY, MM/DD/YYYY, or ISO-with-time → YYYY-MM-DD."""
     if not isinstance(date_str, str) or not date_str.strip():
         return ""
 
+    # Remove any time component (e.g., "2016-11-30 00:00:00" → "2016-11-30")
     date_str = date_str.strip()
+    for sep in (" ", "T"):
+        if sep in date_str:
+            date_str = date_str.split(sep)[0]
+            break
+
+    # Already ISO? Keep just the date part.
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
+        except ValueError:
+            return ""
 
     # Try both possible formats
     for fmt in ("%m/%d/%y", "%m/%d/%Y"):

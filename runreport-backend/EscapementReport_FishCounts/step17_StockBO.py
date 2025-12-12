@@ -13,6 +13,7 @@ Finally cleans nan/NaN/None artifacts.
 """
 
 import sqlite3
+import re
 from pathlib import Path
 
 # ------------------------------------------------------------
@@ -108,6 +109,8 @@ def main():
             current_val = (prev.get("Stock_BO") or "").strip()
             new_val = f"{current_val} {tl6}".strip()
             new_val = " ".join(new_val.split())  # normalize spaces
+            # Remove standalone nan/None tokens only (preserve words like McKernan)
+            new_val = re.sub(r"\b(?:nan|NaN|None)\b", "", new_val).strip()
             prev["Stock_BO"] = new_val
             appended += 1
 
@@ -118,7 +121,7 @@ def main():
     # ------------------------------------------------------------
     for r in data:
         cleaned = (r.get("Stock_BO") or "")
-        cleaned = cleaned.replace("nan", "").replace("NaN", "").replace("None", "")
+        cleaned = re.sub(r"\b(?:nan|NaN|None)\b", "", cleaned)
         cleaned = " ".join(cleaned.split()).strip()
         r["Stock_BO"] = cleaned
 

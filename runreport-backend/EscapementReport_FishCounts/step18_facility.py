@@ -56,8 +56,8 @@ def ensure_facility_column():
 # Validation helper
 # ------------------------------------------------------------
 def valid_date(val):
-    if not isinstance(val, str):
-        return False
+    # Treat any non-empty stringified value as valid, except explicit nan/none markers.
+    val = "" if val is None else str(val)
     val = val.strip()
     if not val or val.lower() in ("nan", "none"):
         return False

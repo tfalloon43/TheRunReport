@@ -12,6 +12,18 @@ Behavior:
 from pathlib import Path
 import sys
 import runpy
+import argparse
+import re
+
+# ------------------------------------------------------------
+# Quick debug controls
+# ------------------------------------------------------------
+# COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
+# When set, the runner executes the contiguous block of steps between them (inclusive).
+FIRST_STEP_NAME = "step4_duplicate_db.py"  # <-- paste START filename here, or leave None
+LAST_STEP_NAME = "step28_duplicates_delete.py"   # <-- paste END filename here, or leave None
+# Toggle Step 1 discovery: set to False to skip the new-PDF check.
+ENABLE_STEP1_DISCOVERY = False
 
 # Ensure imports resolve when run from anywhere
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -72,6 +84,23 @@ STEP_FILES = [
 ]
 
 
+def extract_step_number(label: str) -> int:
+    match = re.search(r"Step\s+(\d+)", label)
+    if not match:
+        raise ValueError(f"Cannot parse step number from label: {label}")
+    return int(match.group(1))
+
+
+def resolve_step_name_to_number(name: str) -> int:
+    """
+    Given a filename (e.g., 'step4_duplicate_db.py'), return its step number.
+    """
+    for label, filename in STEP_FILES:
+        if filename == name:
+            return extract_step_number(label)
+    raise ValueError(f"Step name not found: {name}")
+
+
 def run_step(label: str, filename: str):
     path = CURRENT_DIR / filename
     if not path.exists():
@@ -81,22 +110,73 @@ def run_step(label: str, filename: str):
     print()
 
 
-def run_pipeline():
+def filter_steps(start: int | None, end: int | None):
+    """Return (num, label, filename) filtered to the requested range."""
+    filtered = []
+    for label, filename in STEP_FILES:
+        num = extract_step_number(label)
+        if start is not None and num < start:
+            continue
+        if end is not None and num > end:
+            continue
+        filtered.append((num, label, filename))
+    return filtered
+
+
+def run_pipeline(start: int | None = None, end: int | None = None, skip_discovery: bool = False, force_run: bool = False):
     print("\n🚀 EscapementReport_FishCounts runner starting...\n")
 
-    urls_to_process = step1_discover()  # Returns list of URLs with processed=0
+    min_step = min(extract_step_number(label) for label, _ in STEP_FILES)
+    max_step = max(extract_step_number(label) for label, _ in STEP_FILES)
 
-    if not urls_to_process:
-        print("✔ No new PDFs found — skipping Steps 2–49.\n")
-        return
+    # Override start/end with filename-based controls if provided.
+    if FIRST_STEP_NAME:
+        start = resolve_step_name_to_number(FIRST_STEP_NAME)
+    if LAST_STEP_NAME:
+        end = resolve_step_name_to_number(LAST_STEP_NAME)
 
-    print(f"🆕 Found {len(urls_to_process)} new PDF(s) — running Steps 2–49.\n")
+    start = start or min_step
+    end = end or max_step
 
-    for label, filename in STEP_FILES:
+    if start > end:
+        raise ValueError(f"Start step ({start}) cannot be greater than end step ({end}).")
+
+    if start < min_step or end > max_step:
+        raise ValueError(f"Step range must be between {min_step} and {max_step}. Requested: {start}–{end}.")
+
+    urls_to_process = None
+    discovery_enabled = ENABLE_STEP1_DISCOVERY and not skip_discovery
+    if discovery_enabled:
+        urls_to_process = step1_discover()  # Returns list of URLs with processed=0
+
+        if not urls_to_process and not force_run:
+            print(f"✔ No new PDFs found — skipping Steps {start}–{end}.\n")
+            return
+    else:
+        print("⏭️  Skipping Step 1 discovery per toggle/flags.")
+
+    selected_steps = filter_steps(start, end)
+
+    if urls_to_process is not None:
+        print(f"🆕 Found {len(urls_to_process)} new PDF(s) — running Steps {start}–{end}.\n")
+    else:
+        print(f"🛠️  Debug run — running Steps {start}–{end} without discovery.\n")
+
+    for _, label, filename in selected_steps:
         run_step(label, filename)
 
     print("\n🏁 Escapement pipeline finished.\n")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run EscapementReport_FishCounts pipeline.")
+    parser.add_argument("--start", type=int, help="First step number to run (default: earliest available).")
+    parser.add_argument("--end", type=int, help="Last step number to run (default: latest available).")
+    parser.add_argument("--skip-discovery", action="store_true", help="Skip Step 1 URL discovery.")
+    parser.add_argument("--force-run", action="store_true", help="Run requested steps even if no new PDFs are found.")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    run_pipeline()
+    args = parse_args()
+    run_pipeline(start=args.start, end=args.end, skip_discovery=args.skip_discovery, force_run=args.force_run)

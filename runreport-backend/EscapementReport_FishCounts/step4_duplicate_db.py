@@ -41,10 +41,10 @@ def get_conn():
 # Main duplication logic
 # ------------------------------------------------------------
 
-def ensure_plotpipeline_table():
+def ensure_plotpipeline_table(recreate=False):
     """
-    Create the destination table if it doesn't exist.
-    It MUST match EscapementRawLines column types.
+    Create the destination table. If recreate=True, drop any existing
+    version first so we always start with a clean duplicate target.
     """
     sql = """
     CREATE TABLE IF NOT EXISTS Escapement_PlotPipeline (
@@ -55,6 +55,10 @@ def ensure_plotpipeline_table():
     );
     """
     with get_conn() as conn:
+        if recreate:
+            print("♻️ Recreating Escapement_PlotPipeline table...")
+            conn.execute("DROP TABLE IF EXISTS Escapement_PlotPipeline;")
+
         conn.execute(sql)
         conn.commit()
 
@@ -103,7 +107,7 @@ def copy_raw_to_pipeline():
 def main():
     print("🔄 Step 4: Duplicating raw PDF table into working table...")
 
-    ensure_plotpipeline_table()
+    ensure_plotpipeline_table(recreate=True)
     copy_raw_to_pipeline()
 
     print("\n🎉 Step 4 complete — working copy is ready for transformations.")

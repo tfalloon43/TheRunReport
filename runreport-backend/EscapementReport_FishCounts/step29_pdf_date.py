@@ -50,11 +50,8 @@ def main():
     print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
     df["pdf_date"] = df["pdf_name"].apply(extract_pdf_date)
-    df["pdf_date"] = (
-        pd.to_datetime(df["pdf_date"], errors="coerce")
-        .dt.strftime("%Y-%m-%d")
-        .fillna("")
-    )
+    parsed_dates = pd.to_datetime(df["pdf_date"], errors="coerce").dt.date
+    df["pdf_date"] = parsed_dates.astype(str).where(parsed_dates.notna(), "")
 
     df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
     conn.close()

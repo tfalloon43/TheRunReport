@@ -7,7 +7,7 @@ Reorder rows in Escapement_PlotPipeline using the following hierarchy:
 2️⃣ species         (A → Z)
 3️⃣ Stock           (A → Z)
 4️⃣ Stock_BO        (A → Z)
-5️⃣ pdf_date        (oldest → newest)
+5️⃣ date_iso        (oldest → newest)
 6️⃣ Adult_Total     (highest → lowest)
 
 Writes table back to SQLite (local.db) in sorted order.
@@ -35,17 +35,17 @@ def main():
 
     print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
-    if "pdf_date" not in df.columns:
-        raise ValueError("❌ Missing required column 'pdf_date'. Run step29_pdf_date.py first.")
+    if "date_iso" not in df.columns:
+        raise ValueError("❌ Missing required column 'date_iso'. Run step28_pdf_date.py first.")
 
-    df["pdf_date"] = pd.to_datetime(df["pdf_date"], errors="coerce")
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
 
     if "Adult_Total" in df.columns:
         df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
     else:
         print("⚠️ No 'Adult_Total' column found — sorting by adult count will be skipped.")
 
-    sort_columns = ["facility", "species", "Stock", "Stock_BO", "pdf_date", "Adult_Total"]
+    sort_columns = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
     ascending_order = [True, True, True, True, True, False]  # Adult_Total is descending
 
     existing_sort_columns = [c for c in sort_columns if c in df.columns]
@@ -66,7 +66,7 @@ def main():
 
     print("✅ Reordering complete")
     print(f"📊 Final row count: {len(df_sorted):,}")
-    print("🎯 Rows grouped + ordered by facility → species → Stock → Stock_BO → pdf_date → Adult_Total (desc)")
+    print("🎯 Rows grouped + ordered by facility → species → Stock → Stock_BO → date_iso → Adult_Total (desc)")
     print("🔄 Escapement_PlotPipeline updated in local.db")
 
 

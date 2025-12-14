@@ -1,14 +1,16 @@
-# step34_cleanup2.py
+# step36_cleanup2.py
 # ------------------------------------------------------------
-# Step 34: Condense X clusters (iteration2 cleanup)
+# Step 36: Cleanup Pass 2
 #
 # Logic:
 #   • Work inside DB table Escapement_PlotPipeline
-#   • Only rows where x_count2 ≥ 3 are considered
-#   • Identify consecutive same-x_count2 clusters
-#   • If Adult Total values are all within ±2%
-#       → keep only the oldest date_iso row
-#       → remove all newer rows
+#   • Group by biological identity + by_adult2:
+#         facility, species, Stock, Stock_BO, by_adult2
+#   • Within each group, if rows share the same Adult_Total,
+#     keep only the row with the earliest date_iso.
+#   • Afterward, drop intermediate columns:
+#       day_diff, adult_diff, by_adult, by_adult_length,
+#       by_short, x_count
 #
 # Output: Escapement_PlotPipeline rewritten in-place
 # ------------------------------------------------------------
@@ -17,7 +19,28 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 34: Condensing X clusters (x_count2 ≥ 3, within ±2% Adult Total)...")
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
+
+print("🏗️ Step 36: Removing duplicate Adult_Total within by_adult2 groups (earliest date_iso wins)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -36,6 +59,7 @@ df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
 # Normalize column names to underscore schema if needed
+# Normalize column names to underscore schema if needed
 rename_map = {
     "Adult Total": "Adult_Total",
     "Jack Total": "Jack_Total",
@@ -53,7 +77,7 @@ df = df.rename(columns=rename_map)
 # ------------------------------------------------------------
 required_cols = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "x_count2", "Adult_Total"
+    "date_iso", "Adult_Total", "by_adult2"
 ]
 
 missing = [c for c in required_cols if c not in df.columns]
@@ -65,45 +89,17 @@ if missing:
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
 df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
-df["x_count2"] = pd.to_numeric(df["x_count2"], errors="coerce").fillna(0).astype(int)
 
-group_cols = ["facility", "species", "Stock", "Stock_BO"]
+group_cols = ["facility", "species", "Stock", "Stock_BO", "by_adult2"]
 
 # ------------------------------------------------------------
 # CORE CLEANUP LOGIC
 # ------------------------------------------------------------
-def condense_x_clusters(g):
-    """Condense clusters with x_count2 ≥ 3 and Adult_Total within ±2%."""
-    g = g.sort_values("date_iso").reset_index(drop=True)
-    n = len(g)
-    drop_idx = set()
-    i = 0
-
-    while i < n:
-        xc = g.loc[i, "x_count2"]
-
-        if xc >= 3:
-            j = i
-            # Expand forward as long as x_count2 matches
-            while j < n and g.loc[j, "x_count2"] == xc:
-                j += 1
-
-            cluster = g.iloc[i:j]
-            max_val = cluster["Adult_Total"].max()
-            min_val = cluster["Adult_Total"].min()
-
-            # Check ±2% spread
-            if max_val > 0 and ((max_val - min_val) / max_val) <= 0.02:
-                oldest_idx = cluster["date_iso"].idxmin()
-                # All except oldest get dropped
-                drop_targets = cluster.index.difference([oldest_idx])
-                drop_idx.update(drop_targets)
-
-            i = j
-        else:
-            i += 1
-
-    return g.drop(index=drop_idx)
+def dedupe_adult_total(g):
+    """Within a group, keep earliest date_iso for duplicate Adult_Total."""
+    g = g.sort_values(["Adult_Total", "date_iso", "pdf_date"], na_position="last").reset_index(drop=True)
+    keep_mask = ~g.duplicated(subset=["Adult_Total"], keep="first")
+    return g.loc[keep_mask]
 
 # ------------------------------------------------------------
 # APPLY PER GROUP
@@ -112,16 +108,24 @@ before = len(df)
 
 df_clean = (
     df.groupby(group_cols, group_keys=False)
-      .apply(condense_x_clusters)
+      .apply(dedupe_adult_total)
       .reset_index(drop=True)
 )
 
 after = len(df_clean)
 removed = before - after
 
+# Drop intermediate columns
+drop_cols = ["day_diff", "adult_diff", "by_adult", "by_adult_length", "by_short", "x_count"]
+drop_cols = [c for c in drop_cols if c in df_clean.columns]
+if drop_cols:
+    df_clean = df_clean.drop(columns=drop_cols)
+
 # ------------------------------------------------------------
 # WRITE BACK TO DATABASE
 # ------------------------------------------------------------
+df_clean = reorder_for_output(df_clean)
+
 df_clean.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 

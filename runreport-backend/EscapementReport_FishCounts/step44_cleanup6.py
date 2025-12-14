@@ -1,6 +1,6 @@
-# step42_cleanup6.py
+# step44_cleanup6.py
 # ------------------------------------------------------------
-# Step 42: Cleanup (v6) — Remove biologically invalid negative rows.
+# Step 44: Cleanup (v6) — Remove biologically invalid negative rows.
 #
 # Deletes rows inside the DATABASE table Escapement_PlotPipeline
 # using updated iteration6 metrics:
@@ -15,7 +15,28 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🧹 Step 42 (v6 Cleanup): Removing invalid negative-diff rows...")
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
+
+print("🧹 Step 44 (v6 Cleanup): Removing invalid negative-diff rows...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -102,6 +123,8 @@ print(f"🗑️ Rows marked for deletion: {len(to_delete):,}")
 # WRITE BACK TO DATABASE
 # ------------------------------------------------------------
 print("💾 Writing cleaned dataset back to Escapement_PlotPipeline...")
+
+df = reorder_for_output(df)
 
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()

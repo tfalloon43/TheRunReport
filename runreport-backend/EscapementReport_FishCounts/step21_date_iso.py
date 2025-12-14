@@ -55,7 +55,11 @@ def ensure_date_iso_column():
 # ------------------------------------------------------------
 def convert_to_iso(date_str):
     """Convert MM/DD/YY, MM/DD/YYYY, or ISO-with-time → YYYY-MM-DD."""
-    if not isinstance(date_str, str) or not date_str.strip():
+    if date_str is None:
+        return ""
+    if not isinstance(date_str, str):
+        date_str = str(date_str)
+    if not date_str.strip():
         return ""
 
     # Remove any time component (e.g., "2016-11-30 00:00:00" → "2016-11-30")

@@ -1,6 +1,6 @@
-# step48_iteration10.py
+# step50_iteration10.py
 # ------------------------------------------------------------
-# Step 48 (v10): Final plotting prep columns
+# Step 50 (v10): Final plotting prep columns
 #
 # Adds the final derived plotting columns to Escapement_PlotPipeline:
 #   day_diff_plot
@@ -15,7 +15,28 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 48: Building final plotting columns (day_diff_plot → Biological_Year_Length)...")
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
+
+print("🏗️ Step 50: Building final plotting columns (day_diff_plot → Biological_Year_Length)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -110,6 +131,8 @@ df["Biological_Year_Length"] = df["by_adult_f_length"]
 # SAVE BACK TO DB
 # ============================================================
 print("💾 Writing plotting prep columns back to Escapement_PlotPipeline...")
+
+df = reorder_for_output(df)
 
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()

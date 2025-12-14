@@ -21,7 +21,7 @@ import re
 # COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
 # When set, the runner executes the contiguous block of steps between them (inclusive).
 FIRST_STEP_NAME = "step4_duplicate_db.py"  # <-- paste START filename here, or leave None
-LAST_STEP_NAME = "step28_duplicates_delete.py"   # <-- paste END filename here, or leave None
+LAST_STEP_NAME = "step37_iteration3.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
 ENABLE_STEP1_DISCOVERY = False
 
@@ -59,28 +59,30 @@ STEP_FILES = [
     ("Step 25: Delete blank dates", "step25_dateblank_delete.py"),
     ("Step 26: Delete blank hatchery", "step26_hatcheryblank_delete.py"),
     ("Step 27: Column reorg", "step27_columnreorg.py"),
-    ("Step 28: Delete duplicates", "step28_duplicates_delete.py"),
-    ("Step 29: PDF date normalization", "step29_pdf_date.py"),
+    ("Step 28: PDF date normalization", "step28_pdf_date.py"),
+    ("Step 29: Delete duplicates", "step29_duplicates_delete.py"),
     ("Step 30: Row reorder", "step30_row_reorder.py"),
-    ("Step 31: Iteration 1", "step31_iteration1.py"),
-    ("Step 32: Cleanup 1", "step32_cleanup1.py"),
-    ("Step 33: Iteration 2", "step33_iteration2.py"),
-    ("Step 34: Cleanup 2", "step34_cleanup2.py"),
-    ("Step 35: Iteration 3", "step35_iteration3.py"),
-    ("Step 36: Cleanup 3", "step36_cleanup3.py"),
-    ("Step 37: Iteration 4", "step37_iteration4.py"),
-    ("Step 38: Cleanup 4", "step38_cleanup4.py"),
-    ("Step 39: Iteration 5", "step39_iteration5.py"),
-    ("Step 40: Cleanup 5", "step40_cleanup5.py"),
-    ("Step 41: Iteration 6", "step41_iteration6.py"),
-    ("Step 42: Cleanup 6", "step42_cleanup6.py"),
-    ("Step 43: Iteration 7", "step43_iteration7.py"),
-    ("Step 44: Manual deletions", "step44_manualdeletions.py"),
-    ("Step 45: Iteration 8", "step45_iteration8"),
-    ("Step 46: Cleanup 8", "step46_cleanup8.py"),
-    ("Step 47: Iteration 9", "step47_iteration9.py"),
-    ("Step 48: Iteration 10", "step48_iteration10.py"),
-    ("Step 49: Column reorg", "step49_column_reorg.py"),
+    ("Step 31: Remove same date_iso/Adult_Total (earliest pdf_date)", "step31_date_AT_same_remove.py"),
+    ("Step 32: Remove same date_iso keep largest Adult_Total", "step32_datesame_ATdiff_remove.py"),
+    ("Step 33: Iteration 1", "step33_iteration1.py"),
+    ("Step 34: Cleanup 1", "step34_cleanup1.py"),
+    ("Step 35: Iteration 2", "step35_iteration2.py"),
+    ("Step 36: Cleanup 2", "step36_cleanup2.py"),
+    ("Step 37: Iteration 3", "step37_iteration3.py"),
+    ("Step 38: Cleanup 3", "step38_cleanup3.py"),
+    ("Step 39: Iteration 4", "step39_iteration4.py"),
+    ("Step 40: Cleanup 4", "step40_cleanup4.py"),
+    ("Step 41: Iteration 5", "step41_iteration5.py"),
+    ("Step 42: Cleanup 5", "step42_cleanup5.py"),
+    ("Step 43: Iteration 6", "step43_iteration6.py"),
+    ("Step 44: Cleanup 6", "step44_cleanup6.py"),
+    ("Step 45: Iteration 7", "step45_iteration7.py"),
+    ("Step 46: Manual deletions", "step46_manualdeletions.py"),
+    ("Step 47: Iteration 8", "step47_iteration8.py"),
+    ("Step 48: Cleanup 8", "step48_cleanup8.py"),
+    ("Step 49: Iteration 9", "step49_iteration9.py"),
+    ("Step 50: Iteration 10", "step50_iteration10.py"),
+    ("Step 51: Column reorg", "step51_column_reorg.py"),
 ]
 
 

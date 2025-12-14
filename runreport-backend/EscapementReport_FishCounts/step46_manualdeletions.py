@@ -1,6 +1,6 @@
-# step44_manualdeletions.py
+# step46_manualdeletions.py
 # ------------------------------------------------------------
-# Step 44 (v7): Manual cleanup — delete specific rows in DB
+# Step 46 (v7): Manual cleanup — delete specific rows in DB
 #
 # Deletes rows from Escapement_PlotPipeline when EXACTLY ONE row
 # matches all given field values. If 0 or >1 rows match a rule,
@@ -11,7 +11,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🧹 Step 44 (v7): Manual cleanup — deleting specific rows from DB...")
+print("🧹 Step 46 (v7): Manual cleanup — deleting specific rows from DB...")
 
 # ------------------------------------------------------------
 # DB PATH

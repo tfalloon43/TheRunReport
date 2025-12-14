@@ -1,20 +1,9 @@
-# step32_cleanup1.py
+# step34_cleanup1.py
 # ------------------------------------------------------------
-# Step 32: Cleanup Pass 1
+# Step 34: Cleanup Pass 1
 #
-# Removes duplicate Adult Total values inside spillover
-# short-run clusters (x_count ≥ 3).
-#
-# Rules:
-#   • Work inside biological identity:
-#         facility, species, Stock, Stock_BO
-#   • If x_count < 3 → untouched
-#   • If x_count ≥ 3:
-#         - Identify contiguous block with same x_count
-#         - For duplicate Adult Total values:
-#               keep the earliest (oldest) date_iso
-#               remove all others
-#
+# Remove rows where x_count == 1 (singletons inside a biological
+# identity). All other rows are kept unchanged.
 # Output: Updates Escapement_PlotPipeline directly.
 # ------------------------------------------------------------
 
@@ -22,7 +11,26 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 32: Cleanup Pass 1 — Removing duplicate Adult Total within x_count ≥ 3 clusters...")
+print("🏗️ Step 34: Cleanup Pass 1 — Removing rows where x_count == 1...")
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
 
 # ------------------------------------------------------------
 # DB PATH
@@ -72,53 +80,9 @@ df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
 df["x_count"] = pd.to_numeric(df["x_count"], errors="coerce").fillna(0).astype(int)
 df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 
-group_cols = ["facility", "species", "Stock", "Stock_BO"]
-
-# ------------------------------------------------------------
-# CORE LOGIC
-# ------------------------------------------------------------
-def process_group(g):
-    g = g.sort_values("date_iso").reset_index(drop=True)
-    n = len(g)
-
-    keep_mask = [True] * n
-    i = 0
-
-    while i < n:
-        xval = g.loc[i, "x_count"]
-
-        if xval < 3:
-            i += 1
-            continue
-
-        # Find contiguous x_count cluster
-        j = i
-        while j < n and g.loc[j, "x_count"] == xval:
-            j += 1
-
-        cluster = g.loc[i:j]
-
-        # Mark duplicates (except earliest)
-        dupes = cluster.duplicated(subset=["Adult_Total"], keep="first")
-
-        for idx in cluster.index[dupes]:
-            keep_mask[idx] = False
-
-        i = j
-
-    return g.loc[keep_mask]
-
-
-# ------------------------------------------------------------
-# APPLY CLEANUP
-# ------------------------------------------------------------
 before = len(df)
 
-cleaned = (
-    df.groupby(group_cols, group_keys=False)
-      .apply(process_group)
-      .reset_index(drop=True)
-)
+cleaned = df[df["x_count"] != 1].reset_index(drop=True)
 
 after = len(cleaned)
 removed = before - after
@@ -126,13 +90,13 @@ removed = before - after
 # ------------------------------------------------------------
 # WRITE BACK TO DATABASE
 # ------------------------------------------------------------
+cleaned = reorder_for_output(cleaned)
 cleaned.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
-conn.close()
 
 # ------------------------------------------------------------
 # SUMMARY
 # ------------------------------------------------------------
 print("✅ Cleanup Pass 1 Complete!")
-print(f"🧹 Removed {removed:,} rows from short-run clusters (x_count ≥ 3).")
+print(f"🧹 Removed {removed:,} rows from short-run clusters x_count ==3.")
 print(f"📊 Final dataset size: {after:,} rows.")
 print("🏁 Escapement_PlotPipeline table updated successfully.")

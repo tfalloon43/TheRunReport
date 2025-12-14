@@ -1,6 +1,6 @@
-# step46_cleanup8.py
+# step48_cleanup8.py
 # ------------------------------------------------------------
-# Step 46 (v8 Cleanup):
+# Step 48 (v8 Cleanup):
 # Remove weak short-run clusters where:
 #       x_count8 ∈ [1, 2, 3]
 # EXCEPT keep entries from the current year.
@@ -11,9 +11,30 @@
 import sqlite3
 import pandas as pd
 from pathlib import Path
+
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
 from datetime import datetime
 
-print("🧹 Step 46 (v8 Cleanup): Removing weak short-run clusters (x_count8 = 1–3)...")
+print("🧹 Step 48 (v8 Cleanup): Removing weak short-run clusters (x_count8 = 1–3)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -63,6 +84,8 @@ removed = before - len(df)
 # SAVE RESULTS BACK TO DB
 # ------------------------------------------------------------
 print("💾 Writing cleaned table back to database...")
+df = reorder_for_output(df)
+
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 

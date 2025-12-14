@@ -25,6 +25,7 @@ steps = [
     "1_csv_create.py",            # Base CSV scaffold
     "2_pdf_data.py",              # Ingest pdf_data
     "3_reorder.py",               # Initial reorder
+    "3.5_date_AT_same_remove.py", # Drop same date_iso+Adult_Total keeping earliest pdf_date
     "4_day_diff.py",              # Day difference calc
     "5_adult_diff.py",            # Adult difference calc
     "6_surplus_diff.py",          # Surplus difference calc

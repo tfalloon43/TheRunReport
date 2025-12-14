@@ -1,5 +1,5 @@
 """
-step29_pdf_date.py
+step28_pdf_date.py
 -----------------------------------------
 Extract pdf_date (ISO format) from pdf_name.
 
@@ -16,13 +16,13 @@ import pandas as pd
 import re
 from pathlib import Path
 
-print("🏗️ Step 29: Extracting pdf_date (ISO) from pdf_name...")
+print("🏗️ Step 28: Extracting pdf_date (ISO) from pdf_name...")
 
 # ------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------
 # File location:
-#   runreport-backend/EscapementReport_FishCounts/step29_pdf_date.py
+#   runreport-backend/EscapementReport_FishCounts/step28_pdf_date.py
 CURRENT_DIR = Path(__file__).resolve().parent
 BACKEND_ROOT = CURRENT_DIR.parent              # runreport-backend/
 DB_DIR = BACKEND_ROOT / "0_db"

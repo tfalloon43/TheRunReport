@@ -1,22 +1,24 @@
-# step38_cleanup4.py
+# step38_cleanup3.py
 # ------------------------------------------------------------
-# Step 38 (v4): Condense x_count4 clusters using midpoint min/max logic.
+# Step 38 (v3): Condense x_count3 clusters using max/2 logic
 #
 # Rules:
 #   - Work within facility/species/Stock/Stock_BO groups
-#   - If x_count4 < 3 → leave unchanged
-#   - For x_count4 >= 3:
-#       → Identify contiguous blocks with same x_count4
-#       → If Adult Total is strictly ascending → leave unchanged
-#       → Else:
-#           - midpoint = (min + max) / 2
-#           - "large" rows: Adult Total > midpoint
-#           - "small" rows: Adult Total ≤ midpoint
-#           - Keep:
-#               * All "small" rows
-#               * Only earliest-date "large" row
-#           - Move the kept large value to top of cluster
-#             and zero out its original location if moved.
+#   - If x_count3 < 3 → keep all rows
+#   - For x_count3 >= 3:
+#       → Identify contiguous x_count3 blocks
+#       → threshold = max(Adult_Total) / 2
+#       → "large" rows: Adult_Total > threshold
+#       → "small" rows: Adult_Total ≤ threshold
+#       → Keep:
+#           * ALL small rows
+#           * ONLY earliest-date large row
+#       → Drop all other large rows
+#
+# IMPORTANT:
+#   • Full rows are kept/dropped (no column mutation)
+#   • No fabricated values
+#   • No date modification
 #
 # DB input/output: Escapement_PlotPipeline
 # ------------------------------------------------------------
@@ -25,7 +27,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🏗️ Step 38: Condensing x_count4 clusters (midpoint logic)...")
+print("🏗️ Step 38: Condensing x_count3 clusters (max/2 logic, row-safe)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -41,7 +43,7 @@ conn = sqlite3.connect(db_path)
 df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows")
 
-# Normalize column names to underscore schema if needed
+# Normalize column names
 rename_map = {
     "Adult Total": "Adult_Total",
     "Jack Total": "Jack_Total",
@@ -59,103 +61,99 @@ df = df.rename(columns=rename_map)
 # ------------------------------------------------------------
 required = [
     "facility", "species", "Stock", "Stock_BO",
-    "date_iso", "Adult_Total", "x_count4"
+    "date_iso", "Adult_Total",
+    "x_count3"
 ]
+
 missing = [c for c in required if c not in df.columns]
 if missing:
-    raise ValueError(f"❌ Missing required columns in DB: {missing}")
+    raise ValueError(f"❌ Missing required columns: {missing}")
 
 # ------------------------------------------------------------
-# NORMALIZE TYPES
+# TYPE NORMALIZATION (READ-ONLY)
 # ------------------------------------------------------------
 df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
 df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
-df["x_count4"] = pd.to_numeric(df["x_count4"], errors="coerce").fillna(0).astype(int)
+df["x_count3"] = pd.to_numeric(df["x_count3"], errors="coerce").fillna(0).astype(int)
 
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
 
 # ------------------------------------------------------------
-# MAIN LOGIC
+# CORE LOGIC
 # ------------------------------------------------------------
-def condense_x4(g):
-    """Apply midpoint compression to contiguous x_count4 clusters."""
+def condense_x3(g: pd.DataFrame) -> pd.DataFrame:
+    """
+    Condense contiguous x_count3 clusters using max/2 logic.
+    Full rows are selected/dropped — no mutation.
+    """
     g = g.sort_values("date_iso").reset_index(drop=True)
-    drop_idx = set()
+
+    keep_indices = []
     n = len(g)
     i = 0
 
     while i < n:
-        count_val = g.loc[i, "x_count4"]
+        count_val = g.loc[i, "x_count3"]
 
-        # Only operate on clusters with x_count4 >= 3
+        # Keep untouched if not a cluster
         if count_val < 3:
+            keep_indices.append(g.index[i])
             i += 1
             continue
 
-        # Find contiguous block with same x_count4
+        # Find contiguous cluster
         j = i
-        while j < n and g.loc[j, "x_count4"] == count_val:
+        while j < n and g.loc[j, "x_count3"] == count_val:
             j += 1
 
         cluster = g.iloc[i:j]
-        adult_vals = cluster["Adult_Total"].tolist()
 
-        # If strictly ascending, no modification
-        if adult_vals == sorted(adult_vals):
-            i = j
-            continue
-
-        # Compute midpoint
-        min_val = cluster["Adult_Total"].min()
         max_val = cluster["Adult_Total"].max()
-        midpoint = (min_val + max_val) / 2.0
+        threshold = max_val / 2.0
 
-        # Identify large and small rows
-        is_large = cluster["Adult_Total"] > midpoint
-        large_rows = cluster[is_large]
-        small_rows = cluster[~is_large]
+        large = cluster[cluster["Adult_Total"] > threshold]
+        small = cluster[cluster["Adult_Total"] <= threshold]
 
-        if not large_rows.empty:
-            # Keep earliest large row
-            earliest_large = large_rows.sort_values("date_iso").iloc[0]
-            keep_large_idx = earliest_large.name
+        # Keep ALL small rows
+        keep_indices.extend(small.index.tolist())
 
-            # Drop all other large rows
-            drop_idx.update(large_rows.index.difference([keep_large_idx]))
-
-            # Move the large Adult Total to top of cluster
-            first_idx = cluster.index[0]
-
-            if first_idx != keep_large_idx:
-                # assign to first row
-                g.loc[first_idx, "Adult_Total"] = earliest_large["Adult_Total"]
-                # zero out original value
-                g.loc[keep_large_idx, "Adult_Total"] = 0
+        # Keep earliest large row (if any)
+        if not large.empty:
+            earliest_large_idx = (
+                large.sort_values("date_iso").index[0]
+            )
+            keep_indices.append(earliest_large_idx)
 
         i = j
 
-    return g.drop(index=drop_idx)
+    return g.loc[sorted(set(keep_indices))]
 
 
 # ------------------------------------------------------------
 # APPLY PER BIOLOGICAL IDENTITY
 # ------------------------------------------------------------
 before = len(df)
-df = df.groupby(group_cols, group_keys=False).apply(condense_x4).reset_index(drop=True)
-after = len(df)
+
+df_out = (
+    df.groupby(group_cols, group_keys=False)
+      .apply(condense_x3)
+      .reset_index(drop=True)
+)
+
+after = len(df_out)
 removed = before - after
 
 # ------------------------------------------------------------
 # WRITE BACK TO DB
 # ------------------------------------------------------------
 print("💾 Writing condensed results back to Escapement_PlotPipeline...")
-df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
+df_out.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 
 # ------------------------------------------------------------
 # SUMMARY
 # ------------------------------------------------------------
-print("✅ Cleanup 4 Complete!")
+print("✅ Cleanup 3 Complete!")
 print(f"🧹 Rows removed: {removed:,}")
 print(f"📊 Final rows: {after:,}")
-print("🏁 Midpoint min/max condensing successfully applied.")
+print("🏁 x_count3 clusters safely condensed (row-preserving).")

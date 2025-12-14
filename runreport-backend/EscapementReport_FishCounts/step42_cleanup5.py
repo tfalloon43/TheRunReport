@@ -1,6 +1,6 @@
-# step40_cleanup5.py
+# step42_cleanup5.py
 # ------------------------------------------------------------
-# Step 40 (Cleanup v5): Reorder dataset by biological identity
+# Step 42 (Cleanup v5): Reorder dataset by biological identity
 # and biological year (by_adult5) directly in the database.
 #
 # Rules:
@@ -17,7 +17,28 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🔄 Step 40 (v5 Cleanup): Reordering rows inside the database...")
+
+# ------------------------------------------------------------
+# Reorder helper
+# ------------------------------------------------------------
+
+def reorder_for_output(df):
+    sort_cols = ["facility", "species", "Stock", "Stock_BO", "date_iso", "Adult_Total"]
+    missing = [c for c in sort_cols if c not in df.columns]
+    if missing:
+        return df
+    df = df.copy()
+    df["date_iso"] = pd.to_datetime(df["date_iso"], errors="coerce")
+    df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
+    return df.sort_values(
+        by=sort_cols,
+        ascending=[True, True, True, True, True, False],
+        na_position="last",
+        kind="mergesort",
+    )
+
+
+print("🔄 Step 42 (v5 Cleanup): Reordering rows inside the database...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -70,6 +91,8 @@ df = (
 # ------------------------------------------------------------
 # SAVE BACK TO DATABASE
 # ------------------------------------------------------------
+df = reorder_for_output(df)
+
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 

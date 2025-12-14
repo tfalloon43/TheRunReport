@@ -19,6 +19,8 @@
 import shutil
 import sqlite3
 import pandas as pd
+import re
+from datetime import datetime
 from pathlib import Path
 
 print("🧪 zz_debug.py — CSV vs DB snapshot tool")
@@ -28,7 +30,7 @@ print("🧪 zz_debug.py — CSV vs DB snapshot tool")
 # ============================================================
 
 # --- CSV produced by 0_master_pipeline ---
-CSV_NAME = "csv_reduce.csv"     # 👈 CHANGE THIS AS NEEDED
+CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
 
 # --- DB table to export ---
 DB_TABLE_NAME = "Escapement_PlotPipeline"   # 👈 CHANGE THIS AS NEEDED
@@ -45,7 +47,6 @@ DB_PATH        = PROJECT_ROOT / "runreport-backend" / "0_db" / "local.db"
 OUTPUT_DIR = Path("/Users/thomasfalloon/Desktop/zz_tester")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-SORT_COLUMNS = ["pdf_name", "basin", "species", "Stock", "date_iso"]
 # Columns to remove from both outputs (set to [] to keep all). Example: ["species"]
 COLUMNS_TO_DROP = [
 #                   "species", 
@@ -54,7 +55,26 @@ COLUMNS_TO_DROP = [
 #                   "Hatchery_Name",
 #                   "Family",
 #                   "facility",
-                   "",
+#                   "pdf_name",
+#                   "pdf_date",
+                   "x_count",
+                   "by_short",
+                   "by_adult_length",
+                   "by_adult",
+                   "adult_diff",
+                   "day_diff",
+                   "x_count2",
+                   "by_short2",
+                   "by_adult2_length",
+                   "by_adult2",
+                   "adult_diff2",
+                   "day_diff2",
+#                   "x_count3",
+#                   "by_short3",
+                   "by_adult3_length",
+                   "by_adult3",
+                   "adult_diff3",
+                   "day_diff3",
                    "",
                    "",
                    "",]
@@ -63,14 +83,39 @@ COLUMNS_TO_DROP = [
 # Helpers
 # ------------------------------------------------------------
 
-def sorted_or_warn(df: pd.DataFrame, source_label: str) -> pd.DataFrame:
-    """Sort by the canonical columns if present."""
-    missing = [c for c in SORT_COLUMNS if c not in df.columns]
-    if missing:
-        print(f"⚠️ {source_label}: Missing expected columns for sort: {missing} — leaving order unchanged.")
-        return df
-    # mergesort is stable; keeps deterministic ordering for ties.
-    return df.sort_values(SORT_COLUMNS, kind="mergesort")
+def convert_to_iso(date_str):
+    """Convert MM/DD/YY, MM/DD/YYYY, or ISO-with-time → YYYY-MM-DD."""
+    if date_str is None:
+        return ""
+    if not isinstance(date_str, str):
+        date_str = str(date_str)
+    if not date_str.strip():
+        return ""
+
+    # Remove any time component
+    date_str = date_str.strip()
+    for sep in (" ", "T"):
+        if sep in date_str:
+            date_str = date_str.split(sep)[0]
+            break
+
+    # Already ISO? keep just date part
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
+        except ValueError:
+            return ""
+
+    for fmt in ("%m/%d/%y", "%m/%d/%Y"):
+        try:
+            parsed = datetime.strptime(date_str, fmt)
+            if parsed.year < 1950:
+                parsed = parsed.replace(year=parsed.year + 2000)
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+
+    return ""
 
 # ============================================================
 # 1️⃣ COPY CSV FROM LEGACY PIPELINE
@@ -86,7 +131,6 @@ df_csv = pd.read_csv(csv_source_path)
 drop_cols_csv = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_csv.columns]
 if drop_cols_csv:
     df_csv = df_csv.drop(columns=drop_cols_csv)
-df_csv = sorted_or_warn(df_csv, "CSV")
 df_csv.to_csv(csv_dest_path, index=False)
 
 print(f"📄 Copied CSV → {csv_dest_path} (rows: {len(df_csv):,})")
@@ -109,10 +153,11 @@ finally:
     conn.close()
 
 db_csv_path = OUTPUT_DIR / "DB.csv"
-df_db = sorted_or_warn(df_db, "DB")
 drop_cols_db = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_db.columns]
 if drop_cols_db:
     df_db = df_db.drop(columns=drop_cols_db)
+if "date_iso" in df_db.columns:
+    df_db["date_iso"] = df_db["date_iso"].apply(convert_to_iso)
 df_db.to_csv(db_csv_path, index=False)
 
 print(f"📄 Exported DB table → {db_csv_path} (rows: {len(df_db):,})")

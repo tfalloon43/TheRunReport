@@ -1,6 +1,6 @@
-# step51_column_reorg.py
+# step53_column_reorg.py
 # ------------------------------------------------------------
-# Step 51 (Final Column Reorg): Trim DB table to final plot-ready columns.
+# Step 53 (Final Column Reorg): Trim DB table to final plot-ready columns.
 #
 # This script:
 #   • Loads Escapement_PlotPipeline from the DB
@@ -14,7 +14,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🧹 Step 51: Preparing final plot-ready dataset inside DB...")
+print("🧹 Step 53: Preparing final plot-ready dataset inside DB...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -112,7 +112,7 @@ conn.close()
 # SUMMARY
 # ------------------------------------------------------------
 dropped_cols = before_cols - after_cols
-print("✅ Step 51 (Column Reorg) Complete!")
+print("✅ Step 53 (Column Reorg) Complete!")
 print(f"🧾 Columns kept: {after_cols}")
 print(f"🗑️ Columns dropped: {dropped_cols}")
 print(f"📊 Final columns: {', '.join(df_final.columns)}")

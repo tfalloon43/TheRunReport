@@ -30,10 +30,10 @@ print("🧪 zz_debug.py — CSV vs DB snapshot tool")
 # ============================================================
 
 # --- CSV produced by 0_master_pipeline ---
-CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
+#CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
 
 # --- DB table to export ---
-DB_TABLE_NAME = "Escapement_PlotPipeline"   # 👈 CHANGE THIS AS NEEDED
+DB_TABLE_NAME = "EscapementReport_plotdata"   # 👈 CHANGE THIS AS NEEDED
 
 # ============================================================
 # Paths
@@ -41,7 +41,7 @@ DB_TABLE_NAME = "Escapement_PlotPipeline"   # 👈 CHANGE THIS AS NEEDED
 
 PROJECT_ROOT = Path("/Users/thomasfalloon/Desktop/TheRunReport")
 
-CSV_SOURCE_DIR = PROJECT_ROOT / "100_Data"
+#CSV_SOURCE_DIR = PROJECT_ROOT / "100_Data"
 DB_PATH        = PROJECT_ROOT / "runreport-backend" / "0_db" / "local.db"
 
 OUTPUT_DIR = Path("/Users/thomasfalloon/Desktop/zz_tester")
@@ -57,24 +57,24 @@ COLUMNS_TO_DROP = [
 #                   "facility",
 #                   "pdf_name",
 #                   "pdf_date",
-                   "x_count",
-                   "by_short",
-                   "by_adult_length",
-                   "by_adult",
-                   "adult_diff",
-                   "day_diff",
-                   "x_count2",
-                   "by_short2",
-                   "by_adult2_length",
-                   "by_adult2",
-                   "adult_diff2",
-                   "day_diff2",
+#                   "x_count",
+#                   "by_short",
+#                   "by_adult_length",
+#                   "by_adult",
+#                   "adult_diff",
+#                   "day_diff",
+#                   "x_count2",
+#                   "by_short2",
+#                   "by_adult2_length",
+#                   "by_adult2",
+#                   "adult_diff2",
+#                   "day_diff2",
 #                   "x_count3",
 #                   "by_short3",
-                   "by_adult3_length",
-                   "by_adult3",
-                   "adult_diff3",
-                   "day_diff3",
+#                   "by_adult3_length",
+#                   "by_adult3",
+#                   "adult_diff3",
+#                   "day_diff3",
                    "",
                    "",
                    "",]
@@ -121,19 +121,19 @@ def convert_to_iso(date_str):
 # 1️⃣ COPY CSV FROM LEGACY PIPELINE
 # ============================================================
 
-csv_source_path = CSV_SOURCE_DIR / CSV_NAME
-csv_dest_path   = OUTPUT_DIR / "CSV.CSV"
+#csv_source_path = CSV_SOURCE_DIR / CSV_NAME
+#csv_dest_path   = OUTPUT_DIR / "CSV.CSV"
 
-if not csv_source_path.exists():
-    raise FileNotFoundError(f"❌ CSV not found: {csv_source_path}")
+#if not csv_source_path.exists():
+#    raise FileNotFoundError(f"❌ CSV not found: {csv_source_path}")
 
-df_csv = pd.read_csv(csv_source_path)
-drop_cols_csv = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_csv.columns]
-if drop_cols_csv:
-    df_csv = df_csv.drop(columns=drop_cols_csv)
-df_csv.to_csv(csv_dest_path, index=False)
+#df_csv = pd.read_csv(csv_source_path)
+#drop_cols_csv = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_csv.columns]
+#if drop_cols_csv:
+#    df_csv = df_csv.drop(columns=drop_cols_csv)
+#df_csv.to_csv(csv_dest_path, index=False)
 
-print(f"📄 Copied CSV → {csv_dest_path} (rows: {len(df_csv):,})")
+#print(f"📄 Copied CSV → {csv_dest_path} (rows: {len(df_csv):,})")
 
 # ============================================================
 # 2️⃣ EXPORT DB TABLE TO CSV

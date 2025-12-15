@@ -1,14 +1,15 @@
-# step45_iteration7.py
+# step51_iteration_f.py
 # ------------------------------------------------------------
-# Step 45: Biological Metrics Iteration 7
+# Step 51 (Final): Biological Metrics Iteration F (_f)
 #
-# Recomputes inside the DB:
-#   day_diff7
-#   adult_diff7
-#   by_adult7
-#   by_adult7_length
-#   by_short7
-#   x_count7
+# Recomputes the final biological metrics inside the DB:
+#
+#   day_diff_f
+#   adult_diff_f
+#   by_adult_f
+#   by_adult_f_length
+#   by_short_f
+#   x_count_f
 #
 # Reads + rewrites Escapement_PlotPipeline.
 # ------------------------------------------------------------
@@ -38,7 +39,7 @@ def reorder_for_output(df):
     )
 
 
-print("🏗️ Step 45: Recomputing biological metrics (Iteration 7)...")
+print("🏗️ Step 51: Recomputing FINAL biological metrics (Iteration F)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -48,24 +49,14 @@ db_path = project_root / "0_db" / "local.db"
 print(f"🗄️ Using DB → {db_path}")
 
 # ------------------------------------------------------------
-# LOAD TABLE FROM DB
+# LOAD DATA
 # ------------------------------------------------------------
 conn = sqlite3.connect(db_path)
 df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
-# ------------------------------------------------------------
-# CLEAN STRAY COLUMNS
-# ------------------------------------------------------------
-for col in df.columns:
-    if col.lower().startswith("unnamed") or col == "level_0":
-        print(f"🧹 Dropping stray column: {col}")
-        df = df.drop(columns=[col])
-
-# ------------------------------------------------------------
-# REQUIRED COLUMNS
-# ------------------------------------------------------------
+# Normalize column names to underscore schema if needed
 rename_map = {
     "Adult Total": "Adult_Total",
     "Jack Total": "Jack_Total",
@@ -78,12 +69,15 @@ rename_map = {
 }
 df = df.rename(columns=rename_map)
 
+# ------------------------------------------------------------
+# REQUIRED COLUMNS
+# ------------------------------------------------------------
 required_cols = [
     "facility", "species", "Stock", "Stock_BO",
     "Family", "date_iso", "Adult_Total"
 ]
-
 missing = [c for c in required_cols if c not in df.columns]
+
 if missing:
     raise ValueError(f"❌ Missing required columns in DB: {missing}")
 
@@ -96,14 +90,17 @@ df["Adult_Total"] = pd.to_numeric(df["Adult_Total"], errors="coerce").fillna(0)
 group_cols = ["facility", "species", "Stock", "Stock_BO"]
 
 # Stable sort
-df = df.reset_index().sort_values(group_cols + ["date_iso", "index"]).reset_index(drop=True)
+df = df.reset_index(drop=True)
+if "index" not in df.columns:
+    df = df.reset_index()
+df = df.sort_values(group_cols + ["date_iso", "index"]).reset_index(drop=True)
 
 # ============================================================
-# STEP 1 — day_diff7 and adult_diff7
+# STEP 1: day_diff_f and adult_diff_f
 # ============================================================
-print("🔹 Calculating day_diff7 and adult_diff7...")
+print("🔹 Calculating day_diff_f and adult_diff_f...")
 
-df["day_diff7"] = (
+df["day_diff_f"] = (
     df.groupby(group_cols)["date_iso"]
     .diff()
     .dt.days
@@ -111,66 +108,63 @@ df["day_diff7"] = (
     .astype(int)
 )
 
-# Keep negative diffs
-df["adult_diff7"] = df.groupby(group_cols)["Adult_Total"].diff()
+df["adult_diff_f"] = df.groupby(group_cols)["Adult_Total"].diff()
 
-# Reset when group changes
+# Reset diffs at group boundaries
 for col in group_cols:
     df[f"{col}_changed"] = df[col] != df[col].shift(1)
+
 df["group_changed"] = df[[f"{col}_changed" for col in group_cols]].any(axis=1)
 
-df.loc[df["group_changed"], "adult_diff7"] = df.loc[df["group_changed"], "Adult_Total"]
-df["adult_diff7"] = df["adult_diff7"].fillna(df["Adult_Total"])
+df.loc[df["group_changed"], "adult_diff_f"] = df.loc[df["group_changed"], "Adult_Total"]
+df["adult_diff_f"] = df["adult_diff_f"].fillna(df["Adult_Total"])
 
 df = df.drop(columns=[f"{col}_changed" for col in group_cols] + ["group_changed"])
 
 # ============================================================
-# STEP 2 — by_adult7
+# STEP 2: by_adult_f assignment
 # ============================================================
-print("🔹 Assigning by_adult7...")
+print("🔹 Assigning by_adult_f...")
 
-df = df.sort_values(group_cols + ["date_iso", "index"]).reset_index(drop=True)
-
-by_adult7 = []
+byvals = []
 current = 1
 prev_keys = None
 
-for i, row in df.iterrows():
+for _, row in df.iterrows():
     keys = tuple(row[col] for col in group_cols)
 
     if keys != prev_keys:
         current = 1
         prev_keys = keys
-    elif row["adult_diff7"] < 0 or row["day_diff7"] > 60:
+    elif row["adult_diff_f"] < 0 or row["day_diff_f"] > 60:
         current += 1
 
-    by_adult7.append(current)
+    byvals.append(current)
 
-df["by_adult7"] = by_adult7
+df["by_adult_f"] = byvals
 
 # ============================================================
-# STEP 3 — by_adult7_length
+# STEP 3: by_adult_f_length
 # ============================================================
-print("🔹 Calculating by_adult7_length...")
+print("🔹 Calculating by_adult_f_length...")
 
 lengths = (
-    df.groupby(group_cols + ["by_adult7"])
+    df.groupby(group_cols + ["by_adult_f"])
     .size()
-    .reset_index(name="by_adult7_length")
+    .reset_index(name="by_adult_f_length")
 )
 
-df = df.merge(lengths, on=group_cols + ["by_adult7"], how="left")
+df = df.merge(lengths, on=group_cols + ["by_adult_f"], how="left")
 
 # ============================================================
-# STEP 4 — by_short7
+# STEP 4: by_short_f
 # ============================================================
-print("🔹 Detecting short spillover runs (by_short7)...")
+print("🔹 Detecting spillover short runs (by_short_f, salmonids only)...")
 
-df["by_short7"] = ""
-
+df["by_short_f"] = ""
 valid_families = ["Steelhead", "Chinook", "Coho", "Chum", "Pink", "Sockeye"]
 
-def detect_spill7(g):
+def detect_spillover(g):
     g = g.sort_values("date_iso").reset_index(drop=True)
 
     family = str(g.loc[0, "Family"]).strip().title()
@@ -182,82 +176,80 @@ def detect_spill7(g):
         return g
 
     short_idx = set()
-    runs = g[["by_adult7", "by_adult7_length"]].drop_duplicates().reset_index(drop=True)
+    runs = g[["by_adult_f", "by_adult_f_length"]].drop_duplicates().reset_index(drop=True)
 
-    for i, row in runs.iterrows():
-        curr_len = row["by_adult7_length"]
+    for i, r in runs.iterrows():
+        curr_len = r["by_adult_f_length"]
 
         if curr_len > 15:
-            # Look ahead up to 4 runs
-            for j in range(i + 1, min(len(runs), i + 5)):
-                next_len = runs.loc[j, "by_adult7_length"]
-                next_by = runs.loc[j, "by_adult7"]
+            lookahead = runs.iloc[i+1:i+5]
 
-                sub = g[g["by_adult7"] == next_by]
+            for _, nxt in lookahead.iterrows():
+                next_len = nxt["by_adult_f_length"]
+                next_by = nxt["by_adult_f"]
 
-                if (sub["day_diff7"] > 250).any():
+                sub = g[g["by_adult_f"] == next_by]
+
+                if (sub["day_diff_f"] > 250).any():
                     break
 
-                # Skip tagging if this candidate is the final run for the identity
                 if next_len < 5:
-                    if j == len(runs) - 1:
-                        continue
                     short_idx.update(sub.index)
                 else:
                     break
 
-    g.loc[g.index.isin(short_idx), "by_short7"] = "X"
+    g.loc[g.index.isin(short_idx), "by_short_f"] = "X"
     return g
+
 
 df = (
     df.groupby(group_cols, group_keys=False)
-      .apply(detect_spill7)
+      .apply(detect_spillover)
       .reset_index(drop=True)
 )
 
 # ============================================================
-# STEP 5 — x_count7
+# STEP 5: x_count_f
 # ============================================================
-print("🔹 Counting contiguous X sequences (x_count7)...")
+print("🔹 Counting contiguous X sequences (x_count_f)...")
 
-df["x_count7"] = 0
+df["x_count_f"] = 0
 
-def count_x7(g):
+def count_x(g):
     g = g.sort_values(["date_iso", "index"]).reset_index(drop=True)
-
     counts = [0] * len(g)
-    i = 0
 
+    i = 0
     while i < len(g):
-        if g.loc[i, "by_short7"] == "X":
+        if g.loc[i, "by_short_f"] == "X":
             j = i
-            while j < len(g) and g.loc[j, "by_short7"] == "X":
+            while j < len(g) and g.loc[j, "by_short_f"] == "X":
                 j += 1
 
-            length = j - i
+            size = j - i
             for k in range(i, j):
-                counts[k] = length
+                counts[k] = size
 
             i = j
         else:
             i += 1
 
-    g["x_count7"] = counts
+    g["x_count_f"] = counts
     return g
 
+
 df = (
-    df.groupby(group_cols + ["by_adult7"], group_keys=False)
-      .apply(count_x7)
+    df.groupby(group_cols + ["by_adult_f"], group_keys=False)
+      .apply(count_x)
       .reset_index(drop=True)
 )
 
 # ============================================================
-# FINAL SORT & SAVE TO DB
+# FINAL SORT & SAVE
 # ============================================================
-df = df.sort_values(group_cols + ["by_adult7", "date_iso", "index"]).reset_index(drop=True)
+df = df.sort_values(group_cols + ["by_adult_f", "date_iso", "index"]).reset_index(drop=True)
 
-print("💾 Writing iteration7 metrics back to Escapement_PlotPipeline...")
-
+print("💾 Writing final biological metrics back to database...")
 df = reorder_for_output(df)
 
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
@@ -266,8 +258,8 @@ conn.close()
 # ------------------------------------------------------------
 # SUMMARY
 # ------------------------------------------------------------
-print("✅ Iteration 7 Complete!")
+print("✅ Final Iteration (F) Complete!")
 print(f"📊 Rows processed: {len(df):,}")
-print(f"📈 Short runs flagged: {(df['by_short7'] == 'X').sum():,}")
-print(f"🔢 Max biological year (iteration7): {df['by_adult7'].max()}")
-print("🏁 Biological metrics iteration 7 successfully updated.")
+print(f"📈 Short runs flagged: {(df['by_short_f'] == 'X').sum():,}")
+print(f"🔢 Max biological year: {df['by_adult_f'].max()}")
+print("🏁 Final biological metrics successfully updated.")

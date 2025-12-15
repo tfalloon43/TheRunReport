@@ -20,8 +20,8 @@ import re
 # ------------------------------------------------------------
 # COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
 # When set, the runner executes the contiguous block of steps between them (inclusive).
-FIRST_STEP_NAME = "step4_duplicate_db.py"  # <-- paste START filename here, or leave None
-LAST_STEP_NAME = "step37_iteration3.py"   # <-- paste END filename here, or leave None
+FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
+LAST_STEP_NAME = "step63_remove_AD0.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
 ENABLE_STEP1_DISCOVERY = False
 
@@ -72,17 +72,27 @@ STEP_FILES = [
     ("Step 38: Cleanup 3", "step38_cleanup3.py"),
     ("Step 39: Iteration 4", "step39_iteration4.py"),
     ("Step 40: Cleanup 4", "step40_cleanup4.py"),
-    ("Step 41: Iteration 5", "step41_iteration5.py"),
-    ("Step 42: Cleanup 5", "step42_cleanup5.py"),
-    ("Step 43: Iteration 6", "step43_iteration6.py"),
-    ("Step 44: Cleanup 6", "step44_cleanup6.py"),
-    ("Step 45: Iteration 7", "step45_iteration7.py"),
-    ("Step 46: Manual deletions", "step46_manualdeletions.py"),
-    ("Step 47: Iteration 8", "step47_iteration8.py"),
-    ("Step 48: Cleanup 8", "step48_cleanup8.py"),
-    ("Step 49: Iteration 9", "step49_iteration9.py"),
-    ("Step 50: Iteration 10", "step50_iteration10.py"),
-    ("Step 51: Column reorg", "step51_column_reorg.py"),
+#    ("Step 50: Manual deletions", "step50_manualdeletions.py"),
+    ("Step 51: Iteration F", "step51_iteration_f.py"),
+    ("Step 52: Iteration plot", "step52_Iteration_plot.py"),
+    ("Step 53: Column reorg", "step53_column_reorg.py"),
+    ("Step 60: Remove Columbia River rows", "step60_remove_Columbia.py"),
+    ("Step 61: Remove Snake River rows", "step61_remove_Snake.py"),
+    ("Step 62: Remove Stock M/C rows", "step62_remove_MC.py"),
+    ("Step 63: Remove adult_diff_plot == 0", "step63_remove_AD0.py"),
+    ("Step 64: Remove older than current year - 10", "step64_remove_old.py"),
+    ("Step 70: fishperday", "step70_fishperday.py"),
+    ("Step 71: basinfamily identifier", "step71_locationmarking.py"),
+    ("Step 72: day expansion (Day1..DayN)", "step72_count_days.py"),
+    ("Step 75: basinfamily daily template", "step75_tablegen.py"),
+    ("Step 76: fill basinfamily daily counts", "step76_tablefill.py"),
+    ("Step 77: weekly aggregation", "step77_weekly.py"),
+    ("Step 78: weekly reorg to plot data", "step78_weekly_reorg.py"),
+    ("Step 79: weekly reorg wide", "step79_weekly_reorg2.py"),
+    ("Step 80: river extraction", "step80_river.py"),
+    ("Step 81: species extraction", "step81_species.py"),
+    ("Step 85: Snohomish aggregation", "step85_Snohomish.py"),
+    ("Step 86: final reorg + id", "step86_reorg.py"),
 ]
 
 

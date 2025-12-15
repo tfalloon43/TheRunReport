@@ -1,6 +1,6 @@
-# step50_iteration10.py
+# step52_Iteration_plot.py
 # ------------------------------------------------------------
-# Step 50 (v10): Final plotting prep columns
+# Step 52 (Plotting Iteration): Final plotting prep columns
 #
 # Adds the final derived plotting columns to Escapement_PlotPipeline:
 #   day_diff_plot
@@ -36,7 +36,7 @@ def reorder_for_output(df):
     )
 
 
-print("🏗️ Step 50: Building final plotting columns (day_diff_plot → Biological_Year_Length)...")
+print("🏗️ Step 52: Building final plotting columns (day_diff_plot → Biological_Year_Length)...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -140,7 +140,7 @@ conn.close()
 # ------------------------------------------------------------
 # SUMMARY
 # ------------------------------------------------------------
-print("✅ Iteration 10 complete!")
+print("✅ Iteration plot complete!")
 print("📊 Added columns:")
 print("   • day_diff_plot")
 print("   • adult_diff_plot")

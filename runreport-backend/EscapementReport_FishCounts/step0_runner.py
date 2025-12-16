@@ -93,6 +93,7 @@ STEP_FILES = [
     ("Step 81: species extraction", "step81_species.py"),
     ("Step 85: Snohomish aggregation", "step85_Snohomish.py"),
     ("Step 86: final reorg + id", "step86_reorg.py"),
+    ("Step 87: remove specific basinfamily entries", "step87_remove_basinfamily.py"),
 ]
 
 

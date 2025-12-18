@@ -53,12 +53,12 @@ pipeline_steps = [
     # =====================================================
     # 5  RIVER FLOW DATA COLLECTION - build, clean, and prepare to analyze
     # =====================================================
-    "12_flows.py",              
+    #"12_flows.py",              
 
     # =====================================================
     # 6  QUALITY CHECKS (optional manual inspection)
     # =====================================================
-    "15_testapp.py"            # Step 15: Test application for QA checks (manual step; file name kept for legacy)
+    #"15_testapp.py"            # Step 15: Test application for QA checks (manual step; file name kept for legacy)
 
 
 ]

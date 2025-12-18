@@ -1,6 +1,6 @@
-# step72_count_days.py
+# step73_count_days.py
 # ------------------------------------------------------------
-# Step 72: Expand date_iso into Day1 → DayN columns based on day_diff_plot
+# Step 73: Expand date_iso into Day1 → DayN columns based on day_diff_plot
 #
 # For each row:
 #   - Treat date_iso as the end date
@@ -13,7 +13,7 @@ import pandas as pd
 from datetime import timedelta
 from pathlib import Path
 
-print("🏗️ Step 72: Expanding date_iso into Day1 → DayN columns using day_diff_plot...")
+print("🏗️ Step 73: Expanding date_iso into Day1 → DayN columns using day_diff_plot...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -51,7 +51,7 @@ if max_days <= 0:
     print("ℹ️ No positive day_diff_plot values found; skipping Day column creation.")
     df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
     conn.close()
-    print("✅ Step 72 complete (no Day columns added).")
+    print("✅ Step 73 complete (no Day columns added).")
     exit()
 
 print(f"📅 Maximum day_diff_plot = {max_days} → creating Day1 through Day{max_days}")
@@ -81,4 +81,4 @@ for idx, row in df.iterrows():
 df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 
-print(f"✅ Step 72 complete — created Day1 → Day{max_days} columns.")
+print(f"✅ Step 73 complete — created Day1 → Day{max_days} columns.")

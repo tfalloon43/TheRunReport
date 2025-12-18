@@ -172,7 +172,7 @@ basin_map = {
     "LEWIS RIVER HATCHERY": "Lewis River",
     "MERWIN DAM FCF": "Lewis River",
     "MERWIN HATCHERY": "Lewis River",
-    "SPEELYAI HATCHERY": "Lewis River",
+    "SPEELYAI HATCHERY": "Merwin Reservoir",
     "LYONS FERRY HATCHERY": "Snake River",
     "MARBLEMOUNT HATCHERY": "Skagit River",
     "HURD CR HATCHERY": "Dungeness River",

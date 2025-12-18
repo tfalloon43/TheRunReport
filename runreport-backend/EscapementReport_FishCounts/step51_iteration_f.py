@@ -136,12 +136,25 @@ for _, row in df.iterrows():
     if keys != prev_keys:
         current = 1
         prev_keys = keys
-    elif row["adult_diff_f"] < 0 or row["day_diff_f"] > 60:
+    elif row["adult_diff_f"] < 0 or row["day_diff_f"] > 90:
         current += 1
 
     byvals.append(current)
 
 df["by_adult_f"] = byvals
+
+# ============================================================
+# RESET DIFFS/DAYS AT BIOLOGICAL-YEAR BOUNDARIES
+# ============================================================
+print("🔹 Resetting diffs for new biological years...")
+
+df["by_change"] = df.groupby(group_cols)["by_adult_f"].diff().fillna(0)
+boundary_mask = df["by_change"] != 0
+
+df.loc[boundary_mask, "day_diff_f"] = 7
+df.loc[boundary_mask, "adult_diff_f"] = df.loc[boundary_mask, "Adult_Total"]
+
+df = df.drop(columns=["by_change"])
 
 # ============================================================
 # STEP 3: by_adult_f_length

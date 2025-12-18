@@ -65,6 +65,13 @@ else:
     print("ℹ️ No basinfamily values found; table will only contain metric_type and MM-DD.")
 
 # ------------------------------------------------------------
+# SET CURRENT_YEAR CELLS TO NULL (so lines stop at last data)
+# ------------------------------------------------------------
+if uniques:
+    value_cols = [c for c in table.columns if c not in ("metric_type", "MM-DD")]
+    table.loc[table["metric_type"] == "current_year", value_cols] = np.nan
+
+# ------------------------------------------------------------
 # WRITE TO DB
 # ------------------------------------------------------------
 table.to_sql("EscapementReports_dailycounts", conn, if_exists="replace", index=False)

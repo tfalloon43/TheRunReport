@@ -1,19 +1,17 @@
-# step62_remove_MC.py
+# step72_year.py
 # ------------------------------------------------------------
-# Step 62: Remove M/C Stock rows
+# Step 72: Add year column
 #
-# Removes any rows in Escapement_PlotPipeline where the Stock
-# column equals "M" or "C".
-#
-# Keeps all rows where Stock = H/W/U
-#
+# Adds a `year` column to Escapement_PlotPipeline by extracting
+# the year from `date_iso`.
 # ------------------------------------------------------------
 
 import sqlite3
-import pandas as pd
 from pathlib import Path
 
-print("🧹 Step 62: Removing Stock 'M' and 'C' rows from Escapement_PlotPipeline...")
+import pandas as pd
+
+print("📅 Step 72: Creating `year` column from date_iso...")
 
 # ------------------------------------------------------------
 # DB PATH
@@ -30,23 +28,25 @@ df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
 # ------------------------------------------------------------
-# FILTER OUT M/C STOCK ROWS
+# VALIDATE REQUIRED COLUMNS
 # ------------------------------------------------------------
-if "Stock" not in df.columns:
-    raise ValueError("❌ Missing required column 'Stock' in Escapement_PlotPipeline.")
+if "date_iso" not in df.columns:
+    raise ValueError("❌ Missing required column 'date_iso' in Escapement_PlotPipeline.")
 
-mask_mc = df["Stock"].isin(["M", "C"])
-removed = int(mask_mc.sum())
+# ------------------------------------------------------------
+# BUILD YEAR COLUMN
+# ------------------------------------------------------------
+dt = pd.to_datetime(df["date_iso"], errors="coerce")
+df["year"] = dt.dt.year.astype("Int64")
 
-df_filtered = df.loc[~mask_mc].reset_index(drop=True)
-
-print(f"🗑️ Rows removed (Stock == 'M' or 'C'): {removed:,}")
-print(f"📊 Remaining rows: {len(df_filtered):,}")
+missing_years = int(df["year"].isna().sum())
+if missing_years:
+    print(f"⚠️ {missing_years:,} row(s) have invalid date_iso; `year` set to NULL for those.")
 
 # ------------------------------------------------------------
 # WRITE BACK TO DATABASE
 # ------------------------------------------------------------
-df_filtered.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
+df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 
-print("✅ Step 62 complete — Stock 'M' and 'C' rows removed.")
+print("✅ Step 72 complete — `year` column added.")

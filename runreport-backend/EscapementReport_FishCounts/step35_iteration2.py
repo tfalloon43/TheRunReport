@@ -142,7 +142,7 @@ for i, row in df.iterrows():
     if keys != prev_keys:
         current = 1
         prev_keys = keys
-    elif row["adult_diff2"] < 0 or row["day_diff2"] > 60:
+    elif row["adult_diff2"] < 0 or row["day_diff2"] > 90:
         current += 1
 
     by_adult2.append(current)

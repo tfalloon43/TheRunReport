@@ -146,7 +146,7 @@ for i, row in df.iterrows():
     if keys != prev_keys:
         current_year = 1
         prev_keys = keys
-    elif row["adult_diff"] < 0 or row["day_diff"] > 60:
+    elif row["adult_diff"] < 0 or row["day_diff"] > 90:
         current_year += 1
 
     by_adult.append(current_year)

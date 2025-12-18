@@ -48,15 +48,16 @@ df["value"] = pd.to_numeric(df["value"], errors="coerce")
 # ------------------------------------------------------------
 # PIVOT TO WIDE FORMAT
 # ------------------------------------------------------------
-pivot = (
-    df.pivot_table(
-        index=["MM-DD", "identifier"],
-        columns="metric_type",
-        values="value",
-        aggfunc="sum",
-    )
-    .reset_index()
+# IMPORTANT: preserve missing values (NaN) so "current year" lines
+# stop where data stops instead of dropping to 0. Using pivot_table
+# with aggfunc="sum" will turn all-NaN groups into 0.0, so we do an
+# explicit groupby sum with min_count=1 and then a pivot.
+df_grouped = (
+    df.groupby(["MM-DD", "identifier", "metric_type"], as_index=False)["value"]
+    .sum(min_count=1)
 )
+
+pivot = df_grouped.pivot(index=["MM-DD", "identifier"], columns="metric_type", values="value").reset_index()
 
 # Ensure expected metric columns exist
 for col in ["current_year", "previous_year", "10_year"]:

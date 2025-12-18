@@ -63,12 +63,12 @@ long_df["date_obj"] = pd.to_datetime("2024-" + long_df["MM-DD"], errors="coerce"
 # ------------------------------------------------------------
 # WRITE OUTPUT TABLE
 # ------------------------------------------------------------
-long_df.to_sql("EscapementReport_PlotData", conn, if_exists="replace", index=False)
+long_df.to_sql("EscapementReports_PlotData", conn, if_exists="replace", index=False)
 conn.close()
 
 # ------------------------------------------------------------
 # SUMMARY
 # ------------------------------------------------------------
-print("✅ Step 78 complete — EscapementReport_PlotData created.")
+print("✅ Step 78 complete — EscapementReports_PlotData created.")
 print(f"📊 Rows: {len(long_df):,}")
 print(f"🔢 Identifiers: {len(value_cols)}")

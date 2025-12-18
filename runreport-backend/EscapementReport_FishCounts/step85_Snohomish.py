@@ -48,7 +48,7 @@ if missing:
 # NORMALIZE TYPES
 # ------------------------------------------------------------
 metric_cols = ["current_year", "previous_year", "10_year"]
-df[metric_cols] = df[metric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+df[metric_cols] = df[metric_cols].apply(pd.to_numeric, errors="coerce")
 df["MM-DD"] = df["MM-DD"].astype(str).str.strip()
 df["Species_Plot"] = df["Species_Plot"].astype(str).str.strip()
 df["river"] = df["river"].astype(str).str.strip()

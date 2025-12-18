@@ -3,6 +3,8 @@
 # Step 77: Convert daily basinfamily table to weekly totals
 # (with 12-31 partial-week adjustment ×3.5)
 #
+# Combines Stock values as stock values are ignored in this script
+#
 # Reads EscapementReports_dailycounts and outputs a weekly
 # aggregation into EscapementReports_weeklycounts.
 # At the end, all numeric values are rounded to 2 decimals.

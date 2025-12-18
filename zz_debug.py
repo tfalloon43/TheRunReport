@@ -33,7 +33,7 @@ print("🧪 zz_debug.py — CSV vs DB snapshot tool")
 #CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
 
 # --- DB table to export ---
-DB_TABLE_NAME = "EscapementReport_plotdata"   # 👈 CHANGE THIS AS NEEDED
+DB_TABLE_NAME = "Escapement_plotpipeline"   # 👈 CHANGE THIS AS NEEDED
 
 # ============================================================
 # Paths
@@ -63,18 +63,18 @@ COLUMNS_TO_DROP = [
 #                   "by_adult",
 #                   "adult_diff",
 #                   "day_diff",
-#                   "x_count2",
-#                   "by_short2",
-#                   "by_adult2_length",
-#                   "by_adult2",
-#                   "adult_diff2",
-#                   "day_diff2",
-#                   "x_count3",
-#                   "by_short3",
-#                   "by_adult3_length",
-#                   "by_adult3",
-#                   "adult_diff3",
-#                   "day_diff3",
+                   "x_count2",
+                   "by_short2",
+                   "by_adult2_length",
+                   "by_adult2",
+                   "adult_diff2",
+                   "day_diff2",
+                   "x_count3",
+                   "by_short3",
+                   "by_adult3_length",
+                   "by_adult3",
+                   "adult_diff3",
+                   "day_diff3",
                    "",
                    "",
                    "",]
@@ -158,6 +158,7 @@ if drop_cols_db:
     df_db = df_db.drop(columns=drop_cols_db)
 if "date_iso" in df_db.columns:
     df_db["date_iso"] = df_db["date_iso"].apply(convert_to_iso)
+    df_db["year"] = pd.to_datetime(df_db["date_iso"], errors="coerce").dt.year
 df_db.to_csv(db_csv_path, index=False)
 
 print(f"📄 Exported DB table → {db_csv_path} (rows: {len(df_db):,})")

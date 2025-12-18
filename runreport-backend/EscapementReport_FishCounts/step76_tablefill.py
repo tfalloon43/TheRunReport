@@ -6,7 +6,11 @@
 #   - Get fishperday and DayN values.
 #   - Add fishperday to the matching Day row and basinfamily column
 #     in EscapementReports_dailycounts.
-#   - Target metric_type is determined by the date year:
+#   - Target metric_type is determined by the inferred calendar year
+#     for each DayN MM-DD value:
+#       * If MM-DD wraps past 01-01 when counting backwards (e.g., a
+#         current-year early-January date has DayN values like 12-31),
+#         those wrapped days are treated as belonging to the prior year.
 #       * current year → current_year
 #       * previous year → previous_year AND 10_year
 #       * earlier years → 10_year only
@@ -72,6 +76,21 @@ rows_processed = 0
 cells_updated = 0
 
 # ------------------------------------------------------------
+# HELPERS
+# ------------------------------------------------------------
+def infer_calendar_year_for_mmdd(mmdd: str, end_date: pd.Timestamp) -> int:
+    """
+    Given a DayN value like '12-31' and an end date (date_iso),
+    infer which calendar year that day belongs to when counting
+    backwards from end_date.
+
+    Rule: if mmdd is later in the calendar than end_date's MM-DD,
+    it must have wrapped into the prior year.
+    """
+    end_mmdd = end_date.strftime("%m-%d")
+    return end_date.year - 1 if mmdd > end_mmdd else end_date.year
+
+# ------------------------------------------------------------
 # CORE UPDATE LOOP
 # ------------------------------------------------------------
 for _, row in source_df.iterrows():
@@ -86,20 +105,32 @@ for _, row in source_df.iterrows():
         # Skip rows whose basinfamily isn't in the template
         continue
 
-    year = date_val.year
-    if year == current_year:
-        targets = ["current_year"]
-    elif year == previous_year:
-        targets = ["previous_year", "10_year"]
-    else:
-        targets = ["10_year"]
-
     # Gather valid day values
-    days = [str(row[c]).strip() for c in day_cols if isinstance(row[c], str) and row[c].strip()]
+    days = []
+    for c in day_cols:
+        v = row[c]
+        if pd.isna(v):
+            continue
+        s = str(v).strip()
+        if not s:
+            continue
+        days.append(s)
+
     if not days:
         continue
 
     for d in days:
+        if not isinstance(d, str) or len(d) != 5 or d[2] != "-":
+            continue
+
+        inferred_year = infer_calendar_year_for_mmdd(d, date_val)
+        if inferred_year == current_year:
+            targets = ["current_year"]
+        elif inferred_year == previous_year:
+            targets = ["previous_year", "10_year"]
+        else:
+            targets = ["10_year"]
+
         # For each metric_type target, add the fishperday value
         for metric in targets:
             mask = (table_df["metric_type"] == metric) & (table_df["MM-DD"] == d)

@@ -22,14 +22,14 @@ import pandas as pd
 # ------------------------------------------------------------
 # Resolve correct folder paths
 # ------------------------------------------------------------
-BACKEND_ROOT = Path(__file__).resolve().parent             # runreport-backend/
-COLUMBIA_DIR = BACKEND_ROOT / "Columbia_FishCounts"        # module folder
-DB_DIR = BACKEND_ROOT / "0_db"                             # folder containing local.db
-DB_PATH = DB_DIR / "local.db"                              # unified DB file
+BACKEND_ROOT = Path(__file__).resolve().parents[1]          # runreport-backend/
+COLUMBIA_DIR = BACKEND_ROOT / "Columbia_FishCounts"         # module folder
+DB_DIR = BACKEND_ROOT / "0_db"                              # folder containing local.db
+DB_PATH = DB_DIR / "local.db"                               # unified DB file
 
 # Add folders to Python path
-sys.path.append(str(COLUMBIA_DIR))
-sys.path.append(str(DB_DIR))
+sys.path.insert(0, str(COLUMBIA_DIR))
+sys.path.insert(0, str(DB_DIR))
 
 # ------------------------------------------------------------
 # Import pipeline steps

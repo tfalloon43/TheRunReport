@@ -23,7 +23,7 @@ import re
 FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
 LAST_STEP_NAME = "step87_remove_basinfamily.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
-ENABLE_STEP1_DISCOVERY = True
+ENABLE_STEP1_DISCOVERY = False
 
 # Ensure imports resolve when run from anywhere
 CURRENT_DIR = Path(__file__).resolve().parent

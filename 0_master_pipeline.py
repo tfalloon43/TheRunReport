@@ -44,11 +44,11 @@ pipeline_steps = [
     # 4  FISH COUNT DATA PREPARATION — ready for analysis / plotting
     # =====================================================
     "6_prepare_plot_data.py",   # Step 6: Sort escapement_data_cleaned, compute days_since_last, and save escapement_reordered/reduced
-    #"7_10year_plot.py",         # Step 7: Compute 10-year averages for all basins/species
-    #"8_currentyear.py",         # Step 8: Compute current-year metrics for all basins/species
-    #"9_previousyear.py",        # Step 9: Extract previous full year metrics
-    #"10_columbiadata.py",       # Step 10: Fetch Columbia Basin daily adult counts from FPC
-    #"11_unify_fishcounts.py",   # Step 11: Merge hatchery + Columbia datasets
+    "7_10year_plot.py",         # Step 7: Compute 10-year averages for all basins/species
+    "8_currentyear.py",         # Step 8: Compute current-year metrics for all basins/species
+    "9_previousyear.py",        # Step 9: Extract previous full year metrics
+    "10_columbiadata.py",       # Step 10: Fetch Columbia Basin daily adult counts from FPC
+    "11_unify_fishcounts.py",   # Step 11: Merge hatchery + Columbia datasets
 
     # =====================================================
     # 5  RIVER FLOW DATA COLLECTION - build, clean, and prepare to analyze

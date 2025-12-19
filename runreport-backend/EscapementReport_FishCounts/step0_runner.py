@@ -21,7 +21,7 @@ import re
 # COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
 # When set, the runner executes the contiguous block of steps between them (inclusive).
 FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
-LAST_STEP_NAME = "step87_remove_basinfamily.py"   # <-- paste END filename here, or leave None
+LAST_STEP_NAME = "step86_reorg.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
 ENABLE_STEP1_DISCOVERY = True
 
@@ -85,7 +85,8 @@ STEP_FILES = [
     ("Step 70: fishperday", "step70_fishperday.py"),
     ("Step 71: basinfamily identifier", "step71_locationmarking.py"),
     ("Step 72: year from date_iso", "step72_year.py"),
-    ("Step 73: day expansion (Day1..DayN)", "step73_count_days.py"),
+    ("Step 73: remove specific basinfamily entries", "step73_remove_basinfamily.py"),
+    ("Step 74: day expansion (Day1..DayN)", "step74_count_days.py"),
     ("Step 75: basinfamily daily template", "step75_tablegen.py"),
     ("Step 76: fill basinfamily daily counts", "step76_tablefill.py"),
     ("Step 77: weekly aggregation", "step77_weekly.py"),
@@ -96,7 +97,6 @@ STEP_FILES = [
     ("Step 82: Pink correction (10_year)", "step82_Pink_correction.py"),
     ("Step 85: Snohomish aggregation", "step85_Snohomish.py"),
     ("Step 86: final reorg + id", "step86_reorg.py"),
-    ("Step 87: remove specific basinfamily entries", "step87_remove_basinfamily.py"),
 ]
 
 

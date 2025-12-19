@@ -1,10 +1,10 @@
-# step87_remove_basinfamily.py
+# step73_remove_basinfamily.py
 # ------------------------------------------------------------
-# Step 87: Remove specific river/species combos from
-#           EscapementReport_PlotData.
+# Step 73: Remove specific basin/family combos from
+#           Escapement_PlotPipeline.
 #
 # Populate `pairs_to_remove` with tuples:
-#   (river_name, species_plot)
+#   (basin_name, family_name)
 # Each matching row is removed from the table.
 # ------------------------------------------------------------
 
@@ -12,7 +12,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-print("🧹 Step 87: Removing specified river/species combinations...")
+print("🧹 Step 73: Removing specified basin/family combinations...")
 
 # ------------------------------------------------------------
 # CONFIGURE REMOVALS HERE
@@ -109,34 +109,34 @@ print(f"🗄️ Using DB → {db_path}")
 # LOAD DATA
 # ------------------------------------------------------------
 conn = sqlite3.connect(db_path)
-df = pd.read_sql_query("SELECT * FROM EscapementReport_PlotData;", conn)
+df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
 
-print(f"✅ Loaded {len(df):,} rows from EscapementReport_PlotData")
+print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
 
 # ------------------------------------------------------------
 # VALIDATE
 # ------------------------------------------------------------
-required = ["river", "Species_Plot"]
+required = ["basinfamily"]
 missing = [c for c in required if c not in df.columns]
 if missing:
     raise ValueError(f"❌ Missing required columns: {missing}")
 
-df["river"] = df["river"].astype(str).str.strip()
-df["Species_Plot"] = df["Species_Plot"].astype(str).str.strip()
+df["basinfamily"] = df["basinfamily"].astype(str).str.strip()
 
 if not pairs_to_remove:
     print("ℹ️ No pairs specified in pairs_to_remove; nothing to remove.")
 else:
     removed_total = 0
-    for river_name, species_name in pairs_to_remove:
-        mask = (df["river"] == str(river_name).strip()) & (df["Species_Plot"] == str(species_name).strip())
+    for basin_name, family_name in pairs_to_remove:
+        basinfamily = f"{str(basin_name).strip()} - {str(family_name).strip()}"
+        mask = df["basinfamily"] == basinfamily
         count = int(mask.sum())
         if count:
             df = df.loc[~mask].reset_index(drop=True)
             removed_total += count
-            print(f"🗑️ Removed {count} rows for ({river_name}, {species_name})")
+            print(f"🗑️ Removed {count} rows for ({basinfamily})")
         else:
-            print(f"ℹ️ No rows matched ({river_name}, {species_name})")
+            print(f"ℹ️ No rows matched ({basinfamily})")
 
     print(f"🧾 Total rows removed: {removed_total:,}")
     print(f"📊 Remaining rows: {len(df):,}")
@@ -144,7 +144,7 @@ else:
 # ------------------------------------------------------------
 # WRITE BACK
 # ------------------------------------------------------------
-df.to_sql("EscapementReport_PlotData", conn, if_exists="replace", index=False)
+df.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
 conn.close()
 
-print("✅ Step 87 complete — specified river/species combinations removed.")
+print("✅ Step 73 complete — specified basin/family combinations removed.")

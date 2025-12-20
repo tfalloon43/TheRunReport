@@ -25,6 +25,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from publish.publisher import publish_all
+
 
 BACKEND_ROOT = Path(__file__).resolve().parent
 
@@ -64,11 +66,25 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def build_publish_flags(args: argparse.Namespace) -> dict[str, bool]:
+    flags = {name: False for name in PIPELINES}
+    if args.only:
+        flags[args.only] = True
+        return flags
+
+    skips = set(args.skip or [])
+    for name in PIPELINES:
+        flags[name] = name not in skips
+    return flags
+
+
 def main() -> int:
     args = parse_args()
+    flags = build_publish_flags(args)
 
     if args.only:
         run_step0(args.only, PIPELINES[args.only])
+        publish_all(flags)
         return 0
 
     skips = set(args.skip or [])
@@ -78,10 +94,10 @@ def main() -> int:
             continue
         run_step0(name, PIPELINES[name])
 
+    publish_all(flags)
     print("\n✅ All selected backend pipelines finished.\n")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

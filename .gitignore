@@ -6,3 +6,5 @@ pdf_reports/
 *.sqlite3
 *.sqlite
 *.csv
+.env
+*.env

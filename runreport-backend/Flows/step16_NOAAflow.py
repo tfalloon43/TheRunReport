@@ -25,6 +25,7 @@ import pandas as pd
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
+import os
 import sqlite3
 
 print("🌊 Step 16 (Flows): Fetching NOAA flow + stage data (NWPS API)...")
@@ -55,6 +56,11 @@ WINDOWS = {
     "30d": now_utc - timedelta(days=30),
     "1y":  now_utc - timedelta(days=365),
 }
+
+include_1y = os.getenv("FLOWS_INCLUDE_1Y", "1").strip().lower() in {"1", "true", "yes", "y"}
+if not include_1y:
+    WINDOWS = {k: v for k, v in WINDOWS.items() if k != "1y"}
+    print("🪓 1y window disabled (FLOWS_INCLUDE_1Y=0).")
 
 # ------------------------------------------------------------
 # Helpers to find NOAA sites

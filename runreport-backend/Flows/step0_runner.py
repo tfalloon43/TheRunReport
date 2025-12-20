@@ -16,6 +16,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import runpy
 import sys
@@ -44,6 +45,12 @@ STEP_FILES: list[tuple[str, str]] = [
     ("Step 16: Fetch NOAA flow/stage", "step16_NOAAflow.py"),
     ("Step 17: NOAA flows post-process", "step17_NOAAupdate.py"),
 ]
+
+# ------------------------------------------------------------
+# 1Y WINDOW TOGGLE
+# ------------------------------------------------------------
+# INCLUDE_1Y = True
+INCLUDE_1Y = False  # uncomment to skip 1y window in steps 15/16
 
 
 def extract_step_number(label: str) -> int:
@@ -85,6 +92,8 @@ def main() -> int:
         for label, filename in STEP_FILES:
             print(f"{label} -> {filename}")
         return 0
+
+    os.environ["FLOWS_INCLUDE_1Y"] = "1" if INCLUDE_1Y else "0"
 
     steps = iter_steps(args.start, args.end)
     if not steps:

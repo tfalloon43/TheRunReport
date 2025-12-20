@@ -52,6 +52,7 @@ numeric_cols = ["stage_ft", "flow_cfs"]
 for col in numeric_cols:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
+        df.loc[df[col] < 0, col] = pd.NA
         print(f"🔢 Converted '{col}' to numeric.")
     else:
         print(f"⚠️ Numeric column '{col}' not found — skipping.")

@@ -33,7 +33,7 @@ print("🧪 zz_debug.py — CSV vs DB snapshot tool")
 #CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
 
 # --- DB table to export ---
-DB_TABLE_NAME = "EscapementReports"   # 👈 CHANGE THIS AS NEEDED
+DB_TABLE_NAME = "EscapementRawLines"   # 👈 CHANGE THIS AS NEEDED
 
 # ============================================================
 # Paths

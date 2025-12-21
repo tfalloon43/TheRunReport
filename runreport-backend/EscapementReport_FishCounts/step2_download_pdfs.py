@@ -5,11 +5,10 @@ Download PDFs that step1 flagged as unprocessed (processed = 0)
 and store them temporarily.
 
 Updates:
-    • Writes SHA256 hash into EscapementReports.hash
+    • Writes SHA256 hash into EscapementReports.hash (Supabase)
     • Leaves processed = 0 (parsing happens in Step 3)
 """
 
-import sqlite3
 import hashlib
 import requests
 from pathlib import Path
@@ -23,44 +22,74 @@ import sys
 #   runreport-backend/EscapementReport_FishCounts/
 CURRENT_DIR = Path(__file__).resolve().parent
 BACKEND_ROOT = CURRENT_DIR.parent          # runreport-backend/
-DB_DIR = BACKEND_ROOT / "0_db"
-DB_PATH = DB_DIR / "local.db"
+sys.path.append(str(BACKEND_ROOT))
 
 # Temp folder NEXT TO this script:
 TMP_DIR = CURRENT_DIR / "temp_pdfs"
 TMP_DIR.mkdir(exist_ok=True)
 
-print(f"🗄️ Using local DB at: {DB_PATH}")
 print(f"📁 temp_pdfs folder: {TMP_DIR}")
 
 # ------------------------------------------------------------
-# DB helpers
+# Supabase helpers
 # ------------------------------------------------------------
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+try:
+    from publish.supabase_client import SupabaseConfigError, get_supabase_client
+except Exception as e:
+    raise ImportError(
+        "❌ Could not import Supabase client helper. "
+        f"Checked path: {BACKEND_ROOT / 'publish'}\n"
+        f"Error: {e}"
+    )
 
 
-def get_urls_to_download() -> list[str]:
+def get_supabase():
+    try:
+        return get_supabase_client()
+    except SupabaseConfigError as exc:
+        print(f"❌ Supabase not configured: {exc}")
+        return None
+
+
+def _fetch_rows(client, columns: str, filters: dict[str, object] | None = None) -> list[dict]:
+    rows: list[dict] = []
+    page_size = 1000
+    start = 0
+
+    while True:
+        query = client.table("EscapementReports").select(columns).range(start, start + page_size - 1)
+        if filters:
+            for key, value in filters.items():
+                query = query.eq(key, value)
+        response = query.execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase query failed: {response.error}")
+        data = response.data or []
+        rows.extend(data)
+        if len(data) < page_size:
+            break
+        start += page_size
+
+    return rows
+
+
+def get_urls_to_download(client) -> list[str]:
     """Return report_url rows where processed = 0."""
-    sql = "SELECT report_url FROM EscapementReports WHERE processed = 0;"
-    with get_conn() as conn:
-        rows = conn.execute(sql).fetchall()
-    return [row["report_url"] for row in rows]
+    rows = _fetch_rows(client, "report_url,processed", filters={"processed": 0})
+    return [row["report_url"] for row in rows if row.get("report_url")]
 
 
-def update_hash(url: str, hash_value: str):
+def update_hash(client, url: str, hash_value: str) -> None:
     """Store the file hash in EscapementReports."""
-    sql = """
-        UPDATE EscapementReports
-        SET hash = ?
-        WHERE report_url = ?
-    """
-    with get_conn() as conn:
-        conn.execute(sql, (hash_value, url))
-        conn.commit()
+    response = (
+        client.table("EscapementReports")
+        .update({"hash": hash_value})
+        .eq("report_url", url)
+        .execute()
+    )
+    if getattr(response, "error", None):
+        raise RuntimeError(f"Supabase update failed: {response.error}")
 
 
 # ------------------------------------------------------------
@@ -93,7 +122,11 @@ def download_pdf(url: str) -> tuple[Path, bytes]:
 def main():
     print("🔄 Step 2: Downloading unprocessed PDFs...")
 
-    urls = get_urls_to_download()
+    client = get_supabase()
+    if client is None:
+        return
+
+    urls = get_urls_to_download(client)
     print(f"📥 PDFs to download: {len(urls)}")
 
     if not urls:
@@ -108,7 +141,7 @@ def main():
             print(f"   ✔ Saved: {pdf_path.name}")
             print(f"   🔑 Hash: {file_hash[:12]}...")
 
-            update_hash(url, file_hash)
+            update_hash(client, url, file_hash)
 
         except Exception as e:
             print(f"⚠️ ERROR downloading {url}: {e}")

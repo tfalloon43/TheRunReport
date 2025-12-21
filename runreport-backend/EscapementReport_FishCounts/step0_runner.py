@@ -21,9 +21,9 @@ import re
 # COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
 # When set, the runner executes the contiguous block of steps between them (inclusive).
 FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
-LAST_STEP_NAME = "step86_reorg.py"   # <-- paste END filename here, or leave None
+LAST_STEP_NAME = "step90_export_supabase.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
-ENABLE_STEP1_DISCOVERY = True
+ENABLE_STEP1_DISCOVERY = False
 
 # Ensure imports resolve when run from anywhere
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -97,6 +97,7 @@ STEP_FILES = [
     ("Step 82: Pink correction (10_year)", "step82_Pink_correction.py"),
     ("Step 85: Snohomish aggregation", "step85_Snohomish.py"),
     ("Step 86: final reorg + id", "step86_reorg.py"),
+    ("Step 90: export plot data to supabase", "step90_export_supabase.py"),
 ]
 
 

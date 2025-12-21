@@ -12,10 +12,6 @@ TABLE_SCHEMAS: dict[str, dict[str, object]] = {
         "required_columns": [],
         "delete_filter": None,
     },
-    "EscapementReport_PlotData": {
-        "required_columns": [],
-        "delete_filter": None,
-    },
     "Columbia_FishCounts": {
         "required_columns": [],
         "delete_filter": None,
@@ -33,7 +29,7 @@ TABLE_SCHEMAS: dict[str, dict[str, object]] = {
 DATASET_TABLES: dict[str, list[str]] = {
     "columbia": ["Columbia_FishCounts"],
     "flows": ["NOAA_flows", "USGS_flows"],
-    "escapement": ["EscapementReports", "EscapementReport_PlotData"],
+    "escapement": ["EscapementReports"],
 }
 
 # Placeholder registry + metadata tables for Escapement publishing.

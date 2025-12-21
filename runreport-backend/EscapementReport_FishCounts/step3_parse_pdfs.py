@@ -2,8 +2,8 @@
 step3_parse_pdfs.py
 -----------------------------------------
 Reads each unprocessed PDF from temp_pdfs/,
-extracts all text lines, stores them into local.db,
-and marks the PDF as processed.
+extracts all text lines, appends them to Supabase,
+and marks the PDF as processed in Supabase.
 
 Tables:
 
@@ -14,10 +14,10 @@ EscapementRawLines
     id, pdf_name, page_num, text_line
 """
 
-import sqlite3
 from pathlib import Path
 import pdfplumber
 from datetime import datetime
+import sys
 
 # ------------------------------------------------------------
 # Paths
@@ -27,85 +27,97 @@ from datetime import datetime
 #   runreport-backend/EscapementReport_FishCounts/step3_parse_pdfs.py
 CURRENT_DIR = Path(__file__).resolve().parent
 BACKEND_ROOT = CURRENT_DIR.parent                   # runreport-backend/
-DB_DIR = BACKEND_ROOT / "0_db"
-DB_PATH = DB_DIR / "local.db"
+sys.path.append(str(BACKEND_ROOT))
 
 PDF_DIR = CURRENT_DIR / "temp_pdfs"                 # same folder Step 2 uses
 
-print(f"🗄️ Using DB: {DB_PATH}")
 print(f"📁 Reading PDFs from: {PDF_DIR}")
 
-# ------------------------------------------------------------
-# DB helpers
-# ------------------------------------------------------------
-
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def ensure_rawlines_table():
-    sql = """
-    CREATE TABLE IF NOT EXISTS EscapementRawLines (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pdf_name TEXT,
-        page_num INTEGER,
-        text_line TEXT
-    );
-    """
-    with get_conn() as conn:
-        conn.execute(sql)
-        conn.commit()
+try:
+    from publish.supabase_client import SupabaseConfigError, get_supabase_client
+except Exception as e:
+    raise ImportError(
+        "❌ Could not import Supabase client helper. "
+        f"Checked path: {BACKEND_ROOT / 'publish'}\n"
+        f"Error: {e}"
+    )
 
 
-def get_unprocessed_reports():
+def get_supabase():
+    try:
+        return get_supabase_client()
+    except SupabaseConfigError as exc:
+        print(f"❌ Supabase not configured: {exc}")
+        return None
+
+
+def _fetch_rows(client, columns: str, filters: dict[str, object] | None = None) -> list[dict]:
+    rows: list[dict] = []
+    page_size = 1000
+    start = 0
+
+    while True:
+        query = client.table("EscapementReports").select(columns).range(start, start + page_size - 1)
+        if filters:
+            for key, value in filters.items():
+                query = query.eq(key, value)
+        response = query.execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase query failed: {response.error}")
+        data = response.data or []
+        rows.extend(data)
+        if len(data) < page_size:
+            break
+        start += page_size
+
+    return rows
+
+
+def get_unprocessed_reports(client):
     """
     We only process PDFs that:
         - processed = 0
         - hash IS NOT NULL  (means Step 2 downloaded them)
     """
-    sql = """
-    SELECT id, report_url
-    FROM EscapementReports
-    WHERE processed = 0 AND hash IS NOT NULL;
-    """
-    with get_conn() as conn:
-        rows = conn.execute(sql).fetchall()
-    return rows
+    rows = _fetch_rows(client, "id,report_url,hash", filters={"processed": 0})
+    return [row for row in rows if row.get("hash")]
 
 
-def mark_processed(report_id):
-    sql = """
-    UPDATE EscapementReports
-    SET processed = 1,
-        processed_at = ?
-    WHERE id = ?
-    """
-    with get_conn() as conn:
-        conn.execute(sql, (datetime.utcnow().isoformat(), report_id))
-        conn.commit()
+def mark_processed(client, report_id):
+    response = (
+        client.table("EscapementReports")
+        .update({"processed": 1, "processed_at": datetime.utcnow().isoformat()})
+        .eq("id", report_id)
+        .execute()
+    )
+    if getattr(response, "error", None):
+        raise RuntimeError(f"Supabase update failed: {response.error}")
 
-
-def insert_lines_bulk(lines):
+def insert_lines_bulk(client, lines, chunk_size: int = 1000):
     """
     lines = list of (pdf_name, page_num, text_line)
-    Bulk insert inside ONE transaction for speed.
+    Append to EscapementRawLines in Supabase.
     """
-    sql = """
-    INSERT INTO EscapementRawLines (pdf_name, page_num, text_line)
-    VALUES (?, ?, ?)
-    """
-    with get_conn() as conn:
-        conn.executemany(sql, lines)
-        conn.commit()
+    if not lines:
+        return
+
+    rows = [
+        {"pdf_name": pdf_name, "page_num": page_num, "text_line": text_line}
+        for pdf_name, page_num, text_line in lines
+    ]
+
+    for i in range(0, len(rows), chunk_size):
+        chunk = rows[i : i + chunk_size]
+        response = client.table("EscapementRawLines").insert(chunk).execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase insert failed: {response.error}")
 
 
 # ------------------------------------------------------------
 # PDF parsing
 # ------------------------------------------------------------
 
-def parse_pdf(pdf_path: Path) -> int:
+def parse_pdf(client, pdf_path: Path) -> int:
     """
     Extract all text lines from a PDF.
     Returns the number of text lines extracted.
@@ -128,7 +140,7 @@ def parse_pdf(pdf_path: Path) -> int:
 
     # Bulk insert
     if batch:
-        insert_lines_bulk(batch)
+        insert_lines_bulk(client, batch)
 
     return total_lines
 
@@ -140,9 +152,11 @@ def parse_pdf(pdf_path: Path) -> int:
 def main():
     print("🔄 Step 3: Parsing downloaded PDFs...")
 
-    ensure_rawlines_table()
+    client = get_supabase()
+    if client is None:
+        return
 
-    reports = get_unprocessed_reports()
+    reports = get_unprocessed_reports(client)
     print(f"📄 PDFs needing parsing: {len(reports)}")
 
     if not reports:
@@ -162,11 +176,11 @@ def main():
         print(f"📘 Parsing: {filename}")
 
         try:
-            count = parse_pdf(pdf_path)
+            count = parse_pdf(client, pdf_path)
             print(f"   ✔ Extracted {count} lines")
 
             # Mark DB entry as processed
-            mark_processed(report_id)
+            mark_processed(client, report_id)
 
             # Delete parsed PDF
             pdf_path.unlink(missing_ok=True)

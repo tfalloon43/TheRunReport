@@ -23,13 +23,15 @@ import re
 FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
 LAST_STEP_NAME = "step90_export_supabase.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
-ENABLE_STEP1_DISCOVERY = False
+ENABLE_STEP1_DISCOVERY = True
 
 # Ensure imports resolve when run from anywhere
 CURRENT_DIR = Path(__file__).resolve().parent
 sys.path.append(str(CURRENT_DIR))
 
 from step1_available_pdfs import main as step1_discover
+
+SIGNAL_PATH = CURRENT_DIR.parent / ".escapement_new_pdfs"
 
 
 STEP_FILES = [
@@ -165,11 +167,13 @@ def run_pipeline(start: int | None = None, end: int | None = None, skip_discover
     discovery_enabled = ENABLE_STEP1_DISCOVERY and not skip_discovery
     if discovery_enabled:
         urls_to_process = step1_discover()  # Returns list of URLs with processed=0
+        SIGNAL_PATH.write_text("1" if urls_to_process else "0")
 
         if not urls_to_process and not force_run:
             print(f"✔ No new PDFs found — skipping Steps {start}–{end}.\n")
             return
     else:
+        SIGNAL_PATH.write_text("unknown")
         print("⏭️  Skipping Step 1 discovery per toggle/flags.")
 
     selected_steps = filter_steps(start, end)

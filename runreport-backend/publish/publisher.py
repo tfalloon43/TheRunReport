@@ -12,8 +12,49 @@ from typing import Iterable
 
 import pandas as pd
 
+from datetime import datetime, timezone
+
+from .audit import get_publish_audit, upsert_publish_audit
 from .schemas import DATASET_TABLES, METADATA_TABLES, REGISTRY_TABLES, TABLE_SCHEMAS
 from .supabase_client import SupabaseConfigError, get_supabase_client
+
+
+def _parse_audit_max_date(audit: dict | None) -> datetime | None:
+    if not audit:
+        return None
+    value = audit.get("source_max_date")
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _get_local_max_pdf_date(conn: sqlite3.Connection) -> datetime | None:
+    try:
+        cur = conn.execute(
+            """
+            SELECT MAX(pdf_date)
+            FROM Escapement_PlotPipeline
+            WHERE pdf_date IS NOT NULL AND TRIM(pdf_date) <> '';
+            """
+        )
+    except sqlite3.Error:
+        return None
+    row = cur.fetchone()
+    if not row or not row[0]:
+        return None
+    try:
+        parsed = datetime.fromisoformat(row[0])
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "0_db" / "local.db"
@@ -135,6 +176,19 @@ def _publish_dataset(conn: sqlite3.Connection, client, dataset: str, dry_run: bo
         print(f"⏭️  No tables configured for dataset: {dataset}")
         return
 
+    source_max_date = None
+    if dataset == "escapement":
+        source_max_date = _get_local_max_pdf_date(conn)
+        audit = get_publish_audit(client, dataset)
+        remote_max = _parse_audit_max_date(audit)
+
+        if source_max_date is None:
+            print("⏭️  Escapement publish skipped: no local pdf_date found.")
+            return
+        if remote_max and source_max_date <= remote_max:
+            print("⏭️  Escapement publish skipped: no newer pdf_date found.")
+            return
+
     row_counts: dict[str, int] = {}
     for table in tables:
         row_counts[table] = _publish_table(conn, client, table, dry_run=dry_run)
@@ -144,6 +198,16 @@ def _publish_dataset(conn: sqlite3.Connection, client, dataset: str, dry_run: bo
         _update_registry(client, dataset, dry_run=dry_run)
 
     _update_metadata(client, dataset, row_counts, dry_run=dry_run)
+
+    if not dry_run:
+        run_id = os.getenv("PUBLISH_RUN_ID", "").strip() or None
+        upsert_publish_audit(
+            client,
+            dataset,
+            source_max_date=source_max_date,
+            row_count=sum(row_counts.values()),
+            run_id=run_id,
+        )
 
 
 def publish_all(

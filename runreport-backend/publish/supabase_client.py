@@ -2,7 +2,7 @@
 
 Uses env vars:
   - SUPABASE_URL
-  - SUPABASE_SERVICE_ROLE_KEY (preferred) or SUPABASE_ANON_KEY
+  - SUPABASE_SERVICE_ROLE_KEY
 """
 
 from __future__ import annotations
@@ -15,19 +15,41 @@ class SupabaseConfigError(RuntimeError):
     pass
 
 
+def _load_dotenv_if_needed() -> None:
+    if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
+        return
+
+    try:
+        from dotenv import find_dotenv, load_dotenv  # type: ignore
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise SupabaseConfigError(
+            "python-dotenv is required to load .env locally. Install it or set env vars."
+        ) from exc
+
+    dotenv_path = find_dotenv(usecwd=True)
+    if dotenv_path:
+        load_dotenv(dotenv_path, override=False)
+
+
 def _get_credentials() -> tuple[str, str]:
     url = os.getenv("SUPABASE_URL", "").strip()
     service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-    anon_key = os.getenv("SUPABASE_ANON_KEY", "").strip()
+
+    if not url or not service_key:
+        _load_dotenv_if_needed()
+        url = os.getenv("SUPABASE_URL", "").strip()
+        service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
     if not url:
-        raise SupabaseConfigError("SUPABASE_URL is not set.")
+        raise SupabaseConfigError(
+            "SUPABASE_URL is not set. Define it in the environment or .env."
+        )
+    if not service_key:
+        raise SupabaseConfigError(
+            "SUPABASE_SERVICE_ROLE_KEY is not set. Define it in the environment or .env."
+        )
 
-    key = service_key or anon_key
-    if not key:
-        raise SupabaseConfigError("SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY must be set.")
-
-    return url, key
+    return url, service_key
 
 
 def get_supabase_client() -> Any:

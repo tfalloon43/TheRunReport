@@ -11,13 +11,18 @@ This version:
   - When run directly, writes to runreport-backend/0_db/local.db
 """
 
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import re
 import io
 import requests
 import pandas as pd
 from typing import Optional
-from pathlib import Path
-import sys
 
 # -------------------------------------------------------------------
 # Folder Layout (IMPORTANT)
@@ -38,7 +43,7 @@ DB_PATH = DB_DIR / "local.db"
 # Ensure 0_db is importable
 sys.path.append(str(DB_DIR))
 
-from sqlite_manager import SQLiteManager
+from common.sqlite_manager import SQLiteManager
 
 
 # -------------------------------------------------------------------

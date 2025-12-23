@@ -14,9 +14,14 @@ Runs the Columbia_FishCounts ETL pipeline with a gating check:
 Writes the cleaned DataFrame to runreport-backend/0_db/local.db.
 """
 
-import hashlib
 import sys
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import hashlib
 import pandas as pd
 
 # ------------------------------------------------------------
@@ -41,7 +46,7 @@ from step4_reorg import reorganize_daily_data
 from step5_id import add_id_and_convert_numeric
 
 # SQLite manager (already built earlier)
-from sqlite_manager import SQLiteManager
+from common.sqlite_manager import SQLiteManager
 
 
 # ------------------------------------------------------------

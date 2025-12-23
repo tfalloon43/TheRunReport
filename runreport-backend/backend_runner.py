@@ -29,6 +29,7 @@ from publish.publisher import publish_all
 
 
 BACKEND_ROOT = Path(__file__).resolve().parent
+ESCAPEMENT_SIGNAL_PATH = BACKEND_ROOT / ".escapement_new_pdfs"
 
 PIPELINES: dict[str, Path] = {
     "columbia": BACKEND_ROOT / "Columbia_FishCounts" / "step0_runner.py",
@@ -78,12 +79,24 @@ def build_publish_flags(args: argparse.Namespace) -> dict[str, bool]:
     return flags
 
 
+def apply_escapement_publish_signal(flags: dict[str, bool]) -> None:
+    if not flags.get("escapement"):
+        return
+    if not ESCAPEMENT_SIGNAL_PATH.exists():
+        return
+    signal = ESCAPEMENT_SIGNAL_PATH.read_text().strip().lower()
+    if signal == "0":
+        print("⏭️  Escapement publish skipped: no new PDFs found.")
+        flags["escapement"] = False
+
+
 def main() -> int:
     args = parse_args()
     flags = build_publish_flags(args)
 
     if args.only:
         run_step0(args.only, PIPELINES[args.only])
+        apply_escapement_publish_signal(flags)
         publish_all(flags)
         return 0
 
@@ -94,6 +107,7 @@ def main() -> int:
             continue
         run_step0(name, PIPELINES[name])
 
+    apply_escapement_publish_signal(flags)
     publish_all(flags)
     print("\n✅ All selected backend pipelines finished.\n")
     return 0

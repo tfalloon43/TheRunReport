@@ -33,7 +33,7 @@ print("🧪 zz_debug.py — CSV vs DB snapshot tool")
 #CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
 
 # --- DB table to export ---
-DB_TABLE_NAME = "Escapement_plotpipeline"   # 👈 CHANGE THIS AS NEEDED
+DB_TABLE_NAME = "EscapementRawLines"   # 👈 CHANGE THIS AS NEEDED
 
 # ============================================================
 # Paths
@@ -47,37 +47,8 @@ DB_PATH        = PROJECT_ROOT / "runreport-backend" / "0_db" / "local.db"
 OUTPUT_DIR = Path("/Users/thomasfalloon/Desktop/zz_tester")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Columns to remove from both outputs (set to [] to keep all). Example: ["species"]
-COLUMNS_TO_DROP = [
-#                   "species", 
-#                   "stock_presence", 
-#                   "stock_presence_lower",
-#                   "Hatchery_Name",
-#                   "Family",
-#                   "facility",
-#                   "pdf_name",
-#                   "pdf_date",
-#                   "x_count",
-#                   "by_short",
-#                   "by_adult_length",
-#                   "by_adult",
-#                   "adult_diff",
-#                   "day_diff",
-                   "x_count2",
-                   "by_short2",
-                   "by_adult2_length",
-                   "by_adult2",
-                   "adult_diff2",
-                   "day_diff2",
-                   "x_count3",
-                   "by_short3",
-                   "by_adult3_length",
-                   "by_adult3",
-                   "adult_diff3",
-                   "day_diff3",
-                   "",
-                   "",
-                   "",]
+# Columns to remove from outputs (unused when exporting DB as-is).
+COLUMNS_TO_DROP = []
 
 # ------------------------------------------------------------
 # Helpers
@@ -128,7 +99,7 @@ def convert_to_iso(date_str):
 #    raise FileNotFoundError(f"❌ CSV not found: {csv_source_path}")
 
 #df_csv = pd.read_csv(csv_source_path)
-#drop_cols_csv = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_csv.columns]
+#drop_cols_csv = [c for c in [*COLUMNS_TO_DROP] if c in df_csv.columns]
 #if drop_cols_csv:
 #    df_csv = df_csv.drop(columns=drop_cols_csv)
 #df_csv.to_csv(csv_dest_path, index=False)
@@ -153,12 +124,6 @@ finally:
     conn.close()
 
 db_csv_path = OUTPUT_DIR / "DB.csv"
-drop_cols_db = [c for c in ["id", *COLUMNS_TO_DROP] if c in df_db.columns]
-if drop_cols_db:
-    df_db = df_db.drop(columns=drop_cols_db)
-if "date_iso" in df_db.columns:
-    df_db["date_iso"] = df_db["date_iso"].apply(convert_to_iso)
-    df_db["year"] = pd.to_datetime(df_db["date_iso"], errors="coerce").dt.year
 df_db.to_csv(db_csv_path, index=False)
 
 print(f"📄 Exported DB table → {db_csv_path} (rows: {len(df_db):,})")

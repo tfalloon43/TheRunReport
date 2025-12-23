@@ -16,6 +16,7 @@ transformations can freely modify the working table.
 
 import sqlite3
 from pathlib import Path
+import sys
 
 # ------------------------------------------------------------
 # Paths
@@ -25,17 +26,36 @@ CURRENT_DIR = Path(__file__).resolve().parent
 BACKEND_ROOT = CURRENT_DIR.parent
 DB_DIR = BACKEND_ROOT / "0_db"
 DB_PATH = DB_DIR / "local.db"
+sys.path.append(str(BACKEND_ROOT))
 
 print(f"🗄️ Using DB: {DB_PATH}")
 
 # ------------------------------------------------------------
-# DB helper
+# DB helper (local)
 # ------------------------------------------------------------
 
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+try:
+    from publish.supabase_client import SupabaseConfigError, get_supabase_client
+except Exception as e:
+    raise ImportError(
+        "❌ Could not import Supabase client helper. "
+        f"Checked path: {BACKEND_ROOT / 'publish'}\n"
+        f"Error: {e}"
+    )
+
+
+def get_supabase():
+    try:
+        return get_supabase_client()
+    except SupabaseConfigError as exc:
+        print(f"❌ Supabase not configured: {exc}")
+        return None
 
 # ------------------------------------------------------------
 # Main duplication logic
@@ -63,41 +83,63 @@ def ensure_plotpipeline_table(recreate=False):
         conn.commit()
 
 
-def copy_raw_to_pipeline():
+def _fetch_rawlines_page(client, start: int, page_size: int) -> list[dict]:
+    response = (
+        client.table("EscapementRawLines")
+        .select("pdf_name,page_num,text_line")
+        .range(start, start + page_size - 1)
+        .execute()
+    )
+    if getattr(response, "error", None):
+        raise RuntimeError(f"Supabase query failed: {response.error}")
+    return response.data or []
+
+
+def _insert_pipeline_rows(rows: list[dict]) -> None:
+    if not rows:
+        return
+    payload = [(row["pdf_name"], row["page_num"], row["text_line"]) for row in rows]
+    with get_conn() as conn:
+        conn.executemany(
+            """
+            INSERT INTO Escapement_PlotPipeline (pdf_name, page_num, text_line)
+            VALUES (?, ?, ?);
+            """,
+            payload,
+        )
+        conn.commit()
+
+
+def copy_raw_to_pipeline(client):
     """
     Clears Escapement_PlotPipeline and copies ALL rows
     from EscapementRawLines.
     """
 
     with get_conn() as conn:
-        # Check source exists
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table';"
-        ).fetchall()
-
-        table_names = {row["name"] for row in tables}
-        if "EscapementRawLines" not in table_names:
-            raise RuntimeError("❌ Source table EscapementRawLines does not exist!")
-
         print("🧽 Clearing Escapement_PlotPipeline table...")
         conn.execute("DELETE FROM Escapement_PlotPipeline;")
-
-        print("📋 Copying rows from EscapementRawLines → Escapement_PlotPipeline...")
-
-        conn.execute("""
-            INSERT INTO Escapement_PlotPipeline (pdf_name, page_num, text_line)
-            SELECT pdf_name, page_num, text_line
-            FROM EscapementRawLines;
-        """)
-
         conn.commit()
 
-        # Count rows for confirmation
+    print("📋 Copying rows from Supabase EscapementRawLines → Escapement_PlotPipeline...")
+    page_size = 1000
+    start = 0
+    total = 0
+
+    while True:
+        rows = _fetch_rawlines_page(client, start, page_size)
+        if not rows:
+            break
+        _insert_pipeline_rows(rows)
+        total += len(rows)
+        start += page_size
+
+    with get_conn() as conn:
         count = conn.execute(
             "SELECT COUNT(*) AS c FROM Escapement_PlotPipeline;"
         ).fetchone()["c"]
 
-        print(f"✅ Copy complete — {count:,} rows copied.")
+    print(f"✅ Copy complete — {count:,} rows copied.")
 
 
 # ------------------------------------------------------------
@@ -108,7 +150,10 @@ def main():
     print("🔄 Step 4: Duplicating raw PDF table into working table...")
 
     ensure_plotpipeline_table(recreate=True)
-    copy_raw_to_pipeline()
+    client = get_supabase()
+    if client is None:
+        return
+    copy_raw_to_pipeline(client)
 
     print("\n🎉 Step 4 complete — working copy is ready for transformations.")
 

@@ -41,6 +41,7 @@ import pandas as pd
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta
+import os
 import sqlite3
 
 print("🌊 Step 15 (Flows): Fetching USGS flow + stage data for all USGS sites in Flows...")
@@ -94,6 +95,11 @@ RANGES = {
     "30d": fmt(now - timedelta(days=30)),
     "1y":  fmt(now - timedelta(days=365)),
 }
+
+include_1y = os.getenv("FLOWS_INCLUDE_1Y", "1").strip().lower() in {"1", "true", "yes", "y"}
+if not include_1y:
+    RANGES = {k: v for k, v in RANGES.items() if k != "1y"}
+    print("🪓 1y window disabled (FLOWS_INCLUDE_1Y=0).")
 
 # ------------------------------------------------------------
 # Helper functions
@@ -342,6 +348,7 @@ wide_df = full_long_df.pivot_table(
 
 # Flatten column names (pivot creates a MultiIndex for columns)
 wide_df.columns.name = None
+wide_df.insert(0, "id", range(1, len(wide_df) + 1))
 
 with sqlite3.connect(db_path) as conn:
     wide_df.to_sql(TABLE_USGS_FLOWS, conn, if_exists="replace", index=False)

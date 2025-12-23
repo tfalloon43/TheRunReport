@@ -1,0 +1,14 @@
+fly.toml
+.venv
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+100_Data/
+0_db/
+zz_tester/
+node_modules/
+.DS_Store

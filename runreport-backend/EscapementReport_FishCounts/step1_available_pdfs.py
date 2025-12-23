@@ -1,8 +1,7 @@
 """
 step1_available_pdfs.py
 -----------------------------------------
-Discover escapement PDF URLs and store them in local.db
-(simulating a Supabase registry).
+Discover escapement PDF URLs and store them in Supabase.
 
 Table: EscapementReports
 """
@@ -10,61 +9,70 @@ Table: EscapementReports
 from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
-import sqlite3
-import sys
 
 # ------------------------------------------------------------
-# Load SQLiteManager from runreport-backend/0_db
+# Resolve backend paths / imports
 # ------------------------------------------------------------
 CURRENT_DIR = Path(__file__).resolve().parent
 
-# step1_available_pdfs.py lives in:
-#   runreport-backend/EscapementReport_FishCounts/
-# so backend root is ONE level up (parents[0])
 BACKEND_ROOT = CURRENT_DIR.parent
-DB_DIR = BACKEND_ROOT / "0_db"
 
-# Add db folder to import path
 import sys
-sys.path.append(str(DB_DIR))
+sys.path.append(str(BACKEND_ROOT))
 
 try:
-    from sqlite_manager import SQLiteManager
+    from publish.supabase_client import SupabaseConfigError, get_supabase_client
 except Exception as e:
     raise ImportError(
-        f"❌ Could not import SQLiteManager.\n"
-        f"Checked path: {DB_DIR}\n"
+        "❌ Could not import Supabase client helper. "
+        f"Checked path: {BACKEND_ROOT / 'publish'}\n"
         f"Error: {e}"
     )
 
 
 # ------------------------------------------------------------
-# DB helpers (now using SQLiteManager)
+# Supabase helpers
 # ------------------------------------------------------------
 
-def ensure_table(db: SQLiteManager):
-    sql = """
-    CREATE TABLE IF NOT EXISTS EscapementReports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        report_url   TEXT NOT NULL UNIQUE,
-        report_year  INTEGER,
-        processed    INTEGER DEFAULT 0,
-        hash         TEXT,
-        processed_at TEXT
-    );
-    """
-    db.conn.execute(sql)
-    db.conn.commit()
+def get_supabase():
+    try:
+        return get_supabase_client()
+    except SupabaseConfigError as exc:
+        print(f"❌ Supabase not configured: {exc}")
+        return None
 
 
-def get_existing_urls(db: SQLiteManager) -> set[str]:
-    rows = db.conn.execute("SELECT report_url FROM EscapementReports").fetchall()
-    return {row[0] for row in rows}
+def _fetch_rows(client, columns: str, filters: dict[str, object] | None = None) -> list[dict]:
+    rows: list[dict] = []
+    page_size = 1000
+    start = 0
+
+    while True:
+        query = client.table("EscapementReports").select(columns).range(start, start + page_size - 1)
+        if filters:
+            for key, value in filters.items():
+                query = query.eq(key, value)
+        response = query.execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase query failed: {response.error}")
+        data = response.data or []
+        rows.extend(data)
+        if len(data) < page_size:
+            break
+        start += page_size
+
+    return rows
 
 
-def insert_new_urls(db: SQLiteManager, urls: list[str]) -> list[str]:
-    existing = get_existing_urls(db)
+def get_existing_urls(client) -> set[str]:
+    rows = _fetch_rows(client, "report_url")
+    return {row["report_url"] for row in rows if row.get("report_url")}
+
+
+def insert_new_urls(client, urls: list[str]) -> list[str]:
+    existing = get_existing_urls(client)
     new_urls = []
+    payload = []
 
     for url in urls:
         if url in existing:
@@ -79,29 +87,29 @@ def insert_new_urls(db: SQLiteManager, urls: list[str]) -> list[str]:
                 year = int(token)
                 break
 
-        try:
-            db.conn.execute(
-                """
-                INSERT INTO EscapementReports (report_url, report_year, processed)
-                VALUES (?, ?, 0)
-                """,
-                (url, year),
-            )
-            new_urls.append(url)
+        payload.append(
+            {
+                "report_url": url,
+                "report_year": year,
+                "processed": 0,
+            }
+        )
+        new_urls.append(url)
 
-        except sqlite3.IntegrityError:
-            # Already exists
-            pass
+    if payload:
+        response = client.table("EscapementReports").upsert(
+            payload,
+            on_conflict="report_url",
+        ).execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase insert failed: {response.error}")
 
-    db.conn.commit()
     return new_urls
 
 
-def urls_needing_download(db: SQLiteManager) -> list[str]:
-    rows = db.conn.execute(
-        "SELECT report_url FROM EscapementReports WHERE processed = 0"
-    ).fetchall()
-    return [row[0] for row in rows]
+def urls_needing_download(client) -> list[str]:
+    rows = _fetch_rows(client, "report_url,processed", filters={"processed": 0})
+    return [row["report_url"] for row in rows if row.get("report_url")]
 
 
 # ------------------------------------------------------------
@@ -160,18 +168,17 @@ def discover_pdf_urls() -> list[str]:
 def main() -> list[str]:
     print("🔍 Step 1: Discovering escapement PDF URLs...")
 
-    # Unified DB
-    db = SQLiteManager()
-
-    ensure_table(db)
+    client = get_supabase()
+    if client is None:
+        return []
 
     all_urls = discover_pdf_urls()
     print(f"📄 Found {len(all_urls)} PDF links on WDFW page")
 
-    new_urls = insert_new_urls(db, all_urls)
+    new_urls = insert_new_urls(client, all_urls)
     print(f"🆕 Inserted {len(new_urls)} new URLs into EscapementReports")
 
-    todo = urls_needing_download(db)
+    todo = urls_needing_download(client)
     print(f"⬇️ PDFs needing download (processed = 0): {len(todo)}")
 
     return todo

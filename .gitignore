@@ -13,3 +13,5 @@ pdf_reports/
 venv/
 .DS_Store
 .fly/
+__pycache__/
+*.pyc

@@ -108,7 +108,10 @@ def insert_lines_bulk(client, lines, chunk_size: int = 1000):
 
     for i in range(0, len(rows), chunk_size):
         chunk = rows[i : i + chunk_size]
-        response = client.table("EscapementRawLines").insert(chunk).execute()
+        response = client.table("EscapementRawLines").insert(
+            chunk,
+            default_to_null=False,
+        ).execute()
         if getattr(response, "error", None):
             raise RuntimeError(f"Supabase insert failed: {response.error}")
 

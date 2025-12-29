@@ -205,7 +205,7 @@ def _publish_dataset(conn: sqlite3.Connection, client, dataset: str, dry_run: bo
 
     _update_metadata(client, dataset, row_counts, dry_run=dry_run)
 
-    if not dry_run:
+    if not dry_run and dataset != "escapement":
         run_id = os.getenv("PUBLISH_RUN_ID", "").strip() or None
         upsert_publish_audit(
             client,

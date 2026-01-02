@@ -86,7 +86,10 @@ def ensure_plotpipeline_table(recreate=False):
 def _fetch_rawlines_page(client, start: int, page_size: int) -> list[dict]:
     response = (
         client.table("EscapementRawLines")
-        .select("pdf_name,page_num,text_line")
+        .select("id,pdf_name,page_num,text_line")
+        .order("pdf_name")
+        .order("page_num")
+        .order("id")
         .range(start, start + page_size - 1)
         .execute()
     )

@@ -48,7 +48,7 @@ OUTPUT_DIR = Path("/Users/thomasfalloon/Desktop/zz_tester")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # Columns to remove from outputs (unused when exporting DB as-is).
-COLUMNS_TO_DROP = []
+COLUMNS_TO_DROP = ["report_id", "line_order"]
 
 # ------------------------------------------------------------
 # Helpers
@@ -124,6 +124,9 @@ finally:
     conn.close()
 
 db_csv_path = OUTPUT_DIR / "DB.csv"
+drop_cols_db = [c for c in COLUMNS_TO_DROP if c in df_db.columns]
+if drop_cols_db:
+    df_db = df_db.drop(columns=drop_cols_db)
 df_db.to_csv(db_csv_path, index=False)
 
 print(f"📄 Exported DB table → {db_csv_path} (rows: {len(df_db):,})")

@@ -11,7 +11,7 @@ EscapementReports
     id, report_url, report_year, processed, hash, processed_at
 
 EscapementRawLines
-    id, pdf_name, page_num, text_line
+    id, report_id, line_order, pdf_name, page_num, text_line
 """
 
 from pathlib import Path
@@ -95,15 +95,21 @@ def mark_processed(client, report_id):
 
 def insert_lines_bulk(client, lines, chunk_size: int = 1000):
     """
-    lines = list of (pdf_name, page_num, text_line)
+    lines = list of (report_id, line_order, pdf_name, page_num, text_line)
     Append to EscapementRawLines in Supabase.
     """
     if not lines:
         return
 
     rows = [
-        {"pdf_name": pdf_name, "page_num": page_num, "text_line": text_line}
-        for pdf_name, page_num, text_line in lines
+        {
+            "report_id": report_id,
+            "line_order": line_order,
+            "pdf_name": pdf_name,
+            "page_num": page_num,
+            "text_line": text_line,
+        }
+        for report_id, line_order, pdf_name, page_num, text_line in lines
     ]
 
     for i in range(0, len(rows), chunk_size):
@@ -120,7 +126,7 @@ def insert_lines_bulk(client, lines, chunk_size: int = 1000):
 # PDF parsing
 # ------------------------------------------------------------
 
-def parse_pdf(client, pdf_path: Path) -> int:
+def parse_pdf(client, pdf_path: Path, report_id: int) -> int:
     """
     Extract all text lines from a PDF.
     Returns the number of text lines extracted.
@@ -128,6 +134,7 @@ def parse_pdf(client, pdf_path: Path) -> int:
 
     total_lines = 0
     batch = []  # collect lines before bulk insertion
+    line_order = 0
 
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
@@ -138,7 +145,8 @@ def parse_pdf(client, pdf_path: Path) -> int:
             lines = text.splitlines()
             for line in lines:
                 cleaned = line.strip()
-                batch.append((pdf_path.name, page_num, cleaned))
+                line_order += 1
+                batch.append((report_id, line_order, pdf_path.name, page_num, cleaned))
             total_lines += len(lines)
 
     # Bulk insert
@@ -179,7 +187,7 @@ def main():
         print(f"📘 Parsing: {filename}")
 
         try:
-            count = parse_pdf(client, pdf_path)
+            count = parse_pdf(client, pdf_path, report_id)
             print(f"   ✔ Extracted {count} lines")
 
             # Mark DB entry as processed

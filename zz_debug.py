@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import csv
 import io
+import json
 import os
 import sqlite3
+import sys
 import urllib.error
 import urllib.request
 
@@ -107,6 +109,71 @@ def export_supabase_table(
             offset += page_size
 
 
+def fetch_local_rows(db_path: str, table_name: str) -> tuple[list[str], list[sqlite3.Row]]:
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        columns = [
+            col for col in get_table_columns(conn, table_name) if col not in EXCLUDE_COLUMNS
+        ]
+        if not columns:
+            return [], []
+        select_cols = ", ".join(quote_ident(col) for col in columns)
+        rows = conn.execute(f"SELECT {select_cols} FROM {table_name}").fetchall()
+    return columns, rows
+
+
+def fetch_supabase_rows(
+    base_url: str, api_key: str, table_name: str
+) -> tuple[list[str], list[dict]]:
+    page_size = 1000
+    offset = 0
+    rows: list[dict] = []
+    headers = {
+        "apikey": api_key,
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+    }
+
+    while True:
+        url = f"{base_url}/rest/v1/{table_name}?select=*&limit={page_size}&offset={offset}"
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(request) as response:
+                body_text = response.read().decode("utf-8")
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"Supabase request failed for {table_name}: {exc.code} {exc.reason}\n{detail}"
+            ) from exc
+
+        data = json.loads(body_text) if body_text.strip() else []
+        if not data:
+            break
+
+        rows.extend(data)
+        if len(data) < page_size:
+            break
+
+        offset += page_size
+
+    columns = [col for col in (rows[0].keys() if rows else []) if col not in EXCLUDE_COLUMNS]
+    return columns, rows
+
+
+def print_rows(title: str, columns: list[str], rows: list[object]) -> None:
+    print(f"\n=== {title} ===")
+    if not columns:
+        print("(no rows)")
+        return
+    writer = csv.writer(sys.stdout)
+    writer.writerow(columns)
+    for row in rows:
+        if isinstance(row, dict):
+            writer.writerow([row.get(col, "") for col in columns])
+        else:
+            writer.writerow([row[col] for col in columns])
+
+
 def load_env_file(path: str) -> None:
     if not os.path.exists(path):
         return
@@ -132,6 +199,7 @@ def main() -> None:
     output_dir = ensure_output_dir()
     export_table(db_path, "EscapementReport_PlotData", output_dir)
     export_table(db_path, "EscapementRawLines", output_dir)
+    export_table(db_path, "EscapementReports", output_dir)
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get(
@@ -149,6 +217,17 @@ def main() -> None:
     export_supabase_table(
         supabase_url, supabase_key, "EscapementRawLines", output_dir
     )
+    export_supabase_table(
+        supabase_url, supabase_key, "EscapementReports", output_dir
+    )
+
+    local_cols, local_rows = fetch_local_rows(db_path, "EscapementReports")
+    print_rows("local.db EscapementReports", local_cols, local_rows)
+
+    supa_cols, supa_rows = fetch_supabase_rows(
+        supabase_url, supabase_key, "EscapementReports"
+    )
+    print_rows("supabase EscapementReports", supa_cols, supa_rows)
 
 
 if __name__ == "__main__":

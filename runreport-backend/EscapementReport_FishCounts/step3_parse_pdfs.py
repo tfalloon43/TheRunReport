@@ -11,7 +11,7 @@ EscapementReports
     id, report_url, report_year, processed, hash, processed_at
 
 EscapementRawLines
-    id, pdf_name, page_num, text_line
+    id, report_id, line_order, pdf_name, page_num, text_line
 """
 
 import sqlite3
@@ -49,6 +49,8 @@ def ensure_rawlines_table():
     sql = """
     CREATE TABLE IF NOT EXISTS EscapementRawLines (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_id INTEGER,
+        line_order INTEGER,
         pdf_name TEXT,
         page_num INTEGER,
         text_line TEXT
@@ -56,6 +58,14 @@ def ensure_rawlines_table():
     """
     with get_conn() as conn:
         conn.execute(sql)
+        existing = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(EscapementRawLines);").fetchall()
+        }
+        if "report_id" not in existing:
+            conn.execute("ALTER TABLE EscapementRawLines ADD COLUMN report_id INTEGER;")
+        if "line_order" not in existing:
+            conn.execute("ALTER TABLE EscapementRawLines ADD COLUMN line_order INTEGER;")
         conn.commit()
 
 
@@ -89,12 +99,12 @@ def mark_processed(report_id):
 
 def insert_lines_bulk(lines):
     """
-    lines = list of (pdf_name, page_num, text_line)
+    lines = list of (report_id, line_order, pdf_name, page_num, text_line)
     Bulk insert inside ONE transaction for speed.
     """
     sql = """
-    INSERT INTO EscapementRawLines (pdf_name, page_num, text_line)
-    VALUES (?, ?, ?)
+    INSERT INTO EscapementRawLines (report_id, line_order, pdf_name, page_num, text_line)
+    VALUES (?, ?, ?, ?, ?)
     """
     with get_conn() as conn:
         conn.executemany(sql, lines)
@@ -105,7 +115,7 @@ def insert_lines_bulk(lines):
 # PDF parsing
 # ------------------------------------------------------------
 
-def parse_pdf(pdf_path: Path) -> int:
+def parse_pdf(pdf_path: Path, report_id: int) -> int:
     """
     Extract all text lines from a PDF.
     Returns the number of text lines extracted.
@@ -113,6 +123,7 @@ def parse_pdf(pdf_path: Path) -> int:
 
     total_lines = 0
     batch = []  # collect lines before bulk insertion
+    line_order = 0
 
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
@@ -123,7 +134,8 @@ def parse_pdf(pdf_path: Path) -> int:
             lines = text.splitlines()
             for line in lines:
                 cleaned = line.strip()
-                batch.append((pdf_path.name, page_num, cleaned))
+                line_order += 1
+                batch.append((report_id, line_order, pdf_path.name, page_num, cleaned))
             total_lines += len(lines)
 
     # Bulk insert
@@ -162,7 +174,7 @@ def main():
         print(f"📘 Parsing: {filename}")
 
         try:
-            count = parse_pdf(pdf_path)
+            count = parse_pdf(pdf_path, report_id)
             print(f"   ✔ Extracted {count} lines")
 
             # Mark DB entry as processed

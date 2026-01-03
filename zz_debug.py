@@ -6,6 +6,8 @@ import sqlite3
 import urllib.error
 import urllib.request
 
+EXCLUDE_COLUMNS = {"report_id", "line_order"}
+
 
 def ensure_output_dir() -> str:
     desktop = os.path.expanduser("~/Desktop")
@@ -14,10 +16,25 @@ def ensure_output_dir() -> str:
     return output_dir
 
 
+def get_table_columns(conn: sqlite3.Connection, table_name: str) -> list[str]:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return [row[1] for row in rows]
+
+
+def quote_ident(name: str) -> str:
+    return f'"{name.replace(chr(34), chr(34) + chr(34))}"'
+
+
 def export_table(db_path: str, table_name: str, output_dir: str) -> None:
     output_path = os.path.join(output_dir, f"local_{table_name}.csv")
     with sqlite3.connect(db_path) as conn:
-        cursor = conn.execute(f"SELECT * FROM {table_name}")
+        columns = [
+            col for col in get_table_columns(conn, table_name) if col not in EXCLUDE_COLUMNS
+        ]
+        if not columns:
+            raise RuntimeError(f"No columns to export for table: {table_name}")
+        select_cols = ", ".join(quote_ident(col) for col in columns)
+        cursor = conn.execute(f"SELECT {select_cols} FROM {table_name}")
         headers = [desc[0] for desc in cursor.description]
         with open(output_path, "w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -41,6 +58,7 @@ def export_supabase_table(
 
     with open(output_path, "w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
+        keep_indices = None
         while True:
             url = (
                 f"{base_url}/rest/v1/{table_name}"
@@ -65,13 +83,22 @@ def export_supabase_table(
             except StopIteration:
                 break
 
+            if keep_indices is None:
+                keep_indices = [
+                    idx
+                    for idx, col in enumerate(header_row)
+                    if col not in EXCLUDE_COLUMNS
+                ]
+                if not keep_indices:
+                    raise RuntimeError(f"No columns to export for table: {table_name}")
+
             if not wrote_header:
-                writer.writerow(header_row)
+                writer.writerow([header_row[i] for i in keep_indices])
                 wrote_header = True
 
             row_count = 0
             for row in csv_reader:
-                writer.writerow(row)
+                writer.writerow([row[i] for i in keep_indices])
                 row_count += 1
 
             if row_count < page_size:

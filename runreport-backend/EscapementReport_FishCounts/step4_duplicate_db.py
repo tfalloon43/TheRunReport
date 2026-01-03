@@ -49,6 +49,8 @@ def ensure_plotpipeline_table(recreate=False):
     sql = """
     CREATE TABLE IF NOT EXISTS Escapement_PlotPipeline (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_id INTEGER,
+        line_order INTEGER,
         pdf_name TEXT,
         page_num INTEGER,
         text_line TEXT
@@ -85,9 +87,10 @@ def copy_raw_to_pipeline():
         print("📋 Copying rows from EscapementRawLines → Escapement_PlotPipeline...")
 
         conn.execute("""
-            INSERT INTO Escapement_PlotPipeline (pdf_name, page_num, text_line)
-            SELECT pdf_name, page_num, text_line
-            FROM EscapementRawLines;
+            INSERT INTO Escapement_PlotPipeline (report_id, line_order, pdf_name, page_num, text_line)
+            SELECT report_id, line_order, pdf_name, page_num, text_line
+            FROM EscapementRawLines
+            ORDER BY report_id, line_order;
         """)
 
         conn.commit()

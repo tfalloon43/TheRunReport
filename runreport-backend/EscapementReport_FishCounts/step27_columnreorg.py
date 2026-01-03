@@ -84,6 +84,8 @@ def main():
 
     drop_columns = [
         "id",
+        "report_id",
+        "line_order",
         "page_num",
         "text_line",
         "date",

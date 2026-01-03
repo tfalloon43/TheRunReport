@@ -6,9 +6,14 @@ import os
 import sqlite3
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
-EXCLUDE_COLUMNS = {"report_id", "line_order"}
+EXCLUDE_COLUMNS = {"id"}
+ORDER_BY = {
+    "EscapementReport_PlotData": ["river", "Species_Plot", "MM-DD"],
+    "EscapementRawLines": ["report_id", "line_order"],
+}
 
 
 def ensure_output_dir() -> str:
@@ -27,6 +32,28 @@ def quote_ident(name: str) -> str:
     return f'"{name.replace(chr(34), chr(34) + chr(34))}"'
 
 
+def get_order_clause(columns: list[str], table_name: str) -> str:
+    desired = ORDER_BY.get(table_name, [])
+    order_cols = [col for col in desired if col in columns]
+    if not order_cols:
+        return ""
+    return " ORDER BY " + ", ".join(quote_ident(col) for col in order_cols)
+
+
+def build_supabase_order_param(table_name: str) -> str:
+    desired = ORDER_BY.get(table_name, [])
+    if not desired:
+        return ""
+    parts = []
+    for col in desired:
+        if col.isidentifier():
+            token = f"{col}.asc"
+        else:
+            token = f'"{col}".asc'
+        parts.append(urllib.parse.quote(token, safe="._-"))
+    return "&order=" + ",".join(parts)
+
+
 def export_table(db_path: str, table_name: str, output_dir: str) -> None:
     output_path = os.path.join(output_dir, f"local_{table_name}.csv")
     with sqlite3.connect(db_path) as conn:
@@ -36,7 +63,8 @@ def export_table(db_path: str, table_name: str, output_dir: str) -> None:
         if not columns:
             raise RuntimeError(f"No columns to export for table: {table_name}")
         select_cols = ", ".join(quote_ident(col) for col in columns)
-        cursor = conn.execute(f"SELECT {select_cols} FROM {table_name}")
+        order_clause = get_order_clause(columns, table_name)
+        cursor = conn.execute(f"SELECT {select_cols} FROM {table_name}{order_clause}")
         headers = [desc[0] for desc in cursor.description]
         with open(output_path, "w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -52,6 +80,7 @@ def export_supabase_table(
     page_size = 1000
     offset = 0
     wrote_header = False
+    order_param = build_supabase_order_param(table_name)
     headers = {
         "apikey": api_key,
         "Authorization": f"Bearer {api_key}",
@@ -64,7 +93,7 @@ def export_supabase_table(
         while True:
             url = (
                 f"{base_url}/rest/v1/{table_name}"
-                f"?select=*&limit={page_size}&offset={offset}"
+                f"?select=*&limit={page_size}&offset={offset}{order_param}"
             )
             request = urllib.request.Request(url, headers=headers)
             try:
@@ -118,7 +147,10 @@ def fetch_local_rows(db_path: str, table_name: str) -> tuple[list[str], list[sql
         if not columns:
             return [], []
         select_cols = ", ".join(quote_ident(col) for col in columns)
-        rows = conn.execute(f"SELECT {select_cols} FROM {table_name}").fetchall()
+        order_clause = get_order_clause(columns, table_name)
+        rows = conn.execute(
+            f"SELECT {select_cols} FROM {table_name}{order_clause}"
+        ).fetchall()
     return columns, rows
 
 
@@ -128,6 +160,7 @@ def fetch_supabase_rows(
     page_size = 1000
     offset = 0
     rows: list[dict] = []
+    order_param = build_supabase_order_param(table_name)
     headers = {
         "apikey": api_key,
         "Authorization": f"Bearer {api_key}",
@@ -135,7 +168,10 @@ def fetch_supabase_rows(
     }
 
     while True:
-        url = f"{base_url}/rest/v1/{table_name}?select=*&limit={page_size}&offset={offset}"
+        url = (
+            f"{base_url}/rest/v1/{table_name}"
+            f"?select=*&limit={page_size}&offset={offset}{order_param}"
+        )
         request = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(request) as response:

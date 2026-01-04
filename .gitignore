@@ -7,11 +7,3 @@ pdf_reports/
 *.sqlite
 *.csv
 .env
-*.env
-.env.*
-.venv/
-venv/
-.DS_Store
-.fly/
-__pycache__/
-*.pyc

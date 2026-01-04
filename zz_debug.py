@@ -5,6 +5,7 @@ import json
 import os
 import sqlite3
 import sys
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -86,6 +87,7 @@ def export_supabase_table(
         "Authorization": f"Bearer {api_key}",
         "Accept": "text/csv",
     }
+    ssl_context = build_ssl_context()
 
     with open(output_path, "w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -97,12 +99,17 @@ def export_supabase_table(
             )
             request = urllib.request.Request(url, headers=headers)
             try:
-                with urllib.request.urlopen(request) as response:
+                with urllib.request.urlopen(request, context=ssl_context) as response:
                     body_text = response.read().decode("utf-8")
             except urllib.error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", errors="replace")
                 raise RuntimeError(
                     f"Supabase request failed for {table_name}: {exc.code} {exc.reason}\n{detail}"
+                ) from exc
+            except urllib.error.URLError as exc:
+                raise RuntimeError(
+                    "Supabase request failed during SSL handshake. "
+                    "Set SSL_CERT_FILE to a CA bundle path or install certifi."
                 ) from exc
 
             if not body_text.strip():
@@ -166,6 +173,7 @@ def fetch_supabase_rows(
         "Authorization": f"Bearer {api_key}",
         "Accept": "application/json",
     }
+    ssl_context = build_ssl_context()
 
     while True:
         url = (
@@ -174,12 +182,17 @@ def fetch_supabase_rows(
         )
         request = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(request) as response:
+            with urllib.request.urlopen(request, context=ssl_context) as response:
                 body_text = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise RuntimeError(
                 f"Supabase request failed for {table_name}: {exc.code} {exc.reason}\n{detail}"
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(
+                "Supabase request failed during SSL handshake. "
+                "Set SSL_CERT_FILE to a CA bundle path or install certifi."
             ) from exc
 
         data = json.loads(body_text) if body_text.strip() else []
@@ -223,6 +236,23 @@ def load_env_file(path: str) -> None:
             value = value.strip().strip('"').strip("'")
             if key and key not in os.environ:
                 os.environ[key] = value
+
+
+def build_ssl_context() -> ssl.SSLContext:
+    if os.environ.get("SUPABASE_SSL_NO_VERIFY") == "1":
+        # Explicit override for local debugging only.
+        return ssl._create_unverified_context()
+
+    cafile = os.environ.get("SSL_CERT_FILE") or os.environ.get("REQUESTS_CA_BUNDLE")
+    if cafile:
+        return ssl.create_default_context(cafile=cafile)
+
+    try:
+        import certifi
+    except ImportError:
+        return ssl.create_default_context()
+
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 def main() -> None:

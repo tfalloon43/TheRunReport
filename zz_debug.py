@@ -1,138 +1,300 @@
-# zz_debug.py
-# ------------------------------------------------------------
-# DEBUG UTILITY
-#
-# Copies:
-#   1) A chosen CSV from the legacy CSV pipeline
-#   2) A chosen table from local.db
-#
-# into:
-#   ~/Desktop/zz_tester
-#
-# You manually change:
-#   - CSV_NAME
-#   - DB_TABLE_NAME
-#
-# No smart logic. No inference. Explicit only.
-# ------------------------------------------------------------
-
-import shutil
+#!/usr/bin/env python3
+import csv
+import io
+import json
+import os
 import sqlite3
-import pandas as pd
-import re
-from datetime import datetime
-from pathlib import Path
+import sys
+import ssl
+import urllib.error
+import urllib.parse
+import urllib.request
 
-print("🧪 zz_debug.py — CSV vs DB snapshot tool")
+EXCLUDE_COLUMNS = {"id"}
+ORDER_BY = {
+    "EscapementReport_PlotData": ["river", "Species_Plot", "MM-DD"],
+    "EscapementRawLines": ["report_id", "line_order"],
+}
 
-# ============================================================
-# 🔧🔧🔧 MANUAL EDIT SECTION (CHANGE THESE)
-# ============================================================
 
-# --- CSV produced by 0_master_pipeline ---
-#CSV_NAME = "csv_plotdata.csv"     # 👈 CHANGE THIS AS NEEDED
+def ensure_output_dir() -> str:
+    desktop = os.path.expanduser("~/Desktop")
+    output_dir = os.path.join(desktop, "zz_tester")
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
 
-# --- DB table to export ---
-DB_TABLE_NAME = "EscapementRawLines"   # 👈 CHANGE THIS AS NEEDED
 
-# ============================================================
-# Paths
-# ============================================================
+def get_table_columns(conn: sqlite3.Connection, table_name: str) -> list[str]:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return [row[1] for row in rows]
 
-PROJECT_ROOT = Path("/Users/thomasfalloon/Desktop/TheRunReport")
 
-#CSV_SOURCE_DIR = PROJECT_ROOT / "100_Data"
-DB_PATH        = PROJECT_ROOT / "runreport-backend" / "0_db" / "local.db"
+def quote_ident(name: str) -> str:
+    return f'"{name.replace(chr(34), chr(34) + chr(34))}"'
 
-OUTPUT_DIR = Path("/Users/thomasfalloon/Desktop/zz_tester")
-OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Columns to remove from outputs (unused when exporting DB as-is).
-COLUMNS_TO_DROP = ["report_id", "line_order"]
-
-# ------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------
-
-def convert_to_iso(date_str):
-    """Convert MM/DD/YY, MM/DD/YYYY, or ISO-with-time → YYYY-MM-DD."""
-    if date_str is None:
+def get_order_clause(columns: list[str], table_name: str) -> str:
+    desired = ORDER_BY.get(table_name, [])
+    order_cols = [col for col in desired if col in columns]
+    if not order_cols:
         return ""
-    if not isinstance(date_str, str):
-        date_str = str(date_str)
-    if not date_str.strip():
-        return ""
+    return " ORDER BY " + ", ".join(quote_ident(col) for col in order_cols)
 
-    # Remove any time component
-    date_str = date_str.strip()
-    for sep in (" ", "T"):
-        if sep in date_str:
-            date_str = date_str.split(sep)[0]
+
+def build_supabase_order_param(table_name: str) -> str:
+    desired = ORDER_BY.get(table_name, [])
+    if not desired:
+        return ""
+    parts = []
+    for col in desired:
+        if col.isidentifier():
+            token = f"{col}.asc"
+        else:
+            token = f'"{col}".asc'
+        parts.append(urllib.parse.quote(token, safe="._-"))
+    return "&order=" + ",".join(parts)
+
+
+def export_table(db_path: str, table_name: str, output_dir: str) -> None:
+    output_path = os.path.join(output_dir, f"local_{table_name}.csv")
+    with sqlite3.connect(db_path) as conn:
+        columns = [
+            col for col in get_table_columns(conn, table_name) if col not in EXCLUDE_COLUMNS
+        ]
+        if not columns:
+            raise RuntimeError(f"No columns to export for table: {table_name}")
+        select_cols = ", ".join(quote_ident(col) for col in columns)
+        order_clause = get_order_clause(columns, table_name)
+        cursor = conn.execute(f"SELECT {select_cols} FROM {table_name}{order_clause}")
+        headers = [desc[0] for desc in cursor.description]
+        with open(output_path, "w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(headers)
+            for row in cursor:
+                writer.writerow(row)
+
+
+def export_supabase_table(
+    base_url: str, api_key: str, table_name: str, output_dir: str
+) -> None:
+    output_path = os.path.join(output_dir, f"supabase_{table_name}.csv")
+    page_size = 1000
+    offset = 0
+    wrote_header = False
+    order_param = build_supabase_order_param(table_name)
+    headers = {
+        "apikey": api_key,
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "text/csv",
+    }
+    ssl_context = build_ssl_context()
+
+    with open(output_path, "w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        keep_indices = None
+        while True:
+            url = (
+                f"{base_url}/rest/v1/{table_name}"
+                f"?select=*&limit={page_size}&offset={offset}{order_param}"
+            )
+            request = urllib.request.Request(url, headers=headers)
+            try:
+                with urllib.request.urlopen(request, context=ssl_context) as response:
+                    body_text = response.read().decode("utf-8")
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    f"Supabase request failed for {table_name}: {exc.code} {exc.reason}\n{detail}"
+                ) from exc
+            except urllib.error.URLError as exc:
+                raise RuntimeError(
+                    "Supabase request failed during SSL handshake. "
+                    "Set SSL_CERT_FILE to a CA bundle path or install certifi."
+                ) from exc
+
+            if not body_text.strip():
+                break
+
+            csv_reader = csv.reader(io.StringIO(body_text))
+            try:
+                header_row = next(csv_reader)
+            except StopIteration:
+                break
+
+            if keep_indices is None:
+                keep_indices = [
+                    idx
+                    for idx, col in enumerate(header_row)
+                    if col not in EXCLUDE_COLUMNS
+                ]
+                if not keep_indices:
+                    raise RuntimeError(f"No columns to export for table: {table_name}")
+
+            if not wrote_header:
+                writer.writerow([header_row[i] for i in keep_indices])
+                wrote_header = True
+
+            row_count = 0
+            for row in csv_reader:
+                writer.writerow([row[i] for i in keep_indices])
+                row_count += 1
+
+            if row_count < page_size:
+                break
+
+            offset += page_size
+
+
+def fetch_local_rows(db_path: str, table_name: str) -> tuple[list[str], list[sqlite3.Row]]:
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        columns = [
+            col for col in get_table_columns(conn, table_name) if col not in EXCLUDE_COLUMNS
+        ]
+        if not columns:
+            return [], []
+        select_cols = ", ".join(quote_ident(col) for col in columns)
+        order_clause = get_order_clause(columns, table_name)
+        rows = conn.execute(
+            f"SELECT {select_cols} FROM {table_name}{order_clause}"
+        ).fetchall()
+    return columns, rows
+
+
+def fetch_supabase_rows(
+    base_url: str, api_key: str, table_name: str
+) -> tuple[list[str], list[dict]]:
+    page_size = 1000
+    offset = 0
+    rows: list[dict] = []
+    order_param = build_supabase_order_param(table_name)
+    headers = {
+        "apikey": api_key,
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+    }
+    ssl_context = build_ssl_context()
+
+    while True:
+        url = (
+            f"{base_url}/rest/v1/{table_name}"
+            f"?select=*&limit={page_size}&offset={offset}{order_param}"
+        )
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(request, context=ssl_context) as response:
+                body_text = response.read().decode("utf-8")
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"Supabase request failed for {table_name}: {exc.code} {exc.reason}\n{detail}"
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(
+                "Supabase request failed during SSL handshake. "
+                "Set SSL_CERT_FILE to a CA bundle path or install certifi."
+            ) from exc
+
+        data = json.loads(body_text) if body_text.strip() else []
+        if not data:
             break
 
-    # Already ISO? keep just date part
-    if re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y-%m-%d")
-        except ValueError:
-            return ""
+        rows.extend(data)
+        if len(data) < page_size:
+            break
 
-    for fmt in ("%m/%d/%y", "%m/%d/%Y"):
-        try:
-            parsed = datetime.strptime(date_str, fmt)
-            if parsed.year < 1950:
-                parsed = parsed.replace(year=parsed.year + 2000)
-            return parsed.strftime("%Y-%m-%d")
-        except ValueError:
-            continue
+        offset += page_size
 
-    return ""
+    columns = [col for col in (rows[0].keys() if rows else []) if col not in EXCLUDE_COLUMNS]
+    return columns, rows
 
-# ============================================================
-# 1️⃣ COPY CSV FROM LEGACY PIPELINE
-# ============================================================
 
-#csv_source_path = CSV_SOURCE_DIR / CSV_NAME
-#csv_dest_path   = OUTPUT_DIR / "CSV.CSV"
+def print_rows(title: str, columns: list[str], rows: list[object]) -> None:
+    print(f"\n=== {title} ===")
+    if not columns:
+        print("(no rows)")
+        return
+    writer = csv.writer(sys.stdout)
+    writer.writerow(columns)
+    for row in rows:
+        if isinstance(row, dict):
+            writer.writerow([row.get(col, "") for col in columns])
+        else:
+            writer.writerow([row[col] for col in columns])
 
-#if not csv_source_path.exists():
-#    raise FileNotFoundError(f"❌ CSV not found: {csv_source_path}")
 
-#df_csv = pd.read_csv(csv_source_path)
-#drop_cols_csv = [c for c in [*COLUMNS_TO_DROP] if c in df_csv.columns]
-#if drop_cols_csv:
-#    df_csv = df_csv.drop(columns=drop_cols_csv)
-#df_csv.to_csv(csv_dest_path, index=False)
+def load_env_file(path: str) -> None:
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
 
-#print(f"📄 Copied CSV → {csv_dest_path} (rows: {len(df_csv):,})")
 
-# ============================================================
-# 2️⃣ EXPORT DB TABLE TO CSV
-# ============================================================
+def build_ssl_context() -> ssl.SSLContext:
+    if os.environ.get("SUPABASE_SSL_NO_VERIFY") == "1":
+        # Explicit override for local debugging only.
+        return ssl._create_unverified_context()
 
-if not DB_PATH.exists():
-    raise FileNotFoundError(f"❌ DB not found: {DB_PATH}")
+    cafile = os.environ.get("SSL_CERT_FILE") or os.environ.get("REQUESTS_CA_BUNDLE")
+    if cafile:
+        return ssl.create_default_context(cafile=cafile)
 
-conn = sqlite3.connect(DB_PATH)
+    try:
+        import certifi
+    except ImportError:
+        return ssl.create_default_context()
 
-try:
-    df_db = pd.read_sql_query(
-        f"SELECT * FROM {DB_TABLE_NAME};",
-        conn
+    return ssl.create_default_context(cafile=certifi.where())
+
+
+def main() -> None:
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    load_env_file(os.path.join(repo_root, ".env"))
+    db_path = os.path.join(repo_root, "runreport-backend", "0_db", "local.db")
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"Database not found: {db_path}")
+
+    output_dir = ensure_output_dir()
+    export_table(db_path, "EscapementReport_PlotData", output_dir)
+    export_table(db_path, "EscapementRawLines", output_dir)
+    export_table(db_path, "EscapementReports", output_dir)
+
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get(
+        "SUPABASE_ANON_KEY"
     )
-finally:
-    conn.close()
+    if not supabase_url:
+        raise RuntimeError("Missing SUPABASE_URL env var for Supabase access.")
+    if not supabase_key:
+        raise RuntimeError(
+            "Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY env var."
+        )
+    export_supabase_table(
+        supabase_url, supabase_key, "EscapementReport_PlotData", output_dir
+    )
+    export_supabase_table(
+        supabase_url, supabase_key, "EscapementRawLines", output_dir
+    )
+    export_supabase_table(
+        supabase_url, supabase_key, "EscapementReports", output_dir
+    )
 
-db_csv_path = OUTPUT_DIR / "DB.csv"
-drop_cols_db = [c for c in COLUMNS_TO_DROP if c in df_db.columns]
-if drop_cols_db:
-    df_db = df_db.drop(columns=drop_cols_db)
-df_db.to_csv(db_csv_path, index=False)
+    local_cols, local_rows = fetch_local_rows(db_path, "EscapementReports")
+    print_rows("local.db EscapementReports", local_cols, local_rows)
 
-print(f"📄 Exported DB table → {db_csv_path} (rows: {len(df_db):,})")
+    supa_cols, supa_rows = fetch_supabase_rows(
+        supabase_url, supabase_key, "EscapementReports"
+    )
+    print_rows("supabase EscapementReports", supa_cols, supa_rows)
 
-# ============================================================
-# SUMMARY
-# ============================================================
 
-print("\n✅ Debug snapshot complete")
+if __name__ == "__main__":
+    main()

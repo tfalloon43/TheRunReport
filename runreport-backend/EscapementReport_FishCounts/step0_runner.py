@@ -14,6 +14,8 @@ import sys
 import runpy
 import argparse
 import re
+import time
+from datetime import datetime, timezone
 
 # ------------------------------------------------------------
 # Quick debug controls
@@ -124,8 +126,13 @@ def run_step(label: str, filename: str):
     path = CURRENT_DIR / filename
     if not path.exists():
         raise FileNotFoundError(f"Step file missing: {path}")
-    print(f"▶ {label}")
+    start_ts = datetime.now(timezone.utc)
+    start_perf = time.perf_counter()
+    print(f"{start_ts.isoformat().replace('+00:00', 'Z')} ▶ {label} START")
     runpy.run_path(str(path), run_name="__main__")
+    elapsed = time.perf_counter() - start_perf
+    end_ts = datetime.now(timezone.utc)
+    print(f"{end_ts.isoformat().replace('+00:00', 'Z')} ✅ {label} END ({elapsed:.2f}s)")
     print()
 
 
@@ -166,7 +173,13 @@ def run_pipeline(start: int | None = None, end: int | None = None, skip_discover
     urls_to_process = None
     discovery_enabled = ENABLE_STEP1_DISCOVERY and not skip_discovery
     if discovery_enabled:
+        start_ts = datetime.now(timezone.utc)
+        start_perf = time.perf_counter()
+        print(f"{start_ts.isoformat().replace('+00:00', 'Z')} ▶ Step 1: Discovering escapement PDF URLs START")
         urls_to_process = step1_discover()  # Returns list of URLs with processed=0
+        elapsed = time.perf_counter() - start_perf
+        end_ts = datetime.now(timezone.utc)
+        print(f"{end_ts.isoformat().replace('+00:00', 'Z')} ✅ Step 1: Discovering escapement PDF URLs END ({elapsed:.2f}s)")
         SIGNAL_PATH.write_text("1" if urls_to_process else "0")
 
         if not urls_to_process and not force_run:

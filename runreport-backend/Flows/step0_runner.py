@@ -20,6 +20,7 @@ import os
 import re
 import runpy
 import sys
+import traceback
 from pathlib import Path
 
 # Ensure imports resolve when run from anywhere
@@ -102,7 +103,13 @@ def main() -> int:
 
     print("🌊🚀 Starting Flows Pipeline...\n")
     for _, label, filename in steps:
-        run_step(label, filename)
+        try:
+            run_step(label, filename)
+        except Exception as exc:
+            print(f"⚠️  {label} failed: {exc}")
+            traceback.print_exc()
+            print("🛑 Exiting Flows pipeline with code 0 to avoid immediate restart.")
+            return 0
 
     print("🎉 Flows Pipeline finished successfully.")
     return 0

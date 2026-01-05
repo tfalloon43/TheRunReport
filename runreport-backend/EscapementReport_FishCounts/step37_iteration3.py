@@ -115,39 +115,19 @@ print("🔹 Calculating adult_diff3...")
 
 df["adult_diff3"] = df.groupby(group_cols)["Adult_Total"].diff()
 
-# Group boundary reset
-for col in group_cols:
-    df[f"{col}_changed"] = df[col] != df[col].shift(1)
-
-df["group_changed"] = df[[f"{col}_changed" for col in group_cols]].any(axis=1)
-
-df.loc[df["group_changed"], "adult_diff3"] = df.loc[df["group_changed"], "Adult_Total"]
+# Reset adult_diff3 for new groups (first row in each group)
+first_in_group = df.groupby(group_cols).cumcount() == 0
+df.loc[first_in_group, "adult_diff3"] = df.loc[first_in_group, "Adult_Total"]
 df["adult_diff3"] = df["adult_diff3"].fillna(df["Adult_Total"])
-
-# Cleanup
-df = df.drop(columns=[f"{col}_changed" for col in group_cols] + ["group_changed"])
 
 # ============================================================
 # STEP 3 — by_adult3
 # ============================================================
 print("🔹 Assigning by_adult3...")
 
-by_adult3 = []
-current = 1
-prev_keys = None
-
-for i, row in df.iterrows():
-    keys = tuple(row[col] for col in group_cols)
-
-    if keys != prev_keys:
-        current = 1
-        prev_keys = keys
-    elif row["adult_diff3"] < 0 or row["day_diff3"] > 90:
-        current += 1
-
-    by_adult3.append(current)
-
-df["by_adult3"] = by_adult3
+trigger = (df["adult_diff3"] < 0) | (df["day_diff3"] > 90)
+trigger = trigger & ~first_in_group
+df["by_adult3"] = trigger.groupby([df[c] for c in group_cols]).cumsum() + 1
 
 # ============================================================
 # STEP 4 — by_adult3_length
@@ -170,7 +150,7 @@ print("🔹 Detecting short spillover runs (by_short3)...")
 df["by_short3"] = ""
 
 def detect_spill3(g):
-    g = g.sort_values("date_iso").reset_index(drop=True)
+    g = g.reset_index(drop=True)
     stock_type = str(g.loc[0, "Stock"]).strip().upper()
 
     if stock_type not in ["H", "W", "U"]:
@@ -216,32 +196,11 @@ df = (
 # ============================================================
 print("🔹 Counting contiguous X sequences (x_count3)...")
 
-df["x_count3"] = 0
-
-def count_x3(g):
-    g = g.reset_index(drop=True)
-    counts = [0] * len(g)
-
-    i = 0
-    while i < len(g):
-        if g.loc[i, "by_short3"] == "X":
-            j = i
-            while j < len(g) and g.loc[j, "by_short3"] == "X":
-                j += 1
-
-            length = j - i
-            for k in range(i, j):
-                counts[k] = length
-
-            i = j
-        else:
-            i += 1
-
-    g["x_count3"] = counts
-    return g
-
-
-df = df.groupby(group_cols, group_keys=False).apply(count_x3).reset_index(drop=True)
+mask = df["by_short3"] == "X"
+group_boundary = df[group_cols].ne(df[group_cols].shift()).any(axis=1)
+run_id = (mask.ne(mask.shift()) | group_boundary).cumsum()
+run_len = df.groupby(run_id)["by_short3"].transform("size")
+df["x_count3"] = run_len.where(mask, 0).astype(int)
 
 # ============================================================
 # SAVE BACK TO DB

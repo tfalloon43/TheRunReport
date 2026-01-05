@@ -110,38 +110,19 @@ df["day_diff_f"] = (
 
 df["adult_diff_f"] = df.groupby(group_cols)["Adult_Total"].diff()
 
-# Reset diffs at group boundaries
-for col in group_cols:
-    df[f"{col}_changed"] = df[col] != df[col].shift(1)
-
-df["group_changed"] = df[[f"{col}_changed" for col in group_cols]].any(axis=1)
-
-df.loc[df["group_changed"], "adult_diff_f"] = df.loc[df["group_changed"], "Adult_Total"]
+# Reset diffs at group boundaries (first row in each group)
+first_in_group = df.groupby(group_cols).cumcount() == 0
+df.loc[first_in_group, "adult_diff_f"] = df.loc[first_in_group, "Adult_Total"]
 df["adult_diff_f"] = df["adult_diff_f"].fillna(df["Adult_Total"])
-
-df = df.drop(columns=[f"{col}_changed" for col in group_cols] + ["group_changed"])
 
 # ============================================================
 # STEP 2: by_adult_f assignment
 # ============================================================
 print("🔹 Assigning by_adult_f...")
 
-byvals = []
-current = 1
-prev_keys = None
-
-for _, row in df.iterrows():
-    keys = tuple(row[col] for col in group_cols)
-
-    if keys != prev_keys:
-        current = 1
-        prev_keys = keys
-    elif row["adult_diff_f"] < 0 or row["day_diff_f"] > 90:
-        current += 1
-
-    byvals.append(current)
-
-df["by_adult_f"] = byvals
+trigger = (df["adult_diff_f"] < 0) | (df["day_diff_f"] > 90)
+trigger = trigger & ~first_in_group
+df["by_adult_f"] = trigger.groupby([df[c] for c in group_cols]).cumsum() + 1
 
 # ============================================================
 # RESET DIFFS/DAYS AT BIOLOGICAL-YEAR BOUNDARIES
@@ -178,7 +159,7 @@ df["by_short_f"] = ""
 valid_families = ["Steelhead", "Chinook", "Coho", "Chum", "Pink", "Sockeye"]
 
 def detect_spillover(g):
-    g = g.sort_values("date_iso").reset_index(drop=True)
+    g = g.reset_index(drop=True)
 
     family = str(g.loc[0, "Family"]).strip().title()
     if family not in valid_families:
@@ -226,36 +207,11 @@ df = (
 # ============================================================
 print("🔹 Counting contiguous X sequences (x_count_f)...")
 
-df["x_count_f"] = 0
-
-def count_x(g):
-    g = g.sort_values(["date_iso", "index"]).reset_index(drop=True)
-    counts = [0] * len(g)
-
-    i = 0
-    while i < len(g):
-        if g.loc[i, "by_short_f"] == "X":
-            j = i
-            while j < len(g) and g.loc[j, "by_short_f"] == "X":
-                j += 1
-
-            size = j - i
-            for k in range(i, j):
-                counts[k] = size
-
-            i = j
-        else:
-            i += 1
-
-    g["x_count_f"] = counts
-    return g
-
-
-df = (
-    df.groupby(group_cols + ["by_adult_f"], group_keys=False)
-      .apply(count_x)
-      .reset_index(drop=True)
-)
+mask = df["by_short_f"] == "X"
+group_boundary = df[group_cols + ["by_adult_f"]].ne(df[group_cols + ["by_adult_f"]].shift()).any(axis=1)
+run_id = (mask.ne(mask.shift()) | group_boundary).cumsum()
+run_len = df.groupby(run_id)["by_short_f"].transform("size")
+df["x_count_f"] = run_len.where(mask, 0).astype(int)
 
 # ============================================================
 # FINAL SORT & SAVE

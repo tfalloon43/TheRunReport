@@ -7,3 +7,5 @@ pdf_reports/
 *.sqlite
 *.csv
 .env
+__pycache__/
+*.pyc

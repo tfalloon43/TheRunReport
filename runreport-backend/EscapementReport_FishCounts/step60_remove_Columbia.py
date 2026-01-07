@@ -7,7 +7,6 @@
 # ------------------------------------------------------------
 
 import sqlite3
-import pandas as pd
 from pathlib import Path
 
 print("🧹 Step 60: Removing Columbia River rows from Escapement_PlotPipeline...")
@@ -20,30 +19,39 @@ db_path = project_root / "0_db" / "local.db"
 print(f"🗄️ Using DB → {db_path}")
 
 # ------------------------------------------------------------
-# LOAD TABLE
+# DELETE ROWS VIA SQL
 # ------------------------------------------------------------
 conn = sqlite3.connect(db_path)
-df = pd.read_sql_query("SELECT * FROM Escapement_PlotPipeline;", conn)
-print(f"✅ Loaded {len(df):,} rows from Escapement_PlotPipeline")
+cursor = conn.cursor()
 
-# ------------------------------------------------------------
-# FILTER OUT COLUMBIA RIVER BASIN ROWS
-# ------------------------------------------------------------
-if "basin" not in df.columns:
+cursor.execute("PRAGMA table_info(Escapement_PlotPipeline);")
+columns = {row[1] for row in cursor.fetchall()}
+if "basin" not in columns:
     raise ValueError("❌ Missing required column 'basin' in Escapement_PlotPipeline.")
 
-mask_columbia = df["basin"].str.contains("Columbia River", case=False, na=False)
-removed = int(mask_columbia.sum())
+cursor.execute(
+    "CREATE INDEX IF NOT EXISTS idx_plotpipeline_basin "
+    "ON Escapement_PlotPipeline(basin);"
+)
 
-df_filtered = df.loc[~mask_columbia].reset_index(drop=True)
+cursor.execute(
+    "SELECT COUNT(*) FROM Escapement_PlotPipeline "
+    "WHERE lower(basin) LIKE '%columbia river%';"
+)
+removed = cursor.fetchone()[0]
+
+cursor.execute(
+    "DELETE FROM Escapement_PlotPipeline "
+    "WHERE lower(basin) LIKE '%columbia river%';"
+)
+
+cursor.execute("SELECT COUNT(*) FROM Escapement_PlotPipeline;")
+remaining = cursor.fetchone()[0]
+
+conn.commit()
+conn.close()
 
 print(f"🗑️ Rows removed (basin contains 'Columbia River'): {removed:,}")
-print(f"📊 Remaining rows: {len(df_filtered):,}")
-
-# ------------------------------------------------------------
-# WRITE BACK TO DATABASE
-# ------------------------------------------------------------
-df_filtered.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False)
-conn.close()
+print(f"📊 Remaining rows: {remaining:,}")
 
 print("✅ Step 60 complete — Columbia River rows removed.")

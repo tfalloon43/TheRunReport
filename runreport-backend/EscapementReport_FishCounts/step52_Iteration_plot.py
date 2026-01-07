@@ -101,13 +101,9 @@ print("🔹 Creating day_diff_plot...")
 df["day_diff_plot"] = df["day_diff_f"]
 
 # Identify biological year transitions
-df["prev_by"] = df.groupby(group_cols)["by_adult_f"].shift(1)
-boundary_mask = df["by_adult_f"] == (df["prev_by"] + 1)
-
+boundary_mask = df.groupby(group_cols)["by_adult_f"].diff().fillna(0).eq(1)
 df.loc[boundary_mask, "day_diff_plot"] = 7
 boundary_count = int(boundary_mask.sum())
-
-df = df.drop(columns=["prev_by"])
 
 # ============================================================
 # STEP 2: adult_diff_plot

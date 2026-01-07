@@ -26,6 +26,7 @@ TABLE_NAME = "EscapementReport_PlotData"
 
 try:
     from publish.supabase_client import SupabaseConfigError, get_supabase_client
+    from publish.audit import upsert_publish_audit
 except Exception as exc:
     raise ImportError(
         "❌ Could not import Supabase client helper. "
@@ -47,6 +48,20 @@ def load_plotdata() -> pd.DataFrame:
         raise FileNotFoundError(f"❌ local.db not found at {DB_PATH}")
     with sqlite3.connect(DB_PATH) as conn:
         return pd.read_sql_query(f"SELECT * FROM {TABLE_NAME};", conn)
+
+def get_local_max_pdf_date() -> str | None:
+    if not DB_PATH.exists():
+        raise FileNotFoundError(f"❌ local.db not found at {DB_PATH}")
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.execute(
+            """
+            SELECT MAX(pdf_date)
+            FROM Escapement_PlotPipeline
+            WHERE pdf_date IS NOT NULL AND TRIM(pdf_date) <> '';
+            """
+        )
+        row = cur.fetchone()
+    return row[0] if row and row[0] else None
 
 
 def truncate_table(client, df: pd.DataFrame) -> None:
@@ -93,6 +108,16 @@ def main() -> None:
     insert_rows(client, rows)
 
     print(f"✅ Export complete — {len(rows):,} rows written to {TABLE_NAME}.")
+    source_max_date = get_local_max_pdf_date()
+    run_id = os.getenv("PUBLISH_RUN_ID", "").strip() or None
+    upsert_publish_audit(
+        client,
+        "escapement",
+        source_max_date=source_max_date,
+        row_count=len(rows),
+        run_id=run_id,
+    )
+    print("🧾 Escapement publish audit updated.")
 
 
 if __name__ == "__main__":

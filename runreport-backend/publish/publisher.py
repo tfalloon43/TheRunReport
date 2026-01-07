@@ -114,7 +114,13 @@ def _truncate_table(client, table: str, delete_filter: tuple[str, object] | None
 def _insert_rows(client, table: str, rows: list[dict], chunk_size: int = 1000) -> None:
     for i in range(0, len(rows), chunk_size):
         chunk = rows[i : i + chunk_size]
-        response = client.table(table).insert(chunk).execute()
+        if table == "EscapementReports":
+            response = client.table(table).insert(
+                chunk,
+                on_conflict="report_url",
+            ).execute()
+        else:
+            response = client.table(table).insert(chunk).execute()
         if getattr(response, "error", None):
             raise RuntimeError(f"Supabase insert failed for {table}: {response.error}")
 
@@ -199,7 +205,7 @@ def _publish_dataset(conn: sqlite3.Connection, client, dataset: str, dry_run: bo
 
     _update_metadata(client, dataset, row_counts, dry_run=dry_run)
 
-    if not dry_run:
+    if not dry_run and dataset != "escapement":
         run_id = os.getenv("PUBLISH_RUN_ID", "").strip() or None
         upsert_publish_audit(
             client,

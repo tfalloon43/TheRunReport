@@ -1,0 +1,10 @@
+1/4/2025
+
+Start: 2026-01-04T06:10:24Z
+Finish: 2026-01-04T08:26:15Z
+Total: 2h 15m 51s
+
+longest steps:
+Step 60 “Remove Columbia River rows”: 06:48:01 → 08:23:26 (1h 35m 25s)
+Step 50 “Manual deletions”: 06:42:07 → 06:47:14 (5m 07s)
+Step 27 “Column reorg”: 06:26:22 → 06:30:40 (4m 18s)

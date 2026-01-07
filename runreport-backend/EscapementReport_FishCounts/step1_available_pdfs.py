@@ -71,12 +71,14 @@ def get_existing_urls(client) -> set[str]:
 
 def insert_new_urls(client, urls: list[str]) -> list[str]:
     existing = get_existing_urls(client)
+    seen_in_batch: set[str] = set()
     new_urls = []
     payload = []
 
     for url in urls:
-        if url in existing:
+        if url in existing or url in seen_in_batch:
             continue
+        seen_in_batch.add(url)
 
         # Try to extract year from filename
         year = None
@@ -97,10 +99,17 @@ def insert_new_urls(client, urls: list[str]) -> list[str]:
         new_urls.append(url)
 
     if payload:
-        response = client.table("EscapementReports").upsert(
-            payload,
-            on_conflict="report_url",
-        ).execute()
+        # EscapementReports has a UNIQUE constraint on report_url, so on_conflict
+        # must target report_url to skip existing PDFs without overwriting rows.
+        response = (
+            client.table("EscapementReports")
+            .upsert(
+                payload,
+                on_conflict="report_url",
+                default_to_null=False,
+            )
+            .execute()
+        )
         if getattr(response, "error", None):
             raise RuntimeError(f"Supabase insert failed: {response.error}")
 

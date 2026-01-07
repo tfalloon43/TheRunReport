@@ -69,6 +69,8 @@ def ensure_plotpipeline_table(recreate=False):
     sql = """
     CREATE TABLE IF NOT EXISTS Escapement_PlotPipeline (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_id INTEGER,
+        line_order INTEGER,
         pdf_name TEXT,
         page_num INTEGER,
         text_line TEXT
@@ -86,7 +88,10 @@ def ensure_plotpipeline_table(recreate=False):
 def _fetch_rawlines_page(client, start: int, page_size: int) -> list[dict]:
     response = (
         client.table("EscapementRawLines")
-        .select("pdf_name,page_num,text_line")
+        .select("id,report_id,line_order,pdf_name,page_num,text_line")
+        .order("report_id")
+        .order("line_order")
+        .order("id")
         .range(start, start + page_size - 1)
         .execute()
     )
@@ -98,12 +103,22 @@ def _fetch_rawlines_page(client, start: int, page_size: int) -> list[dict]:
 def _insert_pipeline_rows(rows: list[dict]) -> None:
     if not rows:
         return
-    payload = [(row["pdf_name"], row["page_num"], row["text_line"]) for row in rows]
+    payload = [
+        (
+            row.get("report_id"),
+            row.get("line_order"),
+            row["pdf_name"],
+            row["page_num"],
+            row["text_line"],
+        )
+        for row in rows
+    ]
     with get_conn() as conn:
         conn.executemany(
             """
-            INSERT INTO Escapement_PlotPipeline (pdf_name, page_num, text_line)
-            VALUES (?, ?, ?);
+            INSERT INTO Escapement_PlotPipeline
+                (report_id, line_order, pdf_name, page_num, text_line)
+            VALUES (?, ?, ?, ?, ?);
             """,
             payload,
         )

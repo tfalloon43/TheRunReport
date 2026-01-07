@@ -18,8 +18,9 @@
 # ------------------------------------------------------------
 
 import sqlite3
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 print("🏗️ Step 76: Filling EscapementReports_dailycounts with fishperday values...")
 
@@ -72,9 +73,6 @@ previous_year = current_year - 1
 # Identify Day columns in the source
 day_cols = [c for c in source_df.columns if c.lower().startswith("day")]
 
-rows_processed = 0
-cells_updated = 0
-
 # ------------------------------------------------------------
 # HELPERS
 # ------------------------------------------------------------
@@ -91,57 +89,66 @@ def infer_calendar_year_for_mmdd(mmdd: str, end_date: pd.Timestamp) -> int:
     return end_date.year - 1 if mmdd > end_mmdd else end_date.year
 
 # ------------------------------------------------------------
-# CORE UPDATE LOOP
+# CORE UPDATE (VECTORIZED)
 # ------------------------------------------------------------
-for _, row in source_df.iterrows():
-    fish_value = row["fishperday"]
-    date_val = row["date_iso"]
-    basinfamily = row["basinfamily"]
+# Long-form DayN values: one row per (basinfamily, date_iso, MM-DD)
+long_df = (
+    source_df[["basinfamily", "fishperday", "date_iso"] + day_cols]
+    .melt(
+        id_vars=["basinfamily", "fishperday", "date_iso"],
+        value_vars=day_cols,
+        value_name="MM-DD",
+    )
+    .drop(columns=["variable"])
+)
 
-    if pd.isna(fish_value) or fish_value == 0 or pd.isna(date_val):
-        continue
+# Clean and filter
+long_df["MM-DD"] = long_df["MM-DD"].astype(str).str.strip()
+long_df = long_df[
+    long_df["MM-DD"].str.match(r"^\d{2}-\d{2}$", na=False)
+    & long_df["fishperday"].notna()
+    & (long_df["fishperday"] != 0)
+    & long_df["date_iso"].notna()
+]
+long_df = long_df[long_df["basinfamily"].isin(target_value_columns)]
 
-    if basinfamily not in target_value_columns:
-        # Skip rows whose basinfamily isn't in the template
-        continue
+# Infer calendar year in bulk (wrap if MM-DD is later than end date MM-DD)
+end_mmdd = long_df["date_iso"].dt.strftime("%m-%d")
+inferred_year = long_df["date_iso"].dt.year - (long_df["MM-DD"] > end_mmdd)
 
-    # Gather valid day values
-    days = []
-    for c in day_cols:
-        v = row[c]
-        if pd.isna(v):
-            continue
-        s = str(v).strip()
-        if not s:
-            continue
-        days.append(s)
+long_df["metric_type"] = ""
+long_df.loc[inferred_year == current_year, "metric_type"] = "current_year"
+long_df.loc[inferred_year == previous_year, "metric_type"] = "previous_year|10_year"
+long_df.loc[inferred_year < previous_year, "metric_type"] = "10_year"
 
-    if not days:
-        continue
+# Expand metric_type so previous_year contributes to both previous_year and 10_year
+long_df["metric_type"] = long_df["metric_type"].str.split("|")
+long_df = long_df.explode("metric_type")
 
-    for d in days:
-        if not isinstance(d, str) or len(d) != 5 or d[2] != "-":
-            continue
+# Aggregate additions
+adds = (
+    long_df.groupby(["metric_type", "MM-DD", "basinfamily"], as_index=False)["fishperday"]
+    .sum()
+)
 
-        inferred_year = infer_calendar_year_for_mmdd(d, date_val)
-        if inferred_year == current_year:
-            targets = ["current_year"]
-        elif inferred_year == previous_year:
-            targets = ["previous_year", "10_year"]
-        else:
-            targets = ["10_year"]
+# Pivot to align with template, then add to the table in one pass
+adds_wide = (
+    adds.pivot(index=["metric_type", "MM-DD"], columns="basinfamily", values="fishperday")
+    .reindex(columns=target_value_columns)
+)
 
-        # For each metric_type target, add the fishperday value
-        for metric in targets:
-            mask = (table_df["metric_type"] == metric) & (table_df["MM-DD"] == d)
-            if not mask.any():
-                continue
+table_key = table_df.set_index(["metric_type", "MM-DD"])
+table_vals = (
+    table_key[target_value_columns]
+    .apply(pd.to_numeric, errors="coerce")
+    .fillna(0)
+)
+table_vals = table_vals.add(adds_wide, fill_value=0)
+table_key[target_value_columns] = table_vals
+table_df = table_key.reset_index()
 
-            current_vals = pd.to_numeric(table_df.loc[mask, basinfamily], errors="coerce").fillna(0)
-            table_df.loc[mask, basinfamily] = current_vals + fish_value
-            cells_updated += int(mask.sum())
-
-    rows_processed += 1
+rows_processed = int(len(source_df))
+cells_updated = int(adds["fishperday"].notna().sum())
 
 # ------------------------------------------------------------
 # AVERAGE 10-YEAR CELLS

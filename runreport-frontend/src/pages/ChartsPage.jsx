@@ -1,6 +1,6 @@
 // src/pages/ChartsPage.jsx
 import React, { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase, isSupabaseConfigured } from "../supabaseClient";
 
 import {
   LineChart,
@@ -12,6 +12,37 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+
+function toDayOfYear(dateString) {
+  if (!dateString) return null;
+  const normalized = dateString.replace("/", "-");
+  const parts = normalized.split("-");
+  if (parts.length !== 2) return null;
+  const month = Number(parts[0]);
+  const day = Number(parts[1]);
+  if (!month || !day) return null;
+  const year = 2020;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const start = new Date(Date.UTC(year, 0, 1));
+  const diffDays = Math.round((date - start) / 86400000);
+  return diffDays + 1;
+}
+
+const monthTicks = [
+  { label: "01/01", day: 1 },
+  { label: "02/01", day: 32 },
+  { label: "03/01", day: 61 },
+  { label: "04/01", day: 92 },
+  { label: "05/01", day: 122 },
+  { label: "06/01", day: 153 },
+  { label: "07/01", day: 183 },
+  { label: "08/01", day: 214 },
+  { label: "09/01", day: 245 },
+  { label: "10/01", day: 275 },
+  { label: "11/01", day: 306 },
+  { label: "12/01", day: 336 },
+  { label: "12/31", day: 366 },
+];
 
 function ChartsPage() {
   // ------------------------------------------------------------
@@ -44,40 +75,22 @@ function ChartsPage() {
   // ------------------------------------------------------------
   useEffect(() => {
     async function loadRivers() {
+      if (!supabase) return;
       console.log("Loading rivers...");
 
-      const riverSet = new Set();
+      const { data, error } = await supabase
+        .from("Rivers")
+        .select("river")
+        .order("river", { ascending: true });
 
-      async function fetchAllRivers(table) {
-        const pageSize = 1000;
-        let offset = 0;
-        let hasMore = true;
-
-        while (hasMore) {
-          const { data, error } = await supabase
-            .from(table)
-            .select("river")
-            .range(offset, offset + pageSize - 1);
-
-          if (error) {
-            console.error(`${table} river fetch error:`, error);
-            return;
-          }
-
-          (data || []).forEach((row) => row.river && riverSet.add(row.river));
-
-          if (!data || data.length < pageSize) {
-            hasMore = false;
-          } else {
-            offset += pageSize;
-          }
-        }
+      if (error) {
+        console.error("Rivers fetch error:", error);
+        return;
       }
 
-      await fetchAllRivers("Columbia_FishCounts");
-      await fetchAllRivers("EscapementReport_PlotData");
-
-      const riverList = [...riverSet].sort();
+      const riverList = (data || [])
+        .map((row) => row.river)
+        .filter(Boolean);
       console.log("Final river list:", riverList);
       setRivers(riverList);
     }
@@ -90,6 +103,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   useEffect(() => {
     async function loadDams() {
+      if (!supabase) return;
       if (!selectedRiver) {
         setDams([]);
         setSelectedDam("");
@@ -97,19 +111,37 @@ function ChartsPage() {
       }
 
       if (selectedRiver === "Columbia River" || selectedRiver === "Snake River") {
-        const { data, error } = await supabase
-          .from("Columbia_FishCounts")
-          .select("dam_name")
-          .eq("river", selectedRiver);
+        const damSet = new Set();
+        const pageSize = 1000;
+        let offset = 0;
+        let hasMore = true;
 
-        if (error) {
-          console.error("Error loading dams:", error);
-          setDams([]);
-          setSelectedDam("");
-          return;
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from("Columbia_FishCounts")
+            .select("dam_name")
+            .eq("river", selectedRiver)
+            .range(offset, offset + pageSize - 1);
+
+          if (error) {
+            console.error("Error loading dams:", error);
+            setDams([]);
+            setSelectedDam("");
+            return;
+          }
+
+          (data || []).forEach((row) => {
+            if (row.dam_name) damSet.add(row.dam_name);
+          });
+
+          if (!data || data.length < pageSize) {
+            hasMore = false;
+          } else {
+            offset += pageSize;
+          }
         }
 
-        const uniqueDams = [...new Set(data.map((row) => row.dam_name))].sort();
+        const uniqueDams = [...damSet].sort();
         setDams(uniqueDams);
         setSelectedDam(uniqueDams[0] || "");
       } else {
@@ -126,6 +158,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   useEffect(() => {
     async function loadSpecies() {
+      if (!supabase) return;
       if (!selectedRiver) {
         setSpecies([]);
         setSelectedSpecies("");
@@ -182,6 +215,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   useEffect(() => {
     async function loadFlowSites() {
+      if (!supabase) return;
       if (view !== "Flow" || !selectedRiver) {
         setFlowSites([]);
         setSelectedFlowSite("");
@@ -212,6 +246,7 @@ function ChartsPage() {
   // LOAD FISH CHART DATA (USES Species_Plot)
   // ------------------------------------------------------------
   async function loadFishChart() {
+    if (!supabase) return;
     if (!selectedRiver || !selectedSpecies) return;
     setLoading(true);
 
@@ -235,6 +270,7 @@ function ChartsPage() {
 
         const points = (data || []).map((row) => ({
           date: row.Dates, // e.g. "01/01"
+          dayOfYear: toDayOfYear(row.Dates),
           current: row.Daily_Count_Current_Year,
           last: row.Daily_Count_Last_Year,
           ten: row.Ten_Year_Average_Daily_Count,
@@ -257,6 +293,7 @@ function ChartsPage() {
 
         const points = (data || []).map((row) => ({
           date: row["MM-DD"],
+          dayOfYear: toDayOfYear(row["MM-DD"]),
           current: row.current_year,
           last: row.previous_year,
           ten: row["10_year"],
@@ -273,6 +310,7 @@ function ChartsPage() {
   // LOAD FLOW CHART DATA
   // ------------------------------------------------------------
   async function loadFlowChart() {
+    if (!supabase) return;
     if (!selectedRiver || !selectedFlowSite) return;
     setLoading(true);
 
@@ -368,6 +406,11 @@ function ChartsPage() {
 
   return (
     <div style={containerStyle}>
+      {!isSupabaseConfigured && (
+        <div style={{ marginBottom: "16px", opacity: 0.8 }}>
+          Charts are unavailable until Supabase environment variables are set.
+        </div>
+      )}
       <div style={{ textAlign: "center" }}>
         <h1 style={{ margin: 0, fontSize: "28px", letterSpacing: "0.5px" }}>
           {selectedRiver || "Select a river"}
@@ -378,9 +421,9 @@ function ChartsPage() {
         <div
           style={{
             ...panelStyle,
-            flex: "0 0 27%",
-            maxWidth: "27%",
-            minWidth: "220px",
+            flex: "0 0 22%",
+            maxWidth: "22%",
+            minWidth: "200px",
           }}
         >
           <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
@@ -405,20 +448,48 @@ function ChartsPage() {
               </option>
             ))}
           </select>
+
+          {view === "Fish" &&
+            (selectedRiver === "Columbia River" ||
+              selectedRiver === "Snake River") && (
+              <div style={{ marginTop: "12px" }}>
+                <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
+                  Dam
+                </label>
+                <select
+                  value={selectedDam}
+                  onChange={(e) => setSelectedDam(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    background: "#0b1216",
+                    color: "#eef3f5",
+                  }}
+                >
+                  {dams.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
         </div>
 
         <div
           style={{
             ...panelStyle,
-            flex: "0 0 27%",
-            maxWidth: "27%",
-            minWidth: "220px",
+            flex: "0 0 22%",
+            maxWidth: "22%",
+            minWidth: "200px",
           }}
         >
           <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
             Fish or Flow
           </label>
-          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <input
                 type="checkbox"
@@ -477,116 +548,91 @@ function ChartsPage() {
               minWidth: "220px",
             }}
           >
-            <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-              Station
-            </label>
-            <select
-              value={selectedFlowSite}
-              onChange={(e) => setSelectedFlowSite(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "#0b1216",
-                color: "#eef3f5",
-              }}
-            >
-              <option value="">Select station...</option>
-              {flowSites.map((site) => (
-                <option key={site} value={site}>
-                  {site}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label
+                  style={{ display: "block", marginBottom: "6px", opacity: 0.8 }}
+                >
+                  Station
+                </label>
+                <select
+                  value={selectedFlowSite}
+                  onChange={(e) => setSelectedFlowSite(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    background: "#0b1216",
+                    color: "#eef3f5",
+                  }}
+                >
+                  <option value="">Select station...</option>
+                  {flowSites.map((site) => (
+                    <option key={site} value={site}>
+                      {site}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={showFlowStage}
+                      onChange={() => {
+                        setShowFlowStage(true);
+                        setShowFlowCfs(false);
+                      }}
+                    />
+                    Stage (ft)
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={showFlowCfs}
+                      onChange={() => {
+                        setShowFlowCfs(true);
+                        setShowFlowStage(false);
+                      }}
+                    />
+                    CFS
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={flowWindow === "30d"}
+                      onChange={() => setFlowWindow("30d")}
+                    />
+                    Last 30 days
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={flowWindow === "7d"}
+                      onChange={() => setFlowWindow("7d")}
+                    />
+                    Last 7 days
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* DAM (Columbia / Snake, Fish view only) */}
-      {view === "Fish" &&
-        (selectedRiver === "Columbia River" ||
-          selectedRiver === "Snake River") && (
-          <div style={{ marginTop: "16px", ...panelStyle }}>
-            <label style={{ marginRight: 8 }}>Dam</label>
-            <select
-              value={selectedDam}
-              onChange={(e) => setSelectedDam(e.target.value)}
-              style={{
-                width: "100%",
-                marginTop: "8px",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "#0b1216",
-                color: "#eef3f5",
-              }}
-            >
-              {dams.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-      {/* FLOW CONTROLS */}
-      {view === "Flow" && (
-        <div style={{ marginTop: "16px", ...panelStyle }}>
-          <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-            Time window
-          </label>
-          <select
-            value={flowWindow}
-            onChange={(e) => setFlowWindow(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              borderRadius: "10px",
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "#0b1216",
-              color: "#eef3f5",
-              marginBottom: "12px",
-            }}
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-
-          <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-            Flow metrics
-          </label>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <input
-                type="checkbox"
-                checked={showFlowStage}
-                onChange={() => {
-                  setShowFlowStage(true);
-                  setShowFlowCfs(false);
-                }}
-              />
-              Stage (ft)
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <input
-                type="checkbox"
-                checked={showFlowCfs}
-                onChange={() => {
-                  setShowFlowCfs(true);
-                  setShowFlowStage(false);
-                }}
-              />
-              CFS
-            </label>
-          </div>
-        </div>
-      )}
-
       <div style={{ marginTop: "24px", ...panelStyle }}>
         {loading && <div style={{ opacity: 0.7 }}>Loading...</div>}
-        {view === "Fish" && <FishChart data={fishChartData} />}
+        {view === "Fish" && (
+          <FishChart data={fishChartData} selectedRiver={selectedRiver} />
+        )}
         {view === "Flow" && (
           <FlowChart data={flowChartData} showCfs={showFlowCfs} showStage={showFlowStage} />
         )}
@@ -601,8 +647,70 @@ function ChartsPage() {
 }
 
 function FlowChart({ data, showCfs, showStage }) {
-  if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) {
+    return <div style={{ opacity: 0.7 }}>No data available.</div>;
+  }
   if (!showCfs && !showStage) return <div>Select a flow metric.</div>;
+
+  function niceNum(range, round) {
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let niceFraction;
+
+    if (round) {
+      if (fraction < 1.5) niceFraction = 1;
+      else if (fraction < 3) niceFraction = 2;
+      else if (fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+    } else {
+      if (fraction <= 1) niceFraction = 1;
+      else if (fraction <= 2) niceFraction = 2;
+      else if (fraction <= 5) niceFraction = 5;
+      else niceFraction = 10;
+    }
+
+    return niceFraction * Math.pow(10, exponent);
+  }
+
+  function buildNiceTicks(values, targetCount) {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+
+    if (min === max) {
+      const step = min === 0 ? 1 : Math.abs(min) * 0.1;
+      const ticks = Array.from(
+        { length: targetCount },
+        (_, i) => min - step + step * i
+      );
+      return { ticks, domain: [ticks[0], ticks[ticks.length - 1]] };
+    }
+
+    const range = max - min;
+    const tickSpacing = niceNum(range / (targetCount - 1), true);
+    const niceMin = Math.floor(min / tickSpacing) * tickSpacing;
+    const niceMax = Math.ceil(max / tickSpacing) * tickSpacing;
+    const tickCount =
+      Math.round((niceMax - niceMin) / tickSpacing) + 1;
+
+    const ticks = Array.from({ length: tickCount }, (_, i) =>
+      Number((niceMin + i * tickSpacing).toFixed(6))
+    );
+
+    return { ticks, domain: [ticks[0], ticks[ticks.length - 1]] };
+  }
+
+  const metricValues = data
+    .flatMap((row) => {
+      const values = [];
+      if (showCfs) values.push(row.flow);
+      if (showStage) values.push(row.stage);
+      return values;
+    })
+    .filter((value) => Number.isFinite(value));
+
+  const yAxisConfig =
+    metricValues.length > 0 ? buildNiceTicks(metricValues, 6) : null;
 
   return (
     <div style={{ width: "100%", height: 400, marginTop: 40 }}>
@@ -620,14 +728,35 @@ function FlowChart({ data, showCfs, showStage }) {
               new Date(value).toISOString().slice(5, 10)
             }
           />
-          <YAxis stroke="#ccc" tick={{ fill: "#ccc" }} />
-
-          <Tooltip
-            contentStyle={{ background: "#111", border: "1px solid #444" }}
-            labelStyle={{ color: "#fff" }}
+          <YAxis
+            stroke="#ccc"
+            tick={{ fill: "#ccc" }}
+            domain={yAxisConfig?.domain}
+            ticks={yAxisConfig?.ticks}
           />
 
-          <Legend />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload || payload.length === 0) return null;
+              return (
+                <div
+                  style={{
+                    background: "#111",
+                    border: "1px solid #444",
+                    padding: "8px 10px",
+                  }}
+                >
+                  {payload.map((entry) => (
+                    <div key={entry.dataKey} style={{ color: entry.color }}>
+                      {entry.name}: {entry.value}
+                    </div>
+                  ))}
+                </div>
+              );
+            }}
+          />
+
+          <Legend verticalAlign="top" align="center" />
 
           {showCfs && (
             <Line
@@ -656,8 +785,11 @@ function FlowChart({ data, showCfs, showStage }) {
   );
 }
 
-function FishChart({ data }) {
+function FishChart({ data, selectedRiver }) {
   if (!data || data.length === 0) return null;
+  const isColumbiaOrSnake =
+    selectedRiver === "Columbia River" || selectedRiver === "Snake River";
+  const yAxisLabel = isColumbiaOrSnake ? "Fish per day" : "Fish per week";
 
   return (
     <div style={{ width: "100%", height: 400, marginTop: 40 }}>
@@ -666,12 +798,27 @@ function FishChart({ data }) {
           <CartesianGrid stroke="#333" />
 
           <XAxis
-            dataKey="date"
+            dataKey="dayOfYear"
+            type="number"
             stroke="#ccc"
             tick={{ fill: "#ccc" }}
-            interval={20}
+            ticks={monthTicks.map((tick) => tick.day)}
+            domain={[1, 366]}
+            tickFormatter={(value) => {
+              const match = monthTicks.find((tick) => tick.day === value);
+              return match ? match.label : "";
+            }}
           />
-          <YAxis stroke="#ccc" tick={{ fill: "#ccc" }} />
+          <YAxis
+            stroke="#ccc"
+            tick={{ fill: "#ccc" }}
+            label={{
+              value: yAxisLabel,
+              angle: -90,
+              position: "insideLeft",
+              fill: "#ccc",
+            }}
+          />
 
           <Tooltip
             contentStyle={{ background: "#111", border: "1px solid #444" }}

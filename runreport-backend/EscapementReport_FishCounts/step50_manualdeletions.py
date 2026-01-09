@@ -155,7 +155,7 @@ manual_deletions = [
         "Adult_Total": 8335,
     },
     {
-        "pdf_name": "WA_EscapementReport_10-23-2025.pdf",
+        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
         "facility": "Kendall Creek Hatchery",
         "species": "Spring Chinook",
         "Stock": "H",
@@ -179,7 +179,7 @@ manual_deletions = [
         "Adult_Total": 6832,
     },
     {
-        "pdf_name": "WA_EscapementReport_12-04-2025.pdf",
+        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
         "facility": "Voights Creek Hatchery",
         "species": "Odd Year Pink",
         "Stock": "W",
@@ -243,7 +243,7 @@ manual_deletions = [
         "Adult_Total": 422,
     },
     {
-        "pdf_name": "WA_EscapementReport_09-25-2025.pdf",
+        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
         "facility": "Sol Duc Hatchery",
         "species": "Summer Chinook",
         "Stock": "H",
@@ -251,7 +251,7 @@ manual_deletions = [
         "Adult_Total": 1551,
     },
     {
-        "pdf_name": "WA_EscapementReport_11-26-2025.pdf",
+        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
         "facility": "Toutle River Hatchery",
         "species": "Fall Chinook",
         "Stock": "H",

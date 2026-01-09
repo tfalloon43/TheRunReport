@@ -45,12 +45,8 @@ print(f"📥 Loaded {initial_count:,} rows")
 # Ensure date_iso is string-only YYYY-MM-DD
 df["date_iso"] = df["date_iso"].astype(str).str.slice(0, 10)
 
-# Temporary working datetime columns
+# Temporary working datetime column
 df["date_dt"] = pd.to_datetime(df["date_iso"], errors="coerce")
-if "pdf_date" in df.columns:
-    df["pdf_date_dt"] = pd.to_datetime(df["pdf_date"], errors="coerce")
-else:
-    df["pdf_date_dt"] = pd.NaT
 
 # ------------------------------------------------------------
 # Normalize count columns
@@ -72,7 +68,7 @@ KEY_COLS = ["facility", "species", "Stock_BO"] + COUNT_COLS
 # Deterministic ordering
 # ------------------------------------------------------------
 df = (
-    df.sort_values(KEY_COLS + ["date_dt", "pdf_date_dt"], kind="mergesort")
+    df.sort_values(KEY_COLS + ["date_dt"], kind="mergesort")
       .reset_index(drop=True)
 )
 
@@ -110,7 +106,7 @@ print(f"📊 Final row count: {len(df_final):,}")
 # ------------------------------------------------------------
 # Cleanup working columns before persistence
 # ------------------------------------------------------------
-df_final = df_final.drop(columns=["date_dt", "pdf_date_dt"])
+df_final = df_final.drop(columns=["date_dt"])
 
 # Enforce canonical string date again (belt & suspenders)
 df_final["date_iso"] = df_final["date_iso"].astype(str).str.slice(0, 10)

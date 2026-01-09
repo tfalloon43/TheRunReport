@@ -133,6 +133,6 @@ conn.close()
 # SUMMARY
 # ------------------------------------------------------------
 print("✅ Cleanup2 complete!")
-print(f"🧹 Removed {removed:,} rows from x_count2 clusters.")
+print(f"🧹 Removed {removed:,} rows with duplicate Adult_Total within by_adult2 groups.")
 print(f"📊 Final row count: {after:,}")
 print(f"📁 Escapement_PlotPipeline updated in database.")

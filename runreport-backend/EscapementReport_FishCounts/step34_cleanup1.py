@@ -97,6 +97,6 @@ cleaned.to_sql("Escapement_PlotPipeline", conn, if_exists="replace", index=False
 # SUMMARY
 # ------------------------------------------------------------
 print("✅ Cleanup Pass 1 Complete!")
-print(f"🧹 Removed {removed:,} rows from short-run clusters x_count ==3.")
+print(f"🧹 Removed {removed:,} rows where x_count == 1.")
 print(f"📊 Final dataset size: {after:,} rows.")
 print("🏁 Escapement_PlotPipeline table updated successfully.")

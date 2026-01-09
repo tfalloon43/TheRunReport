@@ -48,7 +48,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   // STATE
   // ------------------------------------------------------------
-  const [view, setView] = useState(""); // "Fish" or "Flow"
+  const [view, setView] = useState("Fish"); // "Fish" or "Flow"
 
   const [rivers, setRivers] = useState([]);
   const [selectedRiver, setSelectedRiver] = useState("");
@@ -403,6 +403,21 @@ function ChartsPage() {
     padding: "16px",
     backdropFilter: "blur(6px)",
   };
+  const controlPanelStyle = {
+    ...panelStyle,
+    minHeight: "170px",
+  };
+  const placeholderChartStyle = {
+    width: "100%",
+    height: 400,
+    marginTop: 40,
+    borderRadius: "14px",
+    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.08)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))," +
+      "repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 72px)," +
+      "repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 48px)",
+  };
 
   return (
     <div style={containerStyle}>
@@ -411,19 +426,22 @@ function ChartsPage() {
           Charts are unavailable until Supabase environment variables are set.
         </div>
       )}
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: "center", marginBottom: "16px" }}>
         <h1 style={{ margin: 0, fontSize: "28px", letterSpacing: "0.5px" }}>
           {selectedRiver || "Select a river"}
         </h1>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between" }}>
+      <div className="chart-controls">
         <div
           style={{
-            ...panelStyle,
-            flex: "0 0 22%",
-            maxWidth: "22%",
-            minWidth: "200px",
+            ...controlPanelStyle,
+            width: "25%",
+            maxWidth: "25%",
+            flex: "0 0 25%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
           }}
         >
           <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
@@ -453,9 +471,6 @@ function ChartsPage() {
             (selectedRiver === "Columbia River" ||
               selectedRiver === "Snake River") && (
               <div style={{ marginTop: "12px" }}>
-                <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-                  Dam
-                </label>
                 <select
                   value={selectedDam}
                   onChange={(e) => setSelectedDam(e.target.value)}
@@ -480,10 +495,10 @@ function ChartsPage() {
 
         <div
           style={{
-            ...panelStyle,
-            flex: "0 0 22%",
-            maxWidth: "22%",
-            minWidth: "200px",
+            ...controlPanelStyle,
+            width: "25%",
+            maxWidth: "25%",
+            flex: "0 0 25%",
           }}
         >
           <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
@@ -494,7 +509,7 @@ function ChartsPage() {
               <input
                 type="checkbox"
                 checked={view === "Fish"}
-                onChange={() => setView(view === "Fish" ? "" : "Fish")}
+                onChange={() => setView("Fish")}
               />
               Fish counts
             </label>
@@ -502,19 +517,19 @@ function ChartsPage() {
               <input
                 type="checkbox"
                 checked={view === "Flow"}
-                onChange={() => setView(view === "Flow" ? "" : "Flow")}
+                onChange={() => setView("Flow")}
               />
               Flow
             </label>
           </div>
         </div>
-        {view === "Fish" && species.length > 0 && (
+        {view === "Fish" && (
           <div
             style={{
-              ...panelStyle,
-              flex: "0 0 27%",
-              maxWidth: "27%",
-              minWidth: "220px",
+              ...controlPanelStyle,
+              width: "25%",
+              maxWidth: "25%",
+              flex: "0 0 25%",
             }}
           >
             <label style={{ marginRight: 8 }}>Species</label>
@@ -531,6 +546,7 @@ function ChartsPage() {
                 color: "#eef3f5",
               }}
             >
+              <option value="">Select species...</option>
               {species.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -542,10 +558,12 @@ function ChartsPage() {
         {view === "Flow" && (
           <div
             style={{
-              ...panelStyle,
-              flex: "0 0 27%",
-              maxWidth: "27%",
-              minWidth: "220px",
+              ...controlPanelStyle,
+              width: "25%",
+              maxWidth: "25%",
+              flex: "0 0 25%",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -630,13 +648,14 @@ function ChartsPage() {
 
       <div style={{ marginTop: "24px", ...panelStyle }}>
         {loading && <div style={{ opacity: 0.7 }}>Loading...</div>}
-        {view === "Fish" && (
+        {!selectedRiver && <div style={placeholderChartStyle} />}
+        {selectedRiver && view === "Fish" && (
           <FishChart data={fishChartData} selectedRiver={selectedRiver} />
         )}
-        {view === "Flow" && (
+        {selectedRiver && view === "Flow" && (
           <FlowChart data={flowChartData} showCfs={showFlowCfs} showStage={showFlowStage} />
         )}
-        {!view && (
+        {selectedRiver && !view && (
           <div style={{ opacity: 0.7 }}>
             Select a river and a data type to render the chart.
           </div>

@@ -91,6 +91,14 @@ manual_deletions = [
         "Adult_Total": 1023,
     },
     {
+        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
+        "facility": "Forks Creek Hatchery",
+        "species": "Fall Chinook",
+        "Stock": "H",
+        "date_iso": "2025-12-22",
+        "Adult_Total": 2873,
+    },
+    {
         "pdf_name": "WA_EscapementReport_12-11-2025.pdf",
         "facility": "Baker Lake Hatchery",
         "species": "Sockeye",

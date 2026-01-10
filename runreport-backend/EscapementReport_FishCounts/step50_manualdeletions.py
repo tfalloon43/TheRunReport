@@ -379,14 +379,6 @@ manual_deletions = [
         "Adult_Total": 2045,
     },
     {
-        "pdf_name": "WA_EscapementReport_01-08-2026.pdf",
-        "facility": "Forks Creek Hatchery",
-        "species": "Fall Chinook",
-        "Stock": "H",
-        "date_iso": "2025-12-02",
-        "Adult_Total": 2870,
-    },
-    {
         "pdf_name": "WA_EscapementReport_01-17-2019.pdf",
         "facility": "Wynoochee River Dam Trap",
         "species": "Coho",

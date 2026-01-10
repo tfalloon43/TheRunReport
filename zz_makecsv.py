@@ -8,7 +8,7 @@ OUTPUT_CSV = Path("Escapement_PlotPipeline.csv")
 
 # Add column names to keep, e.g. ["river", "site_name", "timestamp", "flow_cfs"].
 # Leave empty to export all columns.
-COLUMNS_TO_KEEP = ["pdf_name", "facility", "basin", "species", "Family", "Stock","date_iso", "Adult_Total"]
+COLUMNS_TO_KEEP = ["pdf_name", "facility", "basin", "species", "Family", "Stock","date_iso", "Adult_Total","adult_diff_plot"]
 
 def main() -> None:
     if not DB_PATH.exists():
@@ -32,7 +32,14 @@ def main() -> None:
             writer = csv.writer(handle)
             writer.writerow(["index", *columns])
             for idx, row in enumerate(rows, start=1):
-                writer.writerow([idx, *[row[col] for col in columns]])
+                values = []
+                for col in columns:
+                    value = row[col]
+                    if col == "adult_diff_plot" and isinstance(value, (int, float)):
+                        if float(value).is_integer():
+                            value = int(value)
+                    values.append(value)
+                writer.writerow([idx, *values])
 
     print(f"Wrote {OUTPUT_CSV}")
 

@@ -33,6 +33,7 @@ PIPELINE_COLUMNS = [
     "Stock",
     "date_iso",
     "Adult_Total",
+    "adult_diff_plot",
 ]
 
 

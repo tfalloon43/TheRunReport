@@ -8,7 +8,7 @@ OUTPUT_CSV = Path("Escapement_PlotPipeline.csv")
 
 # Add column names to keep, e.g. ["river", "site_name", "timestamp", "flow_cfs"].
 # Leave empty to export all columns.
-COLUMNS_TO_KEEP = ["pdf_name", "facility", "basin", "species", "Family", "date_iso", "Adult_Total"]
+COLUMNS_TO_KEEP = ["pdf_name", "facility", "basin", "species", "Family", "Stock","date_iso", "Adult_Total"]
 
 def main() -> None:
     if not DB_PATH.exists():

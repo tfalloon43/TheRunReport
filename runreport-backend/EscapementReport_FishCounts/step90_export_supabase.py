@@ -21,7 +21,19 @@ BACKEND_ROOT = CURRENT_DIR.parent
 DB_PATH = BACKEND_ROOT / "0_db" / "local.db"
 sys.path.append(str(BACKEND_ROOT))
 
-TABLE_NAME = "EscapementReport_PlotData"
+PLOTDATA_TABLE = "EscapementReport_PlotData"
+PIPELINE_TABLE = "Escapement_PlotPipeline"
+PIPELINE_COLUMNS = [
+    "index",
+    "pdf_name",
+    "facility",
+    "basin",
+    "species",
+    "Family",
+    "Stock",
+    "date_iso",
+    "Adult_Total",
+]
 
 
 try:
@@ -47,7 +59,18 @@ def load_plotdata() -> pd.DataFrame:
     if not DB_PATH.exists():
         raise FileNotFoundError(f"❌ local.db not found at {DB_PATH}")
     with sqlite3.connect(DB_PATH) as conn:
-        return pd.read_sql_query(f"SELECT * FROM {TABLE_NAME};", conn)
+        return pd.read_sql_query(f"SELECT * FROM {PLOTDATA_TABLE};", conn)
+
+
+def load_pipeline_subset() -> pd.DataFrame:
+    if not DB_PATH.exists():
+        raise FileNotFoundError(f"❌ local.db not found at {DB_PATH}")
+    columns_sql = ", ".join(f'"{col}"' for col in PIPELINE_COLUMNS)
+    with sqlite3.connect(DB_PATH) as conn:
+        return pd.read_sql_query(
+            f"SELECT {columns_sql} FROM {PIPELINE_TABLE};",
+            conn,
+        )
 
 def get_local_max_pdf_date() -> str | None:
     if not DB_PATH.exists():
@@ -64,30 +87,32 @@ def get_local_max_pdf_date() -> str | None:
     return row[0] if row and row[0] else None
 
 
-def truncate_table(client, df: pd.DataFrame) -> None:
+def truncate_table(client, df: pd.DataFrame, table_name: str) -> None:
     rpc_name = os.getenv("SUPABASE_TRUNCATE_RPC", "").strip()
     if rpc_name:
-        response = client.rpc(rpc_name, {"table_name": TABLE_NAME}).execute()
+        response = client.rpc(rpc_name, {"table_name": table_name}).execute()
         if getattr(response, "error", None):
-            raise RuntimeError(f"Supabase truncate failed for {TABLE_NAME}: {response.error}")
+            raise RuntimeError(f"Supabase truncate failed for {table_name}: {response.error}")
         return
 
     if "id" not in df.columns:
         raise RuntimeError(
-            "SUPABASE_TRUNCATE_RPC is required because EscapementReport_PlotData lacks an 'id' column."
+            f"SUPABASE_TRUNCATE_RPC is required because {table_name} lacks an 'id' column."
         )
 
-    response = client.table(TABLE_NAME).delete().gte("id", 0).execute()
+    response = client.table(table_name).delete().gte("id", 0).execute()
     if getattr(response, "error", None):
-        raise RuntimeError(f"Supabase delete failed for {TABLE_NAME}: {response.error}")
+        raise RuntimeError(f"Supabase delete failed for {table_name}: {response.error}")
 
 
-def insert_rows(client, rows: list[dict], chunk_size: int = 1000) -> None:
+def insert_rows(
+    client, table_name: str, rows: list[dict], chunk_size: int = 1000
+) -> None:
     for i in range(0, len(rows), chunk_size):
         chunk = rows[i : i + chunk_size]
-        response = client.table(TABLE_NAME).insert(chunk).execute()
+        response = client.table(table_name).insert(chunk).execute()
         if getattr(response, "error", None):
-            raise RuntimeError(f"Supabase insert failed for {TABLE_NAME}: {response.error}")
+            raise RuntimeError(f"Supabase insert failed for {table_name}: {response.error}")
 
 
 def main() -> None:
@@ -102,12 +127,12 @@ def main() -> None:
         print("⚠️  No rows found in EscapementReport_PlotData. Nothing to export.")
         return
 
-    truncate_table(client, df)
+    truncate_table(client, df, PLOTDATA_TABLE)
     df = df.astype(object).where(pd.notnull(df), None)
     rows = df.to_dict(orient="records")
-    insert_rows(client, rows)
+    insert_rows(client, PLOTDATA_TABLE, rows)
 
-    print(f"✅ Export complete — {len(rows):,} rows written to {TABLE_NAME}.")
+    print(f"✅ Export complete — {len(rows):,} rows written to {PLOTDATA_TABLE}.")
     source_max_date = get_local_max_pdf_date()
     run_id = os.getenv("PUBLISH_RUN_ID", "").strip() or None
     upsert_publish_audit(
@@ -118,6 +143,19 @@ def main() -> None:
         run_id=run_id,
     )
     print("🧾 Escapement publish audit updated.")
+
+    pipeline_df = load_pipeline_subset()
+    if pipeline_df.empty:
+        print("⚠️  No rows found in Escapement_PlotPipeline. Nothing to export.")
+        return
+
+    truncate_table(client, pipeline_df, PIPELINE_TABLE)
+    pipeline_df = pipeline_df.astype(object).where(pd.notnull(pipeline_df), None)
+    pipeline_rows = pipeline_df.to_dict(orient="records")
+    insert_rows(client, PIPELINE_TABLE, pipeline_rows)
+    print(
+        f"✅ Export complete — {len(pipeline_rows):,} rows written to {PIPELINE_TABLE}."
+    )
 
 
 if __name__ == "__main__":

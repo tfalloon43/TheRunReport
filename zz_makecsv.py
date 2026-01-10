@@ -30,7 +30,7 @@ def main() -> None:
 
         with OUTPUT_CSV.open("w", newline="") as handle:
             writer = csv.writer(handle)
-            writer.writerow(["id", *columns])
+            writer.writerow(["index", *columns])
             for idx, row in enumerate(rows, start=1):
                 writer.writerow([idx, *[row[col] for col in columns]])
 

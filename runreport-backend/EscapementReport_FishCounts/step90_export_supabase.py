@@ -73,6 +73,21 @@ def load_pipeline_subset() -> pd.DataFrame:
             conn,
         )
 
+
+def coerce_int_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    for col in columns:
+        if col not in df.columns:
+            continue
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        non_int = numeric.notna() & ((numeric % 1) != 0)
+        if non_int.any():
+            print(
+                f"⚠️  {non_int.sum():,} non-integer values found in {col}; coercing to null for Supabase bigint."
+            )
+        numeric = numeric.where(~non_int)
+        df[col] = numeric.astype("Int64")
+    return df
+
 def get_local_max_pdf_date() -> str | None:
     if not DB_PATH.exists():
         raise FileNotFoundError(f"❌ local.db not found at {DB_PATH}")
@@ -149,6 +164,10 @@ def main() -> None:
     if pipeline_df.empty:
         print("⚠️  No rows found in Escapement_PlotPipeline. Nothing to export.")
         return
+
+    pipeline_df = coerce_int_columns(
+        pipeline_df, ["index", "Adult_Total", "adult_diff_plot"]
+    )
 
     truncate_table(client, pipeline_df, PIPELINE_TABLE)
     pipeline_df = pipeline_df.astype(object).where(pd.notnull(pipeline_df), None)

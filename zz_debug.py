@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.request
 
 EXCLUDE_COLUMNS = {"id"}
+QUIET = True
 ORDER_BY = {
     "EscapementReport_PlotData": ["river", "Species_Plot", "MM-DD"],
     "Escapement_PlotPipeline": [
@@ -219,6 +220,8 @@ def fetch_supabase_rows(
 
 
 def print_rows(title: str, columns: list[str], rows: list[object]) -> None:
+    if QUIET:
+        return
     print(f"\n=== {title} ===")
     if not columns:
         print("(no rows)")

@@ -13,7 +13,6 @@ import urllib.request
 EXCLUDE_COLUMNS = {"id"}
 ORDER_BY = {
     "EscapementReport_PlotData": ["river", "Species_Plot", "MM-DD"],
-    "EscapementRawLines": ["report_id", "line_order"],
 }
 
 
@@ -264,7 +263,6 @@ def main() -> None:
 
     output_dir = ensure_output_dir()
     export_table(db_path, "EscapementReport_PlotData", output_dir)
-    export_table(db_path, "EscapementRawLines", output_dir)
     export_table(db_path, "EscapementReports", output_dir)
 
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -279,9 +277,6 @@ def main() -> None:
         )
     export_supabase_table(
         supabase_url, supabase_key, "EscapementReport_PlotData", output_dir
-    )
-    export_supabase_table(
-        supabase_url, supabase_key, "EscapementRawLines", output_dir
     )
     export_supabase_table(
         supabase_url, supabase_key, "EscapementReports", output_dir

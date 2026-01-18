@@ -198,6 +198,13 @@ manual_deletions = [
         "Adult_Total": 10648,
     },
     {
+        "facility": "Baker Lake Hatchery",
+        "species": "Sockeye",
+        "Stock": "U",
+        "date_iso": "2025-12-15",
+        "Adult_Total": 10584,
+    },
+    {
         "facility": "Bogachiel Hatchery",
         "species": "Winter Steelhead",
         "Stock": "H",

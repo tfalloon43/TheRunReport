@@ -20,10 +20,10 @@ import re
 # ------------------------------------------------------------
 # COPY/PASTE your target filenames here (use names from STEP_FILES below, e.g., "step4_duplicate_db.py").
 # When set, the runner executes the contiguous block of steps between them (inclusive).
-FIRST_STEP_NAME = "step4_duplicate_db.py"  # <-- paste START filename here, or leave None
+FIRST_STEP_NAME = "step2_download_pdfs.py"  # <-- paste START filename here, or leave None
 LAST_STEP_NAME = "step87_wraparound.py"   # <-- paste END filename here, or leave None
 # Toggle Step 1 discovery: set to False to skip the new-PDF check.
-ENABLE_STEP1_DISCOVERY = False
+ENABLE_STEP1_DISCOVERY = True
 
 # Ensure imports resolve when run from anywhere
 CURRENT_DIR = Path(__file__).resolve().parent

@@ -204,7 +204,9 @@ function ChartsPage() {
       console.log("Loaded species for", selectedRiver, ":", uniqueSpecies);
 
       setSpecies(uniqueSpecies);
-      setSelectedSpecies(uniqueSpecies[0] || "");
+      setSelectedSpecies((prev) =>
+        uniqueSpecies.includes(prev) ? prev : uniqueSpecies[0] || ""
+      );
     }
 
     loadSpecies();

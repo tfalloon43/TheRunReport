@@ -1,10 +1,10 @@
 # step20_removenegatives.py
 # ------------------------------------------------------------
-# Step 20 (Flows): Replace negative flow values with NaN.
+# Step 20 (Flows): Replace negative flow values with NaN and trim timestamps.
 #
 # If any negative values appear in flow_cfs for either USGS_flows
 # or NOAA_flows, set them to NaN so plots stop instead of dipping
-# below zero.
+# below zero. Also trim timestamp strings to MM-DD-YYYY, HH-MM.
 # ------------------------------------------------------------
 
 import sqlite3
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-print("🧹 Step 20 (Flows): Converting negative flow values to NaN...")
+print("🧹 Step 20 (Flows): Converting negative flow values to NaN and trimming timestamps...")
 
 # ------------------------------------------------------------
 # DB PATH / TABLES
@@ -46,6 +46,10 @@ with sqlite3.connect(db_path) as conn:
         if "flow_cfs" not in df.columns:
             print(f"⚠️ {table} missing 'flow_cfs' — skipping.")
             continue
+
+        if "timestamp" in df.columns:
+            ts = pd.to_datetime(df["timestamp"], errors="coerce")
+            df.loc[ts.notna(), "timestamp"] = ts.dt.strftime("%m-%d-%Y, %H-%M")
 
         df["flow_cfs"] = pd.to_numeric(df["flow_cfs"], errors="coerce")
         negatives = (df["flow_cfs"] < 0).sum()

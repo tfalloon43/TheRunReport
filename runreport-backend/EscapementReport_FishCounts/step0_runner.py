@@ -102,6 +102,7 @@ STEP_FILES = [
     ("Step 85: Snohomish aggregation", "step85_Snohomish.py"),
     ("Step 86: final reorg + id", "step86_reorg.py"),
     ("Step 87: wraparound 01-01 rows", "step87_wraparound.py"),
+    ("Step 88: hang current year line", "step88_hangingcurrent.py"),
     ("Step 90: export plot data to supabase", "step90_export_supabase.py"),
 ]
 

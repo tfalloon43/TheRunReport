@@ -97,6 +97,13 @@ df_final = df_final.sort_values(sort_cols).drop(columns=["date_obj"]).reset_inde
 df_final.insert(0, "id", range(1, len(df_final) + 1))
 
 # ------------------------------------------------------------
+# ROUND CURRENT/PREVIOUS YEARS (KEEP 10_YEAR DECIMALS)
+# ------------------------------------------------------------
+for col in ["current_year", "previous_year"]:
+    if col in df_final.columns:
+        df_final[col] = pd.to_numeric(df_final[col], errors="coerce").round(0)
+
+# ------------------------------------------------------------
 # WRITE BACK
 # ------------------------------------------------------------
 df_final.to_sql("EscapementReport_PlotData", conn, if_exists="replace", index=False)

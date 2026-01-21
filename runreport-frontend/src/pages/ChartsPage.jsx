@@ -314,6 +314,7 @@ function ChartsPage() {
   async function loadFlowChart() {
     if (!supabase) return;
     if (!selectedRiver || !selectedFlowSite) return;
+    setFlowChartData([]);
     setLoading(true);
 
     try {
@@ -730,8 +731,11 @@ function FlowChart({ data, showCfs, showStage }) {
     })
     .filter((value) => Number.isFinite(value));
 
-  const yAxisConfig =
-    metricValues.length > 0 ? buildNiceTicks(metricValues, 6) : null;
+  if (metricValues.length === 0) {
+    return <div style={{ opacity: 0.7 }}>No data available.</div>;
+  }
+
+  const yAxisConfig = buildNiceTicks(metricValues, 6);
 
   return (
     <div style={{ width: "100%", height: 400, marginTop: 40 }}>
@@ -759,6 +763,12 @@ function FlowChart({ data, showCfs, showStage }) {
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload || payload.length === 0) return null;
+              const byKey = Object.fromEntries(
+                payload.map((entry) => [entry.dataKey, entry])
+              );
+              const order = ["flow", "stage"];
+              const ts = payload[0]?.payload?.timestamp;
+              const tsLabel = ts ? new Date(ts).toLocaleString() : "";
               return (
                 <div
                   style={{
@@ -767,11 +777,17 @@ function FlowChart({ data, showCfs, showStage }) {
                     padding: "8px 10px",
                   }}
                 >
-                  {payload.map((entry) => (
-                    <div key={entry.dataKey} style={{ color: entry.color }}>
-                      {entry.name}: {entry.value}
-                    </div>
-                  ))}
+                  {order
+                    .map((key) => byKey[key])
+                    .filter(Boolean)
+                    .map((entry) => (
+                      <div key={entry.dataKey} style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                      </div>
+                    ))}
+                  {tsLabel && (
+                    <div style={{ color: "#fff", marginTop: 6 }}>{tsLabel}</div>
+                  )}
                 </div>
               );
             }}
@@ -838,12 +854,40 @@ function FishChart({ data, selectedRiver }) {
               angle: -90,
               position: "insideLeft",
               fill: "#ccc",
+              offset: 0,
+              textAnchor: "middle",
+              dominantBaseline: "middle",
             }}
           />
 
           <Tooltip
-            contentStyle={{ background: "#111", border: "1px solid #444" }}
-            labelStyle={{ color: "#fff" }}
+            content={({ active, payload }) => {
+              if (!active || !payload || payload.length === 0) return null;
+              const byKey = Object.fromEntries(
+                payload.map((entry) => [entry.dataKey, entry])
+              );
+              const dateLabel = payload[0]?.payload?.date || "";
+              const order = ["current", "last", "ten"];
+              return (
+                <div
+                  style={{
+                    background: "#111",
+                    border: "1px solid #444",
+                    padding: "8px 10px",
+                  }}
+                >
+                  <div style={{ color: "#fff", marginBottom: 6 }}>{dateLabel}</div>
+                  {order
+                    .map((key) => byKey[key])
+                    .filter(Boolean)
+                    .map((entry) => (
+                      <div key={entry.dataKey} style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                      </div>
+                    ))}
+                </div>
+              );
+            }}
           />
 
           <Legend />

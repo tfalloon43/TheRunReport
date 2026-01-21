@@ -71,11 +71,6 @@ pivot = pivot[["MM-DD", "identifier", "current_year", "previous_year", "10_year"
 pivot["date_obj"] = pd.to_datetime("2024-" + pivot["MM-DD"], errors="coerce")
 pivot = pivot.sort_values(["date_obj", "identifier"]).drop(columns=["date_obj"]).reset_index(drop=True)
 
-# Round year-specific values to whole numbers; keep 10_year decimals
-for col in ["current_year", "previous_year"]:
-    if col in pivot.columns:
-        pivot[col] = pivot[col].round(0)
-
 # ------------------------------------------------------------
 # WRITE BACK
 # ------------------------------------------------------------

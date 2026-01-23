@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import ChartsPage from "./pages/ChartsPage";
 import ContactPage from "./pages/ContactPage";
+import AuthPage from "./pages/AuthPage";
 
 import "./App.css";
 
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/charts" element={<ChartsPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/login" element={<AuthPage />} />
           </Routes>
         </div>
       </div>

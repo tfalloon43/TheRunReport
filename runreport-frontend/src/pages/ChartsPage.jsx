@@ -393,18 +393,16 @@ function ChartsPage() {
   const containerStyle = {
     minHeight: "100vh",
     padding: "32px 24px 80px",
-    color: "#eef3f5",
-    fontFamily: '"Space Grotesk", "Montserrat", sans-serif',
-    background:
-      "radial-gradient(1200px 700px at 10% -10%, #1b3b4a 0%, #0e1820 45%, #0a0f13 100%)",
+    color: "rgb(var(--color-text))",
+    fontFamily: "var(--font-base)",
+    background: "rgb(var(--color-bg))",
   };
 
   const panelStyle = {
-    background: "rgba(10, 16, 20, 0.7)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "rgba(var(--color-surface), 0.9)",
+    border: "1px solid rgba(var(--color-text), 0.08)",
     borderRadius: "16px",
     padding: "16px",
-    backdropFilter: "blur(6px)",
   };
   const controlPanelStyle = {
     ...panelStyle,
@@ -415,11 +413,11 @@ function ChartsPage() {
     height: 400,
     marginTop: 40,
     borderRadius: "14px",
-    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.08)",
+    boxShadow: "inset 0 0 0 1px rgba(var(--color-text), 0.08)",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))," +
-      "repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 72px)," +
-      "repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 48px)",
+      "linear-gradient(180deg, rgba(var(--color-text), 0.05), rgba(var(--color-text), 0.01))," +
+      "repeating-linear-gradient(90deg, rgba(var(--color-text), 0.08) 0, rgba(var(--color-text), 0.08) 1px, transparent 1px, transparent 72px)," +
+      "repeating-linear-gradient(0deg, rgba(var(--color-text), 0.06) 0, rgba(var(--color-text), 0.06) 1px, transparent 1px, transparent 48px)",
   };
 
   return (
@@ -457,9 +455,9 @@ function ChartsPage() {
               width: "100%",
               padding: "10px 12px",
               borderRadius: "10px",
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "#0b1216",
-              color: "#eef3f5",
+              border: "1px solid rgba(var(--color-text), 0.15)",
+              background: "rgb(var(--color-bg))",
+              color: "rgb(var(--color-text))",
             }}
           >
             <option value="">Select river...</option>
@@ -481,9 +479,9 @@ function ChartsPage() {
                     width: "100%",
                     padding: "10px 12px",
                     borderRadius: "10px",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "#0b1216",
-                    color: "#eef3f5",
+                    border: "1px solid rgba(var(--color-text), 0.15)",
+                    background: "rgb(var(--color-bg))",
+                    color: "rgb(var(--color-text))",
                   }}
                 >
                   {dams.map((d) => (
@@ -544,9 +542,9 @@ function ChartsPage() {
                 marginTop: "8px",
                 padding: "10px 12px",
                 borderRadius: "10px",
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "#0b1216",
-                color: "#eef3f5",
+                border: "1px solid rgba(var(--color-text), 0.15)",
+                background: "rgb(var(--color-bg))",
+                color: "rgb(var(--color-text))",
               }}
             >
               <option value="">Select species...</option>
@@ -583,9 +581,9 @@ function ChartsPage() {
                     width: "100%",
                     padding: "10px 12px",
                     borderRadius: "10px",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "#0b1216",
-                    color: "#eef3f5",
+                    border: "1px solid rgba(var(--color-text), 0.15)",
+                    background: "rgb(var(--color-bg))",
+                    color: "rgb(var(--color-text))",
                   }}
                 >
                   <option value="">Select station...</option>
@@ -741,21 +739,21 @@ function FlowChart({ data, showCfs, showStage }) {
     <div style={{ width: "100%", height: 400, marginTop: 40 }}>
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid stroke="#333" />
+          <CartesianGrid stroke="rgba(var(--color-text), 0.15)" />
 
           <XAxis
             dataKey="timestampMs"
             type="number"
             domain={["dataMin", "dataMax"]}
-            stroke="#ccc"
-            tick={{ fill: "#ccc" }}
+            stroke="rgba(var(--color-text), 0.7)"
+            tick={{ fill: "rgba(var(--color-text), 0.7)" }}
             tickFormatter={(value) =>
               new Date(value).toISOString().slice(5, 10)
             }
           />
           <YAxis
-            stroke="#ccc"
-            tick={{ fill: "#ccc" }}
+            stroke="rgba(var(--color-text), 0.7)"
+            tick={{ fill: "rgba(var(--color-text), 0.7)" }}
             domain={yAxisConfig?.domain}
             ticks={yAxisConfig?.ticks}
           />
@@ -772,8 +770,8 @@ function FlowChart({ data, showCfs, showStage }) {
               return (
                 <div
                   style={{
-                    background: "#111",
-                    border: "1px solid #444",
+                    background: "rgb(var(--color-bg))",
+                    border: "1px solid rgba(var(--color-text), 0.2)",
                     padding: "8px 10px",
                   }}
                 >
@@ -786,7 +784,9 @@ function FlowChart({ data, showCfs, showStage }) {
                       </div>
                     ))}
                   {tsLabel && (
-                    <div style={{ color: "#fff", marginTop: 6 }}>{tsLabel}</div>
+                    <div style={{ color: "rgb(var(--color-text))", marginTop: 6 }}>
+                      {tsLabel}
+                    </div>
                   )}
                 </div>
               );
@@ -799,7 +799,7 @@ function FlowChart({ data, showCfs, showStage }) {
             <Line
               type="monotone"
               dataKey="flow"
-              stroke="#00e5ff"
+              stroke="rgb(var(--chart-line-1))"
               strokeWidth={3}
               dot={false}
               name="Flow (cfs)"
@@ -810,7 +810,7 @@ function FlowChart({ data, showCfs, showStage }) {
             <Line
               type="monotone"
               dataKey="stage"
-              stroke="#ff9800"
+              stroke="rgb(var(--chart-line-2))"
               strokeWidth={2}
               dot={false}
               name="Stage (ft)"
@@ -827,18 +827,44 @@ function FishChart({ data, selectedRiver }) {
   const isColumbiaOrSnake =
     selectedRiver === "Columbia River" || selectedRiver === "Snake River";
   const yAxisLabel = isColumbiaOrSnake ? "Fish per day" : "Fish per week";
+  const lineColors = {
+    current: "rgb(var(--chart-line-1))",
+    last: "rgb(var(--chart-line-2))",
+    ten: "rgb(var(--chart-line-3))",
+  };
+  const legendPayload = [
+    {
+      value: "Current Year",
+      type: "line",
+      id: "current",
+      color: lineColors.current,
+    },
+    {
+      value: "Last Year",
+      type: "line",
+      id: "last",
+      color: lineColors.last,
+    },
+    {
+      value: "10-Year Avg",
+      type: "line",
+      id: "ten",
+      color: lineColors.ten,
+    },
+  ];
+  const legendItems = legendPayload;
 
   return (
     <div style={{ width: "100%", height: 400, marginTop: 40 }}>
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid stroke="#333" />
+          <CartesianGrid stroke="rgba(var(--color-text), 0.15)" />
 
           <XAxis
             dataKey="dayOfYear"
             type="number"
-            stroke="#ccc"
-            tick={{ fill: "#ccc" }}
+            stroke="rgba(var(--color-text), 0.7)"
+            tick={{ fill: "rgba(var(--color-text), 0.7)" }}
             ticks={monthTicks.map((tick) => tick.day)}
             domain={[1, 366]}
             tickFormatter={(value) => {
@@ -847,13 +873,13 @@ function FishChart({ data, selectedRiver }) {
             }}
           />
           <YAxis
-            stroke="#ccc"
-            tick={{ fill: "#ccc" }}
+            stroke="rgba(var(--color-text), 0.7)"
+            tick={{ fill: "rgba(var(--color-text), 0.7)" }}
             label={{
               value: yAxisLabel,
               angle: -90,
               position: "insideLeft",
-              fill: "#ccc",
+              fill: "rgba(var(--color-text), 0.7)",
               offset: 0,
               textAnchor: "middle",
               dominantBaseline: "middle",
@@ -871,12 +897,14 @@ function FishChart({ data, selectedRiver }) {
               return (
                 <div
                   style={{
-                    background: "#111",
-                    border: "1px solid #444",
+                    background: "rgb(var(--color-bg))",
+                    border: "1px solid rgba(var(--color-text), 0.2)",
                     padding: "8px 10px",
                   }}
                 >
-                  <div style={{ color: "#fff", marginBottom: 6 }}>{dateLabel}</div>
+                  <div style={{ color: "rgb(var(--color-text))", marginBottom: 6 }}>
+                    {dateLabel}
+                  </div>
                   {order
                     .map((key) => byKey[key])
                     .filter(Boolean)
@@ -890,12 +918,50 @@ function FishChart({ data, selectedRiver }) {
             }}
           />
 
-          <Legend />
+          <Legend
+            content={() => (
+              <ul
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "18px",
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "10px 0 0",
+                  color: "rgba(var(--color-text), 0.7)",
+                }}
+              >
+                {legendItems.map((item) => (
+                  <li
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      color: "inherit",
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: "18px",
+                        height: "2px",
+                        background: item.color,
+                        display: "inline-block",
+                        borderRadius: "999px",
+                      }}
+                    />
+                    <span>{item.value}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          />
 
           <Line
             type="monotone"
             dataKey="ten"
-            stroke="#777"
+            stroke={lineColors.ten}
             strokeWidth={2}
             dot={false}
             name="10-Year Avg"
@@ -904,7 +970,7 @@ function FishChart({ data, selectedRiver }) {
           <Line
             type="monotone"
             dataKey="last"
-            stroke="#4fc3f7"
+            stroke={lineColors.last}
             strokeWidth={2}
             dot={false}
             name="Last Year"
@@ -913,8 +979,8 @@ function FishChart({ data, selectedRiver }) {
           <Line
             type="monotone"
             dataKey="current"
-            stroke="#00e5ff"
-            strokeWidth={3}
+            stroke={lineColors.current}
+            strokeWidth={2}
             dot={false}
             name="Current Year"
           />

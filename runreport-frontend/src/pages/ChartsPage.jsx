@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  Label,
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
@@ -314,7 +315,6 @@ function ChartsPage() {
   async function loadFlowChart() {
     if (!supabase) return;
     if (!selectedRiver || !selectedFlowSite) return;
-    setFlowChartData([]);
     setLoading(true);
 
     try {
@@ -392,7 +392,7 @@ function ChartsPage() {
 
   const containerStyle = {
     minHeight: "100vh",
-    padding: "32px 24px 80px",
+    padding: "32px 24px 40px",
     color: "rgb(var(--color-text))",
     fontFamily: "var(--font-base)",
     background: "rgb(var(--color-bg))",
@@ -404,6 +404,10 @@ function ChartsPage() {
     borderRadius: "16px",
     padding: "16px",
   };
+  const chartPanelStyle = {
+    ...panelStyle,
+    position: "relative",
+  };
   const controlPanelStyle = {
     ...panelStyle,
     minHeight: "170px",
@@ -411,7 +415,6 @@ function ChartsPage() {
   const placeholderChartStyle = {
     width: "100%",
     height: 400,
-    marginTop: 40,
     borderRadius: "14px",
     boxShadow: "inset 0 0 0 1px rgba(var(--color-text), 0.08)",
     background:
@@ -419,6 +422,12 @@ function ChartsPage() {
       "repeating-linear-gradient(90deg, rgba(var(--color-text), 0.08) 0, rgba(var(--color-text), 0.08) 1px, transparent 1px, transparent 72px)," +
       "repeating-linear-gradient(0deg, rgba(var(--color-text), 0.06) 0, rgba(var(--color-text), 0.06) 1px, transparent 1px, transparent 48px)",
   };
+  const hasFishData = fishChartData && fishChartData.length > 0;
+  const hasFlowValues = (flowChartData || []).some((row) => {
+    if (showFlowCfs && Number.isFinite(row.flow)) return true;
+    if (showFlowStage && Number.isFinite(row.stage)) return true;
+    return false;
+  });
 
   return (
     <div style={containerStyle}>
@@ -427,164 +436,88 @@ function ChartsPage() {
           Charts are unavailable until Supabase environment variables are set.
         </div>
       )}
-      <div style={{ textAlign: "center", marginBottom: "16px" }}>
-        <h1 style={{ margin: 0, fontSize: "28px", letterSpacing: "0.5px" }}>
-          {selectedRiver || "Select a river"}
-        </h1>
-      </div>
+      <div className="chart-controls" />
 
-      <div className="chart-controls">
+      <div style={{ marginTop: "24px", ...chartPanelStyle }}>
         <div
           style={{
-            ...controlPanelStyle,
-            width: "25%",
-            maxWidth: "25%",
-            flex: "0 0 25%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
+            marginBottom: "16px",
+            ...panelStyle,
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-            River
-          </label>
-          <select
-            value={selectedRiver}
-            onChange={(e) => setSelectedRiver(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              borderRadius: "10px",
-              border: "1px solid rgba(var(--color-text), 0.15)",
-              background: "rgb(var(--color-bg))",
-              color: "rgb(var(--color-text))",
-            }}
-          >
-            <option value="">Select river...</option>
-            {rivers.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-
-          {view === "Fish" &&
-            (selectedRiver === "Columbia River" ||
-              selectedRiver === "Snake River") && (
-              <div style={{ marginTop: "12px" }}>
-                <select
-                  value={selectedDam}
-                  onChange={(e) => setSelectedDam(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(var(--color-text), 0.15)",
-                    background: "rgb(var(--color-bg))",
-                    color: "rgb(var(--color-text))",
-                  }}
+          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <div style={{ flex: 1 }}>
+              <div className="toggle-pill" role="group" aria-label="Fish or flow">
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${view === "Fish" ? "is-active" : ""}`}
+                  onClick={() => setView("Fish")}
                 >
-                  {dams.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
+                  Fish Counts
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${view === "Flow" ? "is-active" : ""}`}
+                  onClick={() => setView("Flow")}
+                >
+                  River Flow
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <select
+                className="chart-select"
+                value={selectedRiver}
+                onChange={(e) => setSelectedRiver(e.target.value)}
+              >
+                <option value="">Select river...</option>
+                {rivers.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              {view === "Fish" &&
+                (selectedRiver === "Columbia River" ||
+                  selectedRiver === "Snake River") && (
+                  <div style={{ marginTop: "12px" }}>
+                    <select
+                      className="chart-select"
+                      value={selectedDam}
+                      onChange={(e) => setSelectedDam(e.target.value)}
+                    >
+                      {dams.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+            </div>
+            <div style={{ flex: 1 }}>
+              {view === "Fish" && (
+                <select
+                  className="chart-select"
+                  value={selectedSpecies}
+                  onChange={(e) => setSelectedSpecies(e.target.value)}
+                >
+                  <option value="">Select species...</option>
+                  {species.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
-        </div>
-
-        <div
-          style={{
-            ...controlPanelStyle,
-            width: "25%",
-            maxWidth: "25%",
-            flex: "0 0 25%",
-          }}
-        >
-          <label style={{ display: "block", marginBottom: "8px", opacity: 0.8 }}>
-            Fish or Flow
-          </label>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <input
-                type="checkbox"
-                checked={view === "Fish"}
-                onChange={() => setView("Fish")}
-              />
-              Fish counts
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <input
-                type="checkbox"
-                checked={view === "Flow"}
-                onChange={() => setView("Flow")}
-              />
-              Flow
-            </label>
-          </div>
-        </div>
-        {view === "Fish" && (
-          <div
-            style={{
-              ...controlPanelStyle,
-              width: "25%",
-              maxWidth: "25%",
-              flex: "0 0 25%",
-            }}
-          >
-            <label style={{ marginRight: 8 }}>Species</label>
-            <select
-              value={selectedSpecies}
-              onChange={(e) => setSelectedSpecies(e.target.value)}
-              style={{
-                width: "100%",
-                marginTop: "8px",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                border: "1px solid rgba(var(--color-text), 0.15)",
-                background: "rgb(var(--color-bg))",
-                color: "rgb(var(--color-text))",
-              }}
-            >
-              <option value="">Select species...</option>
-              {species.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        {view === "Flow" && (
-          <div
-            style={{
-              ...controlPanelStyle,
-              width: "25%",
-              maxWidth: "25%",
-              flex: "0 0 25%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div>
-                <label
-                  style={{ display: "block", marginBottom: "6px", opacity: 0.8 }}
-                >
-                  Station
-                </label>
+              )}
+              {view === "Flow" && (
                 <select
+                  className="chart-select"
                   value={selectedFlowSite}
                   onChange={(e) => setSelectedFlowSite(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(var(--color-text), 0.15)",
-                    background: "rgb(var(--color-bg))",
-                    color: "rgb(var(--color-text))",
-                  }}
                 >
                   <option value="">Select station...</option>
                   {flowSites.map((site) => (
@@ -593,72 +526,164 @@ function ChartsPage() {
                     </option>
                   ))}
                 </select>
+              )}
+            </div>
+          </div>
+        </div>
+        {(!selectedRiver || (loading && !(hasFishData || hasFlowValues))) && (
+          <div style={placeholderChartStyle} />
+        )}
+        {selectedRiver && view === "Fish" && hasFishData && (
+          <FishChart data={fishChartData} selectedRiver={selectedRiver} />
+        )}
+        {selectedRiver && view === "Flow" && hasFlowValues && (
+          <FlowChart
+            data={flowChartData}
+            showCfs={showFlowCfs}
+            showStage={showFlowStage}
+            hasData={hasFlowValues}
+          />
+        )}
+        {selectedRiver &&
+          !loading &&
+          ((view === "Fish" && (!fishChartData || fishChartData.length === 0)) ||
+            (view === "Flow" && !hasFlowValues)) && (
+            <div style={{ ...placeholderChartStyle, position: "relative" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "rgba(var(--color-text), 0.7)",
+                  fontSize: "0.95rem",
+                }}
+              >
+                No data available.
               </div>
-
-              <div>
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={showFlowStage}
-                      onChange={() => {
-                        setShowFlowStage(true);
-                        setShowFlowCfs(false);
-                      }}
-                    />
-                    Stage (ft)
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={showFlowCfs}
-                      onChange={() => {
-                        setShowFlowCfs(true);
-                        setShowFlowStage(false);
-                      }}
-                    />
-                    CFS
-                  </label>
-                </div>
+            </div>
+          )}
+        {loading && selectedRiver && (
+          <div style={{ position: "absolute", bottom: 16, right: 16, opacity: 0.7 }}>
+            Loading...
+          </div>
+        )}
+        {selectedRiver && !view && !loading && (
+          <div style={{ opacity: 0.7 }}>
+            Select a river and a data type to render the chart.
+          </div>
+        )}
+        {selectedRiver && view === "Fish" && !loading && (
+          <div
+            style={{
+              marginTop: "16px",
+              ...panelStyle,
+              border: "none",
+              background: "transparent",
+              padding: 0,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "18px",
+                color: "rgba(var(--color-text), 0.7)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "18px",
+                    height: "2px",
+                    background: "rgb(var(--chart-line-1))",
+                    display: "inline-block",
+                    borderRadius: "999px",
+                  }}
+                />
+                <span>Current Year</span>
               </div>
-
-              <div>
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={flowWindow === "30d"}
-                      onChange={() => setFlowWindow("30d")}
-                    />
-                    Last 30 days
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={flowWindow === "7d"}
-                      onChange={() => setFlowWindow("7d")}
-                    />
-                    Last 7 days
-                  </label>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "18px",
+                    height: "2px",
+                    background: "rgb(var(--chart-line-2))",
+                    display: "inline-block",
+                    borderRadius: "999px",
+                  }}
+                />
+                <span>Last Year</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "18px",
+                    height: "2px",
+                    background: "rgb(var(--chart-line-3))",
+                    display: "inline-block",
+                    borderRadius: "999px",
+                  }}
+                />
+                <span>10-Year Avg</span>
               </div>
             </div>
           </div>
         )}
-      </div>
-
-      <div style={{ marginTop: "24px", ...panelStyle }}>
-        {loading && <div style={{ opacity: 0.7 }}>Loading...</div>}
-        {!selectedRiver && <div style={placeholderChartStyle} />}
-        {selectedRiver && view === "Fish" && (
-          <FishChart data={fishChartData} selectedRiver={selectedRiver} />
-        )}
         {selectedRiver && view === "Flow" && (
-          <FlowChart data={flowChartData} showCfs={showFlowCfs} showStage={showFlowStage} />
-        )}
-        {selectedRiver && !view && (
-          <div style={{ opacity: 0.7 }}>
-            Select a river and a data type to render the chart.
+          <div
+            style={{
+              marginTop: "16px",
+              ...panelStyle,
+              border: "none",
+              background: "transparent",
+              padding: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "center", gap: "16px" }}>
+              <div className="toggle-pill" role="group" aria-label="Flow metric">
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${showFlowStage ? "is-active" : ""}`}
+                  onClick={() => {
+                    setShowFlowStage(true);
+                    setShowFlowCfs(false);
+                  }}
+                >
+                  Stage (ft)
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${showFlowCfs ? "is-active" : ""}`}
+                  onClick={() => {
+                    setShowFlowCfs(true);
+                    setShowFlowStage(false);
+                  }}
+                >
+                  CFS
+                </button>
+              </div>
+              <div className="toggle-pill" role="group" aria-label="Flow window">
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${flowWindow === "30d" ? "is-active" : ""}`}
+                  onClick={() => setFlowWindow("30d")}
+                >
+                  30 days
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill-button ${flowWindow === "7d" ? "is-active" : ""}`}
+                  onClick={() => setFlowWindow("7d")}
+                >
+                  7 days
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -666,11 +691,13 @@ function ChartsPage() {
   );
 }
 
-function FlowChart({ data, showCfs, showStage }) {
-  if (!data || data.length === 0) {
-    return <div style={{ opacity: 0.7 }}>No data available.</div>;
-  }
+function FlowChart({ data, showCfs, showStage, hasData }) {
+  if (!hasData) return null;
   if (!showCfs && !showStage) return <div>Select a flow metric.</div>;
+  const flowLabel = showCfs ? "Flow (cfs)" : "Stage (ft)";
+  const flowColor = showCfs
+    ? "rgb(var(--chart-line-1))"
+    : "rgb(var(--chart-line-2))";
 
   function niceNum(range, round) {
     const exponent = Math.floor(Math.log10(range));
@@ -729,14 +756,12 @@ function FlowChart({ data, showCfs, showStage }) {
     })
     .filter((value) => Number.isFinite(value));
 
-  if (metricValues.length === 0) {
-    return <div style={{ opacity: 0.7 }}>No data available.</div>;
-  }
+  if (metricValues.length === 0) return null;
 
   const yAxisConfig = buildNiceTicks(metricValues, 6);
 
   return (
-    <div style={{ width: "100%", height: 400, marginTop: 40 }}>
+    <div style={{ width: "100%", height: 400 }}>
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid stroke="rgba(var(--color-text), 0.15)" />
@@ -756,6 +781,15 @@ function FlowChart({ data, showCfs, showStage }) {
             tick={{ fill: "rgba(var(--color-text), 0.7)" }}
             domain={yAxisConfig?.domain}
             ticks={yAxisConfig?.ticks}
+            label={{
+              value: flowLabel,
+              angle: -90,
+              position: "insideLeft",
+              fill: "rgba(var(--color-text), 0.7)",
+              offset: 0,
+              textAnchor: "middle",
+              dominantBaseline: "middle",
+            }}
           />
 
           <Tooltip
@@ -792,8 +826,6 @@ function FlowChart({ data, showCfs, showStage }) {
               );
             }}
           />
-
-          <Legend verticalAlign="top" align="center" />
 
           {showCfs && (
             <Line
@@ -832,30 +864,14 @@ function FishChart({ data, selectedRiver }) {
     last: "rgb(var(--chart-line-2))",
     ten: "rgb(var(--chart-line-3))",
   };
-  const legendPayload = [
-    {
-      value: "Current Year",
-      type: "line",
-      id: "current",
-      color: lineColors.current,
-    },
-    {
-      value: "Last Year",
-      type: "line",
-      id: "last",
-      color: lineColors.last,
-    },
-    {
-      value: "10-Year Avg",
-      type: "line",
-      id: "ten",
-      color: lineColors.ten,
-    },
+  const legendItems = [
+    { value: "Current Year", id: "current", color: lineColors.current },
+    { value: "Last Year", id: "last", color: lineColors.last },
+    { value: "10-Year Avg", id: "ten", color: lineColors.ten },
   ];
-  const legendItems = legendPayload;
 
   return (
-    <div style={{ width: "100%", height: 400, marginTop: 40 }}>
+    <div style={{ width: "100%", height: 400 }}>
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid stroke="rgba(var(--color-text), 0.15)" />
@@ -918,45 +934,7 @@ function FishChart({ data, selectedRiver }) {
             }}
           />
 
-          <Legend
-            content={() => (
-              <ul
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "18px",
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "10px 0 0",
-                  color: "rgba(var(--color-text), 0.7)",
-                }}
-              >
-                {legendItems.map((item) => (
-                  <li
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      color: "inherit",
-                    }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: "18px",
-                        height: "2px",
-                        background: item.color,
-                        display: "inline-block",
-                        borderRadius: "999px",
-                      }}
-                    />
-                    <span>{item.value}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          />
+          <Legend content={() => null} />
 
           <Line
             type="monotone"

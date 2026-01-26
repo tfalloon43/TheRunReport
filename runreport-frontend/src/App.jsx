@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import ChartsPage from "./pages/ChartsPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
+import AboutPage from "./pages/AboutPage";
 
 import "./App.css";
 
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/charts" element={<ChartsPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<AuthPage />} />
+            <Route path="/about" element={<AboutPage />} />
           </Routes>
         </div>
       </div>

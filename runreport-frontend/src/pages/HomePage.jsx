@@ -31,14 +31,6 @@ export default function HomePage() {
             />
           </div>
           <div className="benefit-card">
-            <h3>Compare current returns to past years</h3>
-            <img
-              className="benefit-card-image"
-              src="/tooltip.jpeg"
-              alt="Sample chart tooltip"
-            />
-          </div>
-          <div className="benefit-card">
             <h3>Check river flows in one click</h3>
             <img
               className="benefit-card-image"
@@ -51,7 +43,7 @@ export default function HomePage() {
             <ul className="benefit-list">
               <li>Flows update hourly</li>
               <li>Dam counts update daily</li>
-              <li>Hatchery data update weekly</li>
+              <li>Hatchery counts update weekly</li>
               <li>$5/month</li>
             </ul>
           </div>

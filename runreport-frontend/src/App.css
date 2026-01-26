@@ -100,6 +100,53 @@ body {
   text-decoration: none;
 }
 
+.nav-greeting {
+  color: rgb(var(--color-text));
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.nav-user-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-greeting-button {
+  background: none;
+  border: none;
+  color: rgb(var(--color-text));
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(var(--color-surface), 0.95);
+  border: 1px solid rgba(var(--color-text), 0.15);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 120px;
+  z-index: 10;
+}
+
+.nav-user-dropdown button {
+  border: none;
+  background: none;
+  color: rgb(var(--color-text));
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0;
+  cursor: pointer;
+}
+
 .login-icon {
   display: inline-flex;
   align-items: center;
@@ -193,12 +240,32 @@ body {
   font-size: 1rem;
 }
 
+.nav-mobile-signout {
+  border: none;
+  background: none;
+  color: rgb(var(--color-text));
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
 @media (max-width: 900px) {
   .nav-links {
     display: none;
   }
 
   .login-button {
+    display: none;
+  }
+
+  .nav-greeting {
+    display: none;
+  }
+
+  .nav-user-menu {
     display: none;
   }
 
@@ -903,6 +970,24 @@ body {
   gap: 16px;
 }
 
+.auth-form input {
+  background: rgba(var(--color-bg), 0.7);
+  border: 1px solid rgba(var(--color-text), 0.15);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: rgb(var(--color-text));
+  font-size: 1rem;
+}
+
+.auth-form input:focus {
+  outline: 2px solid rgba(var(--color-accent), 0.7);
+  border-color: rgba(var(--color-accent), 0.7);
+}
+
+.auth-form .cta-button {
+  width: 100%;
+}
+
 .auth-helper {
   margin: 0;
   font-size: 0.9rem;
@@ -918,9 +1003,35 @@ body {
   font: inherit;
 }
 
+.auth-signed-in {
+  margin-top: 12px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
 .cta-button.outline {
   background: transparent;
   color: rgb(var(--color-accent));
   border: 1px solid rgba(var(--color-accent), 0.6);
   box-shadow: none;
+}
+
+.auth-feedback {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-error {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.auth-message {
+  color: rgba(var(--color-text), 0.8);
 }

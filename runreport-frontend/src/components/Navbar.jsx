@@ -1,25 +1,44 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../AuthContext";
+import { supabase } from "../supabaseClient";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const { session } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  const displayName = session?.user?.user_metadata?.full_name
+    || session?.user?.user_metadata?.name
+    || session?.user?.email?.split("@")[0];
+
+  async function handleSignOut() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+  }
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target)) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
       }
     }
 
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         setMenuOpen(false);
+        setUserMenuOpen(false);
       }
     }
 
-    if (menuOpen) {
+    if (menuOpen || userMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleKeyDown);
     }
@@ -28,7 +47,7 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [menuOpen]);
+  }, [menuOpen, userMenuOpen]);
 
   return (
     <div className="navbar">
@@ -47,21 +66,41 @@ export default function Navbar() {
       </div>
 
       <div className="nav-actions">
-        <Link className="login-button" to="/login">
-          <span className="login-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation">
-              <path
-                d="M5 12h12M13 6l6 6-6 6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="login-label">SIGN IN</span>
-        </Link>
+        {session ? (
+          <div className="nav-user-menu" ref={userMenuRef}>
+            <button
+              type="button"
+              className="nav-greeting-button"
+              aria-expanded={userMenuOpen}
+              onClick={() => setUserMenuOpen((open) => !open)}
+            >
+              Hello, {displayName || "there"}
+            </button>
+            {userMenuOpen && (
+              <div className="nav-user-dropdown">
+                <button type="button" onClick={handleSignOut}>
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <Link className="login-button" to="/login">
+            <span className="login-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="presentation">
+                <path
+                  d="M5 12h12M13 6l6 6-6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span className="login-label">SIGN IN</span>
+          </Link>
+        )}
         <div className="nav-menu-wrap" ref={menuRef}>
           <button
             type="button"
@@ -90,9 +129,19 @@ export default function Navbar() {
               <Link to="/contact" onClick={() => setMenuOpen(false)}>
                 Contact Us
               </Link>
-              <Link to="/login" onClick={() => setMenuOpen(false)}>
-                Sign In
-              </Link>
+              {!session ? (
+                <Link to="/login" onClick={() => setMenuOpen(false)}>
+                  Sign In
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="nav-mobile-signout"
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </button>
+              )}
             </div>
           )}
         </div>

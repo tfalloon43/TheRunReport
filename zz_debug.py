@@ -256,39 +256,15 @@ def build_ssl_context() -> ssl.SSLContext:
 
 def main() -> None:
     repo_root = os.path.dirname(os.path.abspath(__file__))
-    load_env_file(os.path.join(repo_root, ".env"))
     db_path = os.path.join(repo_root, "runreport-backend", "0_db", "local.db")
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Database not found: {db_path}")
 
     output_dir = ensure_output_dir()
+    export_table(db_path, "Columbia_FishCounts", output_dir)
     export_table(db_path, "EscapementReport_PlotData", output_dir)
-    export_table(db_path, "EscapementReports", output_dir)
-
-    supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get(
-        "SUPABASE_ANON_KEY"
-    )
-    if not supabase_url:
-        raise RuntimeError("Missing SUPABASE_URL env var for Supabase access.")
-    if not supabase_key:
-        raise RuntimeError(
-            "Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY env var."
-        )
-    export_supabase_table(
-        supabase_url, supabase_key, "EscapementReport_PlotData", output_dir
-    )
-    export_supabase_table(
-        supabase_url, supabase_key, "EscapementReports", output_dir
-    )
-
-    local_cols, local_rows = fetch_local_rows(db_path, "EscapementReports")
-    print_rows("local.db EscapementReports", local_cols, local_rows)
-
-    supa_cols, supa_rows = fetch_supabase_rows(
-        supabase_url, supabase_key, "EscapementReports"
-    )
-    print_rows("supabase EscapementReports", supa_cols, supa_rows)
+    export_table(db_path, "NOAA_flows", output_dir)
+    export_table(db_path, "USGS_flows", output_dir)
 
 
 if __name__ == "__main__":

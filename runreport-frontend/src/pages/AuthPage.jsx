@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
 import { useAuth } from "../AuthContext";
+import { initPaddle } from "../utils/paddle";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function AuthPage() {
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [billingError, setBillingError] = useState("");
+  const [billingBusy, setBillingBusy] = useState(false);
 
   async function handleSignIn(event) {
     event.preventDefault();
@@ -67,7 +70,7 @@ export default function AuthPage() {
     }
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(signInEmail, {
-      redirectTo: window.location.origin + "/login",
+      redirectTo: window.location.origin + "/reset-password",
     });
     setBusy(false);
     if (error) {
@@ -86,6 +89,35 @@ export default function AuthPage() {
     setBusy(false);
     if (error) {
       setAuthError(error.message);
+    }
+  }
+
+  async function handleStartSubscription() {
+    setBillingError("");
+    if (!session) return;
+
+    const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
+    if (!priceId) {
+      setBillingError("Missing Paddle price id.");
+      return;
+    }
+
+    try {
+      setBillingBusy(true);
+      const paddle = await initPaddle();
+      paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: {
+          email: session.user?.email,
+        },
+        customData: {
+          user_id: session.user?.id,
+        },
+      });
+    } catch (error) {
+      setBillingError(error.message || "Unable to start checkout.");
+    } finally {
+      setBillingBusy(false);
     }
   }
 
@@ -217,6 +249,21 @@ export default function AuthPage() {
               Sign out
             </button>
           )}
+        </section>
+      )}
+
+      {session && (
+        <section className="auth-feedback">
+          <p className="auth-message">Ready to start your subscription?</p>
+          <button
+            className="cta-button"
+            type="button"
+            onClick={handleStartSubscription}
+            disabled={billingBusy}
+          >
+            {billingBusy ? "Opening checkout..." : "Start subscription"}
+          </button>
+          {billingError && <p className="auth-error">{billingError}</p>}
         </section>
       )}
     </div>

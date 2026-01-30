@@ -1,6 +1,8 @@
 // src/pages/ChartsPage.jsx
 import React, { useState, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
+import { useAuth } from "../AuthContext";
+import { initPaddle } from "../utils/paddle";
 
 import {
   LineChart,
@@ -49,6 +51,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   // STATE
   // ------------------------------------------------------------
+  const { session } = useAuth();
   const [view, setView] = useState("Fish"); // "Fish" or "Flow"
 
   const [rivers, setRivers] = useState([]);
@@ -71,6 +74,9 @@ function ChartsPage() {
   const [flowChartData, setFlowChartData] = useState([]);
 
   const [loading, setLoading] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [billingError, setBillingError] = useState("");
   // ------------------------------------------------------------
   // LOAD RIVERS ONCE
   // ------------------------------------------------------------
@@ -428,6 +434,66 @@ function ChartsPage() {
     if (showFlowStage && Number.isFinite(row.stage)) return true;
     return false;
   });
+  const hasActiveSubscription =
+    subscriptionStatus === "active"
+    || subscriptionStatus === "trialing"
+    || subscriptionStatus === "complete";
+  const isLocked = !session || !hasActiveSubscription || subscriptionLoading;
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadSubscription() {
+      if (!supabase || !session) {
+        if (mounted) {
+          setSubscriptionStatus(null);
+          setSubscriptionLoading(false);
+        }
+        return;
+      }
+      setSubscriptionLoading(true);
+      const { data, error } = await supabase
+        .from("paddle_subscriptions")
+        .select("status")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (mounted) {
+        if (error) {
+          console.error("Subscription lookup error:", error);
+        }
+        setSubscriptionStatus(data?.status ?? null);
+        setSubscriptionLoading(false);
+      }
+    }
+
+    loadSubscription();
+    return () => {
+      mounted = false;
+    };
+  }, [session]);
+
+  async function handleStartSubscription() {
+    setBillingError("");
+    const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
+    if (!priceId) {
+      setBillingError("Missing Paddle price id.");
+      return;
+    }
+    try {
+      const paddle = await initPaddle();
+      paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: {
+          email: session?.user?.email,
+        },
+        customData: {
+          user_id: session?.user?.id,
+        },
+      });
+    } catch (error) {
+      setBillingError(error.message || "Unable to start checkout.");
+    }
+  }
 
   return (
     <div style={containerStyle}>
@@ -455,6 +521,7 @@ function ChartsPage() {
                   type="button"
                   className={`toggle-pill-button ${view === "Fish" ? "is-active" : ""}`}
                   onClick={() => setView("Fish")}
+                  disabled={isLocked}
                 >
                   Fish Counts
                 </button>
@@ -462,6 +529,7 @@ function ChartsPage() {
                   type="button"
                   className={`toggle-pill-button ${view === "Flow" ? "is-active" : ""}`}
                   onClick={() => setView("Flow")}
+                  disabled={isLocked}
                 >
                   River Flow
                 </button>
@@ -472,6 +540,7 @@ function ChartsPage() {
                 className="chart-select"
                 value={selectedRiver}
                 onChange={(e) => setSelectedRiver(e.target.value)}
+                disabled={isLocked}
               >
                 <option value="">Select river...</option>
                 {rivers.map((r) => (
@@ -488,6 +557,7 @@ function ChartsPage() {
                       className="chart-select"
                       value={selectedDam}
                       onChange={(e) => setSelectedDam(e.target.value)}
+                      disabled={isLocked}
                     >
                       {dams.map((d) => (
                         <option key={d} value={d}>
@@ -504,6 +574,7 @@ function ChartsPage() {
                   className="chart-select"
                   value={selectedSpecies}
                   onChange={(e) => setSelectedSpecies(e.target.value)}
+                  disabled={isLocked}
                 >
                   <option value="">Select species...</option>
                   {species.map((s) => (
@@ -518,6 +589,7 @@ function ChartsPage() {
                   className="chart-select"
                   value={selectedFlowSite}
                   onChange={(e) => setSelectedFlowSite(e.target.value)}
+                  disabled={isLocked}
                 >
                   <option value="">Select station...</option>
                   {flowSites.map((site) => (
@@ -653,6 +725,7 @@ function ChartsPage() {
                     setShowFlowStage(true);
                     setShowFlowCfs(false);
                   }}
+                  disabled={isLocked}
                 >
                   Stage (ft)
                 </button>
@@ -663,6 +736,7 @@ function ChartsPage() {
                     setShowFlowCfs(true);
                     setShowFlowStage(false);
                   }}
+                  disabled={isLocked}
                 >
                   CFS
                 </button>
@@ -672,6 +746,7 @@ function ChartsPage() {
                   type="button"
                   className={`toggle-pill-button ${flowWindow === "30d" ? "is-active" : ""}`}
                   onClick={() => setFlowWindow("30d")}
+                  disabled={isLocked}
                 >
                   30 days
                 </button>
@@ -679,11 +754,40 @@ function ChartsPage() {
                   type="button"
                   className={`toggle-pill-button ${flowWindow === "7d" ? "is-active" : ""}`}
                   onClick={() => setFlowWindow("7d")}
+                  disabled={isLocked}
                 >
                   7 days
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {isLocked && (
+          <div className="chart-lock-overlay" role="status">
+            {!session ? (
+              <button
+                type="button"
+                className="chart-lock-button"
+                onClick={() => (window.location.href = "/login")}
+              >
+                Log in to see run info
+              </button>
+            ) : subscriptionLoading ? (
+              <div className="chart-lock-message">Checking subscription...</div>
+            ) : (
+              <div className="chart-lock-stack">
+                <button
+                  type="button"
+                  className="chart-lock-button"
+                  onClick={handleStartSubscription}
+                >
+                  Subscribe to see run info
+                </button>
+                {billingError && (
+                  <div className="chart-lock-error">{billingError}</div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

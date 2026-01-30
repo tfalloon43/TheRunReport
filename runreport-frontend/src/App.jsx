@@ -7,6 +7,7 @@ import ChartsPage from "./pages/ChartsPage";
 import ContactPage from "./pages/ContactPage";
 import AuthPage from "./pages/AuthPage";
 import AboutPage from "./pages/AboutPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthContext from "./AuthContext";
 import { supabase } from "./supabaseClient";
 
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/charts" element={<ChartsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/about" element={<AboutPage />} />
             </Routes>
           </div>

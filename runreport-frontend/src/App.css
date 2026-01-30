@@ -294,6 +294,57 @@ body {
   text-decoration: underline;
 }
 
+/* Charts lock overlay */
+.chart-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--color-bg), 0.75);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  border-radius: 16px;
+}
+
+.chart-lock-button {
+  border: none;
+  cursor: pointer;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: rgba(var(--color-surface), 0.95);
+  color: rgb(var(--color-text));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.chart-lock-button:hover,
+.chart-lock-button:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+}
+
+.chart-lock-message {
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: rgba(var(--color-surface), 0.95);
+  color: rgb(var(--color-text));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.chart-lock-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.chart-lock-error {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
 /* Page content should fill width but be padded */
 .page-container {
   padding: 40px;
@@ -986,6 +1037,15 @@ body {
 
 .auth-form .cta-button {
   width: 100%;
+}
+
+.reset-link-button {
+  background: none;
+  border: none;
+  color: rgb(var(--color-accent));
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
 }
 
 .auth-helper {

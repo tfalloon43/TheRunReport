@@ -4,7 +4,7 @@
 #
 # If any negative values appear in flow_cfs for either USGS_flows
 # or NOAA_flows, set them to NaN so plots stop instead of dipping
-# below zero. Also trim timestamp strings to MM-DD-YYYY, HH-MM.
+# below zero. Normalize timestamps to ISO 8601 for Supabase.
 # ------------------------------------------------------------
 
 import sqlite3
@@ -49,7 +49,7 @@ with sqlite3.connect(db_path) as conn:
 
         if "timestamp" in df.columns:
             ts = pd.to_datetime(df["timestamp"], errors="coerce")
-            df.loc[ts.notna(), "timestamp"] = ts.dt.strftime("%m-%d-%Y, %H-%M")
+            df.loc[ts.notna(), "timestamp"] = ts.dt.strftime("%Y-%m-%d %H:%M:%S+00:00")
 
         df["flow_cfs"] = pd.to_numeric(df["flow_cfs"], errors="coerce")
         negatives = (df["flow_cfs"] < 0).sum()

@@ -43,7 +43,7 @@ export default function AuthPage() {
     setAuthMessage("");
     if (!supabase) return;
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: signUpEmail,
       password: signUpPassword,
       options: {
@@ -57,19 +57,24 @@ export default function AuthPage() {
       setAuthError(error.message);
       return;
     }
-    setAuthMessage("Check your email to confirm your account.");
+    if (!data?.session) {
+      setAuthMessage("Account created. Please sign in to subscribe.");
+      return;
+    }
+    await handleStartSubscription(data.session.user);
   }
 
   async function handleResetPassword() {
     setAuthError("");
     setAuthMessage("");
     if (!supabase) return;
-    if (!signInEmail) {
+    const email = (signInEmail || signUpEmail || "").trim().toLowerCase();
+    if (!email) {
       setAuthError("Enter your email first so we know where to send the reset.");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(signInEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + "/reset-password",
     });
     setBusy(false);
@@ -92,9 +97,10 @@ export default function AuthPage() {
     }
   }
 
-  async function handleStartSubscription() {
+  async function handleStartSubscription(userOverride) {
     setBillingError("");
-    if (!session) return;
+    const activeUser = userOverride || session?.user;
+    if (!activeUser) return;
 
     const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
     if (!priceId) {
@@ -108,10 +114,10 @@ export default function AuthPage() {
       paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         customer: {
-          email: session.user?.email,
+          email: activeUser?.email,
         },
         customData: {
-          user_id: session.user?.id,
+          user_id: activeUser?.id,
         },
       });
     } catch (error) {
@@ -230,7 +236,7 @@ export default function AuthPage() {
               />
             </label>
             <button className="cta-button" type="submit">
-              {busy ? "Creating..." : "Create account"}
+              {busy || billingBusy ? "Opening checkout..." : "Subscribe"}
             </button>
           </form>
         </div>
@@ -252,18 +258,9 @@ export default function AuthPage() {
         </section>
       )}
 
-      {session && (
+      {billingError && (
         <section className="auth-feedback">
-          <p className="auth-message">Ready to start your subscription?</p>
-          <button
-            className="cta-button"
-            type="button"
-            onClick={handleStartSubscription}
-            disabled={billingBusy}
-          >
-            {billingBusy ? "Opening checkout..." : "Start subscription"}
-          </button>
-          {billingError && <p className="auth-error">{billingError}</p>}
+          <p className="auth-error">{billingError}</p>
         </section>
       )}
     </div>

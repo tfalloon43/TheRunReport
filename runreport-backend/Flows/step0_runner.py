@@ -45,6 +45,8 @@ STEP_FILES: list[tuple[str, str]] = [
     ("Step 15: Fetch USGS flow/stage", "step15_USGSflow.py"),
     ("Step 16: Fetch NOAA flow/stage", "step16_NOAAflow.py"),
     ("Step 17: NOAA flows post-process", "step17_NOAAupdate.py"),
+    ("Step 20: Remove negative flow values", "step20_removenegatives.py"),
+    ("Step 21: Manual timestamp cleanup", "step21_manualdeletions.py"),
 ]
 
 # ------------------------------------------------------------

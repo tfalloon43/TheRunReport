@@ -140,6 +140,18 @@ def _publish_table(conn: sqlite3.Connection, client, table: str, dry_run: bool) 
         print(f"🧪 Dry-run: would publish {len(df):,} rows to {table}")
         return len(df)
 
+    if "timestamp" in df.columns:
+        bad_mask = df["timestamp"].astype(str).str.contains(",", na=False)
+        bad_count = int(bad_mask.sum())
+        if bad_count:
+            sample = df.loc[bad_mask, "timestamp"].head(5).tolist()
+            print(
+                f"⚠️  {table}: found {bad_count} timestamp values containing commas. "
+                f"Sample: {sample}"
+            )
+        else:
+            print(f"✅ {table}: no comma-style timestamps detected.")
+
     _truncate_table(client, table, delete_filter)
     if table == "EscapementReports" and "report_year" in df.columns:
         df["report_year"] = pd.to_numeric(df["report_year"], errors="coerce").astype("Int64")

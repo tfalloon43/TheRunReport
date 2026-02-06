@@ -1,27 +1,79 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import ChartsPage from "./pages/ChartsPage";
 import ContactPage from "./pages/ContactPage";
+import AuthPage from "./pages/AuthPage";
+import AboutPage from "./pages/AboutPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import TermsPage from "./pages/TermsPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
+import AuthContext from "./AuthContext";
+import { supabase } from "./supabaseClient";
 
 import "./App.css";
 
 export default function App() {
-  return (
-    <Router>
-      <div className="app-container">
-        <Navbar />
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-        {/* Main Page Content */}
-        <div className="main-content">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/charts" element={<ChartsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-          </Routes>
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSession() {
+      if (!supabase) {
+        if (mounted) setAuthLoading(false);
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      if (mounted) {
+        setSession(data.session);
+        setAuthLoading(false);
+      }
+    }
+
+    loadSession();
+
+    if (!supabase) return () => {};
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (mounted) setSession(newSession);
+    });
+
+    return () => {
+      mounted = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ session, loading: authLoading }}>
+      <Router>
+        <div className="app-container">
+          <Navbar />
+
+          {/* Main Page Content */}
+          <div className="main-content">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/charts" element={<ChartsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            </Routes>
+          </div>
+          <Footer />
         </div>
-      </div>
-    </Router>
+      </Router>
+    </AuthContext.Provider>
   );
 }

@@ -25,7 +25,7 @@ export default function FishChart({ data }) {
     <div style={{ width: "100%", height: 400 }}>
       <ResponsiveContainer>
         <LineChart data={chartData}>
-          <CartesianGrid stroke="rgba(255,255,255,0.1)" />
+          <CartesianGrid stroke="rgba(var(--color-text), 0.1)" />
 
           <XAxis
             dataKey="date"
@@ -35,10 +35,10 @@ export default function FishChart({ data }) {
                 day: "2-digit",
               })
             }
-            stroke="#ccc"
+            stroke="rgba(var(--color-text), 0.7)"
           />
 
-          <YAxis stroke="#ccc" />
+          <YAxis stroke="rgba(var(--color-text), 0.7)" />
 
           <Tooltip
             labelFormatter={(d) =>
@@ -48,10 +48,10 @@ export default function FishChart({ data }) {
               })
             }
             contentStyle={{
-              background: "#111",
-              border: "1px solid #444",
+              background: "rgb(var(--color-bg))",
+              border: "1px solid rgba(var(--color-text), 0.2)",
               borderRadius: "6px",
-              color: "white",
+              color: "rgb(var(--color-text))",
             }}
           />
 
@@ -60,7 +60,7 @@ export default function FishChart({ data }) {
           <Line
             type="monotone"
             dataKey="ten_year"
-            stroke="#6A6AFF"
+            stroke="rgb(var(--chart-line-3))"
             strokeWidth={2}
             dot={false}
             opacity={0.4}
@@ -70,7 +70,7 @@ export default function FishChart({ data }) {
           <Line
             type="monotone"
             dataKey="last_year"
-            stroke="#4FC3F7"
+            stroke="rgb(var(--chart-line-2))"
             strokeWidth={2}
             dot={false}
             name="Last Year"
@@ -79,7 +79,7 @@ export default function FishChart({ data }) {
           <Line
             type="monotone"
             dataKey="current_year"
-            stroke="#FF6B6B"
+            stroke="rgb(var(--chart-line-1))"
             strokeWidth={3}
             dot={false}
             name="Current Year"

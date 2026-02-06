@@ -11,8 +11,19 @@ import urllib.parse
 import urllib.request
 
 EXCLUDE_COLUMNS = {"id"}
+QUIET = True
 ORDER_BY = {
     "EscapementReport_PlotData": ["river", "Species_Plot", "MM-DD"],
+    "Escapement_PlotPipeline": [
+        "pdf_name",
+        "facility",
+        "basin",
+        "species",
+        "Stock",
+        "date_iso",
+        "Adult_Total",
+        "adult_diff_plot",
+    ],
 }
 
 
@@ -209,6 +220,8 @@ def fetch_supabase_rows(
 
 
 def print_rows(title: str, columns: list[str], rows: list[object]) -> None:
+    if QUIET:
+        return
     print(f"\n=== {title} ===")
     if not columns:
         print("(no rows)")
@@ -264,6 +277,7 @@ def main() -> None:
     output_dir = ensure_output_dir()
     export_table(db_path, "EscapementReport_PlotData", output_dir)
     export_table(db_path, "EscapementReports", output_dir)
+    export_table(db_path, "Escapement_PlotPipeline", output_dir)
 
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get(
@@ -281,6 +295,9 @@ def main() -> None:
     export_supabase_table(
         supabase_url, supabase_key, "EscapementReports", output_dir
     )
+    export_supabase_table(
+        supabase_url, supabase_key, "Escapement_PlotPipeline", output_dir
+    )
 
     local_cols, local_rows = fetch_local_rows(db_path, "EscapementReports")
     print_rows("local.db EscapementReports", local_cols, local_rows)
@@ -289,6 +306,14 @@ def main() -> None:
         supabase_url, supabase_key, "EscapementReports"
     )
     print_rows("supabase EscapementReports", supa_cols, supa_rows)
+
+    local_cols, local_rows = fetch_local_rows(db_path, "Escapement_PlotPipeline")
+    print_rows("local.db Escapement_PlotPipeline", local_cols, local_rows)
+
+    supa_cols, supa_rows = fetch_supabase_rows(
+        supabase_url, supabase_key, "Escapement_PlotPipeline"
+    )
+    print_rows("supabase Escapement_PlotPipeline", supa_cols, supa_rows)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,38 @@ with sqlite3.connect(db_path) as conn:
 print(f"📂 Loaded {len(df):,} rows from [{TABLE_NOAA_FLOWS}]")
 
 # ------------------------------------------------------------
+# Normalize timestamp format for Supabase
+# ------------------------------------------------------------
+def normalize_timestamp(value: object) -> object:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if "," in text:
+        date_part, time_part = [part.strip() for part in text.split(",", 1)]
+        date_tokens = date_part.split("-")
+        time_tokens = time_part.split("-")
+        if len(date_tokens) == 3 and len(time_tokens) == 2:
+            month, day, year = date_tokens
+            hour, minute = time_tokens
+            return f"{year}-{month}-{day} {hour}:{minute}:00+00:00"
+    return text
+
+if "timestamp" in df.columns:
+    bad_mask = df["timestamp"].astype(str).str.contains(",", na=False)
+    bad_count = int(bad_mask.sum())
+    if bad_count:
+        sample = df.loc[bad_mask, "timestamp"].head(5).tolist()
+        print(
+            f"⚠️ Found {bad_count} NOAA timestamp values with commas. Sample: {sample}"
+        )
+    df["timestamp"] = df["timestamp"].apply(normalize_timestamp)
+    print("🧭 Normalized NOAA timestamp format.")
+else:
+    print("⚠️ Column 'timestamp' not found — skipping normalization.")
+
+# ------------------------------------------------------------
 # Remove timestamp_dt
 # ------------------------------------------------------------
 if "timestamp_dt" in df.columns:

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
@@ -10,67 +10,42 @@ export default function AuthPage() {
   const { session } = useAuth();
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
-  const [signUpName, setSignUpName] = useState("");
-  const [signUpEmail, setSignUpEmail] = useState("");
-  const [signUpPassword, setSignUpPassword] = useState("");
+  const [flowStep, setFlowStep] = useState("email");
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
   const [busy, setBusy] = useState(false);
   const [billingError, setBillingError] = useState("");
   const [billingBusy, setBillingBusy] = useState(false);
-
-  async function handleSignIn(event) {
-    event.preventDefault();
-    setAuthError("");
-    setAuthMessage("");
-    if (!supabase) return;
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: signInEmail,
-      password: signInPassword,
-    });
-    setBusy(false);
-    if (error) {
-      setAuthError(error.message);
-      return;
-    }
-    navigate("/charts");
-  }
-
-  async function handleSignUp(event) {
-    event.preventDefault();
-    setAuthError("");
-    setAuthMessage("");
-    if (!supabase) return;
-    setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: signUpEmail,
-      password: signUpPassword,
-      options: {
-        data: {
-          full_name: signUpName,
-        },
-      },
-    });
-    setBusy(false);
-    if (error) {
-      setAuthError(error.message);
-      return;
-    }
-    if (!data?.session) {
-      setAuthMessage("Account created. Please sign in to subscribe.");
-      return;
-    }
-    await handleStartSubscription(data.session.user);
-  }
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingUserId, setPendingUserId] = useState("");
+  const isActiveSubscriber =
+    subscriptionStatus === "active"
+    || subscriptionStatus === "trialing"
+    || subscriptionStatus === "complete";
+  const isStatusActive = (status) =>
+    ["active", "trialing", "complete"].includes((status || "").toLowerCase());
 
   async function handleResetPassword() {
     setAuthError("");
     setAuthMessage("");
     if (!supabase) return;
-    const email = (signInEmail || signUpEmail || "").trim().toLowerCase();
+    const email = (signInEmail || "").trim().toLowerCase();
     if (!email) {
       setAuthError("Enter your email first so we know where to send the reset.");
+      return;
+    }
+    setBusy(true);
+    const { data: gateData, error: gateError } = await supabase.functions.invoke(
+      "password-reset-gate",
+      {
+        body: { email },
+      }
+    );
+    if (gateError || !gateData?.ok) {
+      setAuthError("This email is not associated with an active subscriber.");
+      setBusy(false);
       return;
     }
     setBusy(true);
@@ -97,10 +72,10 @@ export default function AuthPage() {
     }
   }
 
-  async function handleStartSubscription(userOverride) {
+  async function handleStartSubscription() {
     setBillingError("");
-    const activeUser = userOverride || session?.user;
-    if (!activeUser) return;
+    const email = pendingEmail || signInEmail;
+    if (!email) return;
 
     const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
     if (!priceId) {
@@ -114,10 +89,15 @@ export default function AuthPage() {
       paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         customer: {
-          email: activeUser?.email,
+          email,
         },
         customData: {
-          user_id: activeUser?.id,
+          email,
+          user_id: pendingUserId || null,
+        },
+        settings: {
+          success_url: `${window.location.origin}/login`,
+          close_url: `${window.location.origin}/login`,
         },
       });
     } catch (error) {
@@ -127,118 +107,178 @@ export default function AuthPage() {
     }
   }
 
+  async function handleEmailContinue(event) {
+    event.preventDefault();
+    setAuthError("");
+    setAuthMessage("");
+    setBillingError("");
+    if (!supabase) return;
+    const email = (signInEmail || "").trim().toLowerCase();
+    if (!email) {
+      setAuthError("Enter your email first to continue.");
+      return;
+    }
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke(
+      "subscription-lookup",
+      { body: { email } }
+    );
+    setBusy(false);
+    if (error) {
+      setAuthError("We could not look up that email. Please try again.");
+      return;
+    }
+    if (data?.found) {
+      setPendingEmail(email);
+      setPendingUserId(data.user_id || "");
+      if (isStatusActive(data.status)) {
+        setFlowStep("password");
+      } else {
+        setFlowStep("payment");
+        setAuthMessage(
+          "Email linked to an unsubscribed account. Continue to payment."
+        );
+      }
+    } else {
+      setPendingEmail(email);
+      setPendingUserId("");
+      setFlowStep("payment");
+    }
+  }
+
+  async function handlePasswordSignIn(event) {
+    event.preventDefault();
+    setAuthError("");
+    setAuthMessage("");
+    if (!supabase) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: pendingEmail,
+      password: signInPassword,
+    });
+    setBusy(false);
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+  }
+
+  async function loadSubscriptionStatus() {
+    if (!supabase || !session?.user?.id) {
+      setSubscriptionStatus(null);
+      return;
+    }
+    setSubscriptionLoading(true);
+    const { data } = await supabase
+      .from("paddle_subscriptions")
+      .select("status")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    setSubscriptionStatus(data?.status ? data.status.toLowerCase() : null);
+    setSubscriptionLoading(false);
+  }
+
+  useEffect(() => {
+    loadSubscriptionStatus();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (!session || subscriptionLoading) return;
+    if (isActiveSubscriber) {
+      navigate("/charts");
+      return;
+    }
+    if (session?.user?.email) {
+      setFlowStep("payment");
+      setPendingEmail(session.user.email);
+      setAuthMessage(
+        "Payment required. Please update your payment method to continue."
+      );
+    }
+  }, [session, subscriptionLoading, subscriptionStatus, navigate, isActiveSubscriber]);
+
   return (
     <div className="page-container auth-page">
       <section className="auth-hero">
-        <h1>Welcome back</h1>
-        <p>
-          Sign in to save runs, track favorites, and keep your fishing plans in
-          one place.
-        </p>
+        <h1>Sign in or create account</h1>
+        <p>Enter your email to continue.</p>
         {!isSupabaseConfigured && (
           <p className="auth-helper">Supabase is not configured yet.</p>
-        )}
-        {session && (
-          <div className="auth-signed-in">
-            <p className="auth-helper">
-              You are signed in as {session.user?.email}.
-            </p>
-            <button
-              className="cta-button outline"
-              type="button"
-              onClick={handleSignOut}
-            >
-              Sign out
-            </button>
-          </div>
         )}
       </section>
 
       <section className="auth-grid">
         <div className="auth-card">
-          <h2>Sign in</h2>
-          <form className="auth-form" onSubmit={handleSignIn}>
-            <label className="form-field">
-              <span className="field-title">Email address</span>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={signInEmail}
-                onChange={(event) => setSignInEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label className="form-field">
-              <span className="field-title">Password</span>
-              <input
-                type="password"
-                name="password"
-                autoComplete="current-password"
-                value={signInPassword}
-                onChange={(event) => setSignInPassword(event.target.value)}
-                required
-              />
-            </label>
-            <button className="cta-button" type="submit">
-              {busy ? "Signing in..." : "Sign in"}
-            </button>
-            <p className="auth-helper">
-              Forgot your password?{" "}
-              <button type="button" onClick={handleResetPassword}>
-                Reset it
+          {flowStep === "email" && (
+            <form className="auth-form" onSubmit={handleEmailContinue}>
+              <label className="form-field">
+                <span className="field-title">Email address</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  value={signInEmail}
+                  onChange={(event) => setSignInEmail(event.target.value)}
+                  required
+                />
+              </label>
+              <button className="cta-button" type="submit">
+                {busy ? "Checking..." : "Continue"}
               </button>
-            </p>
-          </form>
-        </div>
+            </form>
+          )}
 
-        <div className="auth-card secondary">
-          <h2>New here?</h2>
-          <p>
-            Create an account to get early access features and personalized run
-            alerts.
-          </p>
-          <form className="auth-form" onSubmit={handleSignUp}>
-            <label className="form-field">
-              <span className="field-title">Name</span>
-              <input
-                type="text"
-                name="signup-name"
-                autoComplete="name"
-                placeholder="Name"
-                value={signUpName}
-                onChange={(event) => setSignUpName(event.target.value)}
-                required
-              />
-            </label>
-            <label className="form-field">
-              <span className="field-title">Email address</span>
-              <input
-                type="email"
-                name="signup-email"
-                autoComplete="email"
-                placeholder="Email"
-                value={signUpEmail}
-                onChange={(event) => setSignUpEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label className="form-field">
-              <span className="field-title">Password</span>
-              <input
-                type="password"
-                name="signup-password"
-                autoComplete="new-password"
-                placeholder="Password"
-                value={signUpPassword}
-                onChange={(event) => setSignUpPassword(event.target.value)}
-                required
-              />
-            </label>
-            <button className="cta-button" type="submit">
-              {busy || billingBusy ? "Opening checkout..." : "Subscribe"}
-            </button>
-          </form>
+          {flowStep === "password" && (
+            <form className="auth-form" onSubmit={handlePasswordSignIn}>
+              <label className="form-field">
+                <span className="field-title">Email address</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  value={pendingEmail}
+                  onChange={(event) => setPendingEmail(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="form-field">
+                <span className="field-title">Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  value={signInPassword}
+                  onChange={(event) => setSignInPassword(event.target.value)}
+                  required
+                />
+              </label>
+              <button className="cta-button" type="submit">
+                {busy ? "Signing in..." : "Sign in"}
+              </button>
+              <p className="auth-helper">
+                <span className="auth-text-link" onClick={handleResetPassword}>
+                  Forgot your password?
+                </span>
+              </p>
+            </form>
+          )}
+
+          {flowStep === "payment" && (
+            <div className="auth-form">
+              <p>
+                Continue to payment to activate your subscription. We’ll email a
+                link to set your password after checkout.
+              </p>
+              <button
+                className="cta-button"
+                type="button"
+                onClick={handleStartSubscription}
+                disabled={billingBusy}
+              >
+                {billingBusy ? "Opening checkout..." : "Continue to payment"}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -246,15 +286,6 @@ export default function AuthPage() {
         <section className="auth-feedback">
           {authError && <p className="auth-error">{authError}</p>}
           {authMessage && <p className="auth-message">{authMessage}</p>}
-          {session && (
-            <button
-              className="cta-button outline"
-              type="button"
-              onClick={handleSignOut}
-            >
-              Sign out
-            </button>
-          )}
         </section>
       )}
 

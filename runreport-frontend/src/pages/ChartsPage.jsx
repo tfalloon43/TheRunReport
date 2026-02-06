@@ -472,6 +472,34 @@ function ChartsPage() {
     };
   }, [session]);
 
+  useEffect(() => {
+    if (!session || hasActiveSubscription || subscriptionLoading) return;
+    let attempts = 0;
+    const maxAttempts = 15;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      const { data } = await supabase
+        .from("paddle_subscriptions")
+        .select("status")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      const nextStatus = data?.status?.toLowerCase() || null;
+      if (nextStatus) {
+        setSubscriptionStatus(nextStatus);
+      }
+      if (
+        nextStatus === "active" ||
+        nextStatus === "trialing" ||
+        nextStatus === "complete" ||
+        attempts >= maxAttempts
+      ) {
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [session, hasActiveSubscription, subscriptionLoading]);
+
   async function handleStartSubscription() {
     setBillingError("");
     const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
@@ -488,6 +516,10 @@ function ChartsPage() {
         },
         customData: {
           user_id: session?.user?.id,
+        },
+        settings: {
+          success_url: `${window.location.origin}/charts`,
+          close_url: `${window.location.origin}/charts`,
         },
       });
     } catch (error) {

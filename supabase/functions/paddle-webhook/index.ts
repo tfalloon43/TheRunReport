@@ -65,6 +65,24 @@ function extractUserId(data: any) {
   return customData?.user_id || customData?.userId || null;
 }
 
+function extractEmail(data: any) {
+  const customData =
+    parseCustomData(data?.custom_data)
+    || parseCustomData(data?.customer?.custom_data)
+    || parseCustomData(data?.subscription?.custom_data)
+    || parseCustomData(data?.transaction?.custom_data)
+    || parseCustomData(data?.checkout?.custom_data)
+    || null;
+
+  return (
+    customData?.email
+    || data?.customer?.email
+    || data?.customer_email
+    || data?.email
+    || null
+  );
+}
+
 function extractPriceId(data: any) {
   return (
     data?.items?.[0]?.price_id
@@ -98,7 +116,8 @@ serve(async (req) => {
   const eventType = payload.event_type || payload.eventType;
   const data = payload.data || {};
 
-  const userId = extractUserId(data);
+  const email = extractEmail(data);
+  let userId = extractUserId(data);
   const subscriptionId =
     data.id || data.subscription_id || data.subscription?.id || null;
   const customerId =
@@ -107,8 +126,23 @@ serve(async (req) => {
   const rawStatus = data.status || null;
   const normalizedStatus = normalizeStatus(eventType, rawStatus);
 
+  if (!userId && email) {
+    const match = await findUserByEmail(email.toLowerCase());
+    if (match?.id) {
+      userId = match.id;
+    } else {
+      const { data: invited, error: inviteError } =
+        await supabase.auth.admin.inviteUserByEmail(email);
+      if (inviteError || !invited?.user?.id) {
+        console.error("Invite user failed:", inviteError);
+        return new Response("Invite failed", { status: 500 });
+      }
+      userId = invited.user.id;
+    }
+  }
+
   if (!userId) {
-    console.warn("Missing user id", {
+    console.warn("Missing user id and email", {
       eventType,
       dataKeys: Object.keys(data || {}),
     });
@@ -145,4 +179,23 @@ function normalizeStatus(eventType: string | null, status: string | null) {
   if (normalized === "trialing") return "trialing";
   if (normalized === "active") return "active";
   return normalized;
+}
+
+async function findUserByEmail(email: string) {
+  let page = 1;
+  const perPage = 1000;
+  // Iterate through pages until we find a match or exhaust results.
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+    if (error || !data?.users) return null;
+    const match = data.users.find(
+      (user) => (user.email || "").toLowerCase() === email
+    );
+    if (match) return match;
+    if (data.users.length < perPage) return null;
+    page += 1;
+  }
 }

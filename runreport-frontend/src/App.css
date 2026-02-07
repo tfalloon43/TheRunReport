@@ -1069,6 +1069,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: center;
+}
+
+.auth-form .form-field {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .auth-form input {
@@ -1078,6 +1087,7 @@ body {
   padding: 12px 14px;
   color: rgb(var(--color-text));
   font-size: 1rem;
+  width: 100%;
 }
 
 .auth-form input:focus {
@@ -1087,6 +1097,7 @@ body {
 
 .auth-form .cta-button {
   width: 100%;
+  max-width: 420px;
 }
 
 .reset-link-button {

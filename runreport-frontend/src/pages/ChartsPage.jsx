@@ -1,5 +1,6 @@
 // src/pages/ChartsPage.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
 import { useAuth } from "../AuthContext";
 import { initPaddle } from "../utils/paddle";
@@ -52,6 +53,7 @@ function ChartsPage() {
   // STATE
   // ------------------------------------------------------------
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [view, setView] = useState("Fish"); // "Fish" or "Flow"
 
   const [rivers, setRivers] = useState([]);
@@ -800,7 +802,7 @@ function ChartsPage() {
               <button
                 type="button"
                 className="chart-lock-button"
-                onClick={() => (window.location.href = "/login")}
+                onClick={() => navigate("/login")}
               >
                 Log in to see run info
               </button>

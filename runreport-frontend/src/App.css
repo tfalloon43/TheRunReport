@@ -1057,6 +1057,9 @@ body {
   border-radius: 18px;
   background: rgba(var(--color-surface), 0.9);
   border: 1px solid rgba(var(--color-text), 0.12);
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .auth-card.secondary {

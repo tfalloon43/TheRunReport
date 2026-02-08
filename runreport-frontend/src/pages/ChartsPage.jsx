@@ -54,6 +54,7 @@ function ChartsPage() {
   // ------------------------------------------------------------
   const { session } = useAuth();
   const navigate = useNavigate();
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
   const [view, setView] = useState("Fish"); // "Fish" or "Flow"
 
   const [rivers, setRivers] = useState([]);
@@ -520,8 +521,8 @@ function ChartsPage() {
           user_id: session?.user?.id,
         },
         settings: {
-          success_url: `${window.location.origin}/charts`,
-          close_url: `${window.location.origin}/charts`,
+          success_url: `${appUrl}/charts`,
+          close_url: `${appUrl}/charts`,
         },
       });
     } catch (error) {

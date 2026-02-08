@@ -8,6 +8,7 @@ import { initPaddle } from "../utils/paddle";
 export default function AuthPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [flowStep, setFlowStep] = useState("email");
@@ -96,8 +97,8 @@ export default function AuthPage() {
           user_id: pendingUserId || null,
         },
         settings: {
-          success_url: `${window.location.origin}/login`,
-          close_url: `${window.location.origin}/login`,
+          success_url: `${appUrl}/login`,
+          close_url: `${appUrl}/login`,
         },
       });
     } catch (error) {

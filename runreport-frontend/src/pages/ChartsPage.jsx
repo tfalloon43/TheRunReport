@@ -1,5 +1,6 @@
 // src/pages/ChartsPage.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
 import { useAuth } from "../AuthContext";
 import { initPaddle } from "../utils/paddle";
@@ -52,6 +53,8 @@ function ChartsPage() {
   // STATE
   // ------------------------------------------------------------
   const { session } = useAuth();
+  const navigate = useNavigate();
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
   const [view, setView] = useState("Fish"); // "Fish" or "Flow"
 
   const [rivers, setRivers] = useState([]);
@@ -518,8 +521,8 @@ function ChartsPage() {
           user_id: session?.user?.id,
         },
         settings: {
-          success_url: `${window.location.origin}/charts`,
-          close_url: `${window.location.origin}/charts`,
+          success_url: `${appUrl}/charts`,
+          close_url: `${appUrl}/charts`,
         },
       });
     } catch (error) {
@@ -800,7 +803,7 @@ function ChartsPage() {
               <button
                 type="button"
                 className="chart-lock-button"
-                onClick={() => (window.location.href = "/login")}
+                onClick={() => navigate("/login")}
               >
                 Log in to see run info
               </button>

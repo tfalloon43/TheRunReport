@@ -9,3 +9,4 @@ pdf_reports/
 .env
 __pycache__/
 *.pyc
+.vercel

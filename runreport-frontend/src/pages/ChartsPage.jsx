@@ -512,9 +512,6 @@ function ChartsPage() {
     }
     try {
       const paddle = await initPaddle();
-      console.log("Paddle checkout URLs", {
-        successUrl: `${appUrl}/charts`,
-      });
       paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         customer: {

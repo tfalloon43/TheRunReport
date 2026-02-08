@@ -87,9 +87,6 @@ export default function AuthPage() {
     try {
       setBillingBusy(true);
       const paddle = await initPaddle();
-      console.log("Paddle checkout URLs", {
-        successUrl: `${appUrl}/login`,
-      });
       paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
         customer: {

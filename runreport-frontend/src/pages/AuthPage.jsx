@@ -101,8 +101,8 @@ export default function AuthPage() {
           user_id: pendingUserId || null,
         },
         settings: {
-          success_url: `${appUrl}/login`,
-          close_url: `${appUrl}/login`,
+          successUrl: `${appUrl}/login`,
+          closeUrl: `${appUrl}/login`,
         },
       });
     } catch (error) {

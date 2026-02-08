@@ -525,8 +525,8 @@ function ChartsPage() {
           user_id: session?.user?.id,
         },
         settings: {
-          success_url: `${appUrl}/charts`,
-          close_url: `${appUrl}/charts`,
+          successUrl: `${appUrl}/charts`,
+          closeUrl: `${appUrl}/charts`,
         },
       });
     } catch (error) {

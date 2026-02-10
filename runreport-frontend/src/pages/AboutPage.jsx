@@ -41,7 +41,7 @@ export default function AboutPage() {
             The Run Report started as a personal tool to answer one simple
             question before heading out the door:
           </p>
-          <p>"Is this the best river to fish today?"</p>
+          <p>"Where are the fish today?"</p>
         </div>
         <div className="about-media">
           <img className="about-hero-image" src="/AboutUs2.jpeg" alt="Run report data source" />

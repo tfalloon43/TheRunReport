@@ -59,7 +59,6 @@ export default function Navbar() {
       </div>
 
       <div className="nav-links">
-        <Link to="/">Home</Link>
         <Link to="/charts">Charts</Link>
         <Link to="/about">About Us</Link>
         <Link to="/contact">Contact Us</Link>
@@ -98,7 +97,7 @@ export default function Navbar() {
                 />
               </svg>
             </span>
-            <span className="login-label">SIGN IN</span>
+            <span className="login-label">Sign in</span>
           </Link>
         )}
         <div className="nav-menu-wrap" ref={menuRef}>
@@ -117,9 +116,15 @@ export default function Navbar() {
           </button>
           {menuOpen && (
             <div className="nav-mobile-menu">
-              <Link to="/" onClick={() => setMenuOpen(false)}>
-                Home
-              </Link>
+              {session ? (
+                <div className="nav-mobile-greeting">
+                  Hello, {displayName || "there"}
+                </div>
+              ) : (
+                <Link to="/login" onClick={() => setMenuOpen(false)}>
+                  Sign in / Create account
+                </Link>
+              )}
               <Link to="/charts" onClick={() => setMenuOpen(false)}>
                 Charts
               </Link>
@@ -129,11 +134,7 @@ export default function Navbar() {
               <Link to="/contact" onClick={() => setMenuOpen(false)}>
                 Contact Us
               </Link>
-              {!session ? (
-                <Link to="/login" onClick={() => setMenuOpen(false)}>
-                  Sign In
-                </Link>
-              ) : (
+              {session && (
                 <button
                   type="button"
                   className="nav-mobile-signout"

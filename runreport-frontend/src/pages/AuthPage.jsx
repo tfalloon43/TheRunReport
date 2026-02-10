@@ -11,6 +11,9 @@ export default function AuthPage() {
   const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
+  const [signUpName, setSignUpName] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const [flowStep, setFlowStep] = useState("email");
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
@@ -97,7 +100,7 @@ export default function AuthPage() {
           user_id: pendingUserId || null,
         },
         settings: {
-          successUrl: `${appUrl}/login`,
+          successUrl: `${appUrl}/charts`,
         },
       });
     } catch (error) {
@@ -133,16 +136,15 @@ export default function AuthPage() {
       setPendingUserId(data.user_id || "");
       if (isStatusActive(data.status)) {
         setFlowStep("password");
+        setAuthMessage("");
       } else {
-        setFlowStep("payment");
-        setAuthMessage(
-          "Email linked to an unsubscribed account. Continue to payment."
-        );
+        setFlowStep("password");
+        setAuthMessage("Enter your password to continue.");
       }
     } else {
       setPendingEmail(email);
       setPendingUserId("");
-      setFlowStep("payment");
+      setFlowStep("signup");
     }
   }
 
@@ -160,6 +162,84 @@ export default function AuthPage() {
     if (error) {
       setAuthError(error.message);
       return;
+    }
+  }
+
+  async function handleSignUp(event) {
+    event.preventDefault();
+    setAuthError("");
+    setAuthMessage("");
+    setBillingError("");
+    if (!supabase) return;
+
+    const name = (signUpName || "").trim();
+    const password = (signUpPassword || "").trim();
+    const confirmPassword = (signUpConfirmPassword || "").trim();
+
+    if (!name) {
+      setAuthError("Enter your name to continue.");
+      return;
+    }
+    if (!password) {
+      setAuthError("Create a password to continue.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setAuthError("Passwords do not match.");
+      return;
+    }
+
+    setBusy(true);
+    const { data, error } = await supabase.auth.signUp({
+      email: pendingEmail,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+    setBusy(false);
+
+    if (error) {
+      if ((error.message || "").toLowerCase().includes("already registered")) {
+        setFlowStep("password");
+        setAuthMessage("Enter your password to continue.");
+        return;
+      }
+      setAuthError(error.message);
+      return;
+    }
+
+    const createdUserId = data?.user?.id || "";
+    setPendingUserId(createdUserId);
+
+    try {
+      setBillingBusy(true);
+      const paddle = await initPaddle();
+      const priceId = import.meta.env.VITE_PADDLE_PRICE_ID;
+      if (!priceId) {
+        setBillingError("Missing Paddle price id.");
+        return;
+      }
+      paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: {
+          email: pendingEmail,
+        },
+        customData: {
+          email: pendingEmail,
+          user_id: createdUserId || null,
+        },
+        settings: {
+          successUrl: `${appUrl}/login`,
+        },
+      });
+      setAuthMessage("Continue to payment to activate your subscription.");
+    } catch (error) {
+      setBillingError(error.message || "Unable to start checkout.");
+    } finally {
+      setBillingBusy(false);
     }
   }
 
@@ -192,7 +272,7 @@ export default function AuthPage() {
       setFlowStep("payment");
       setPendingEmail(session.user.email);
       setAuthMessage(
-        "Payment required. Please update your payment method to continue."
+        "Finish setting up your account by completing payment."
       );
     }
   }, [session, subscriptionLoading, subscriptionStatus, navigate, isActiveSubscriber]);
@@ -201,7 +281,6 @@ export default function AuthPage() {
     <div className="page-container auth-page">
       <section className="auth-hero">
         <h1>Sign in or create account</h1>
-        <p>Enter your email to continue.</p>
         {!isSupabaseConfigured && (
           <p className="auth-helper">Supabase is not configured yet.</p>
         )}
@@ -263,11 +342,62 @@ export default function AuthPage() {
             </form>
           )}
 
+          {flowStep === "signup" && (
+            <form className="auth-form" onSubmit={handleSignUp}>
+              <label className="form-field">
+                <span className="field-title">Email address</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  value={pendingEmail}
+                  onChange={(event) => setPendingEmail(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="form-field">
+                <span className="field-title">Name</span>
+                <input
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  value={signUpName}
+                  onChange={(event) => setSignUpName(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="form-field">
+                <span className="field-title">Create password</span>
+                <input
+                  type="password"
+                  name="new-password"
+                  autoComplete="new-password"
+                  value={signUpPassword}
+                  onChange={(event) => setSignUpPassword(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="form-field">
+                <span className="field-title">Confirm password</span>
+                <input
+                  type="password"
+                  name="confirm-password"
+                  autoComplete="new-password"
+                  value={signUpConfirmPassword}
+                  onChange={(event) => setSignUpConfirmPassword(event.target.value)}
+                  required
+                />
+              </label>
+              <button className="cta-button" type="submit">
+                {busy || billingBusy ? "Opening checkout..." : "Continue to payment"}
+              </button>
+            </form>
+          )}
+
           {flowStep === "payment" && (
             <div className="auth-form">
               <p>
-                Continue to payment to activate your subscription. We’ll email a
-                link to set your password after checkout.
+                Continue to payment to activate your subscription.
               </p>
               <button
                 className="cta-button"
